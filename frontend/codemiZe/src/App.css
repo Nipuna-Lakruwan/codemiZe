@@ -1,1 +1,334 @@
 @import "tailwindcss";
+
+/* For Firefox which doesn't support backdrop-filter */
+@-moz-document url-prefix() {
+  .backdrop-blur-md {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+  }
+}
+
+/* Mascot animation */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-15px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-mascot {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Add a slight wobble on hover */
+.animate-mascot:hover {
+  animation: none;
+  transition: transform 0.3s ease;
+  transform: scale(1.05) rotate(2deg);
+}
+
+/* Roadmap specific styles */
+.roadmap-container {
+  padding: 2rem 0;
+}
+
+.glass-container {
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.button-container.active .button-top {
+  animation: press 0.2s ease-out forwards;
+}
+
+@keyframes press {
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+
+  100% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.button-container:hover .button-top:not(.active) {
+  animation: pulse 1.5s infinite;
+}
+
+/* Enhanced roadmap map styles */
+.roadmap-map-container {
+  min-height: 600px;
+  position: relative;
+  padding: 20px 0;
+}
+
+/* 3D Button styles */
+.button-3d-container {
+  perspective: 1000px;
+}
+
+.button-3d-container.active .button-top {
+  transform: translateY(-8px) !important;
+  animation: press3d 0.3s ease-out forwards;
+}
+
+.button-3d-container:hover .button-top:not(.active) {
+  animation: float3d 2s infinite ease-in-out;
+}
+
+@keyframes press3d {
+  0% {
+    transform: translateY(0);
+  }
+
+  40% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes float3d {
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Glowing effect for status indicators and level markers */
+.shadow-glow {
+  box-shadow: 0 0 10px rgba(62, 5, 128, 0.8), 0 0 20px rgba(62, 5, 128, 0.4);
+}
+
+/* Jersey font fallback */
+@font-face {
+  font-family: 'Jersey_25';
+  src: local('Jersey 25'), url('/fonts/Jersey_25.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Game roadmap animations */
+@keyframes float-game {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.game-float {
+  animation: float-game 4s ease-in-out infinite;
+}
+
+.game-active {
+  filter: drop-shadow(0 0 15px rgba(62, 5, 128, 0.7));
+}
+
+/* Path animation - Updated for left-to-right flow */
+@keyframes dash {
+  to {
+    stroke-dashoffset: -40;
+    /* Negative value for left-to-right motion */
+  }
+}
+
+.animate-dash {
+  stroke-dashoffset: 0;
+  animation: dash 30s linear infinite;
+}
+
+/* Responsive adjustments for roadmap */
+@media (max-width: 768px) {
+  .roadmap-container .flex {
+    flex-direction: column;
+  }
+
+  .roadmap-item {
+    margin-bottom: 3rem;
+  }
+
+  /* Vertical line for mobile */
+  .roadmap-container .absolute.top-1\/2 {
+    top: 0;
+    height: 100%;
+    width: 1px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* Adjust connectors for vertical layout */
+  .roadmap-item .absolute.top-1\/2\.-left-8,
+  .roadmap-item .absolute.top-1\/2\.-right-8 {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1px;
+    height: 2rem;
+  }
+
+  .roadmap-item .absolute.top-1\/2\.-left-8 {
+    top: -2rem;
+  }
+
+  .roadmap-item .absolute.top-1\/2\.-right-8 {
+    top: auto;
+    bottom: -2rem;
+  }
+}
+
+/* Responsive adjustments for roadmap map */
+@media (max-width: 768px) {
+  .roadmap-map-container {
+    min-height: auto;
+  }
+
+  svg.absolute {
+    display: none;
+    /* Hide the connecting path on mobile */
+  }
+
+  .roadmap-item {
+    margin-bottom: 3rem;
+  }
+}
+
+/* Landscape roadmap styles */
+.roadmap-landscape-container {
+  width: 100%;
+  position: relative;
+  overflow-x: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.roadmap-items-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-width: min-content;
+  padding-bottom: 2rem;
+  padding-top: 2rem;
+}
+
+.roadmap-items-container>div:nth-child(odd) {
+  margin-top: 3rem;
+}
+
+.roadmap-items-container>div:nth-child(even) {
+  margin-bottom: 3rem;
+}
+
+/* Responsive styles for landscape view */
+@media (max-width: 768px) {
+  .roadmap-items-container {
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+  }
+
+  .roadmap-item {
+    scroll-snap-align: center;
+    flex-shrink: 0;
+  }
+}
+
+/* Style for the scrollbar in the landscape layout */
+.roadmap-items-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.roadmap-items-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.roadmap-items-container::-webkit-scrollbar-thumb {
+  background: rgba(62, 5, 128, 0.5);
+  border-radius: 10px;
+}
+
+.roadmap-items-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(62, 5, 128, 0.8);
+}
+
+/* Triangle gradient styles */
+.triangle-gradient {
+  position: relative;
+  width: 0;
+  height: 0;
+  margin: 0 auto;
+  z-index: 30;
+}
+
+.triangle-gradient::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 25px solid transparent;
+  border-right: 25px solid transparent;
+  border-bottom: 40px solid rgba(62, 5, 128, 0.8);
+  z-index: -1;
+}
+
+.triangle-icon {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 28px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Add custom styles that can't be achieved with Tailwind below */
