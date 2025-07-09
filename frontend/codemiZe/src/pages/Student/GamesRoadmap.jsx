@@ -16,7 +16,7 @@ const games = [
     pos: { left: '15%', top: '75%' },
     isCompleted: true,     // This game is completed
     isAvailable: true,     // This game is available
-    isActive: false,
+    isActive: true,
   },
   {
     id: 2,
@@ -25,7 +25,7 @@ const games = [
     pos: { left: '32%', top: '40%' },
     isCompleted: false,    // Not completed
     isAvailable: true,     // But available to play
-    isActive: false,
+    isActive: true,
   },
   {
     id: 3,
@@ -33,25 +33,25 @@ const games = [
     icon: '/circuit samshers logo 1.png',
     pos: { left: '50%', top: '75%' },
     isCompleted: false,    // Not completed
-    isAvailable: false,    // Not available yet
+    isAvailable: true,    // Not available yet
     isActive: false,
   },
   {
     id: 4,
     title: 'Route Seekers',
     icon: '/circuit samshers logo 1.png',
-    pos: { left: '80%', top: '70%' },
+    pos: { left: '68%', top: '40%' },
     isCompleted: false,    // Not completed
-    isAvailable: false,    // Not available yet
+    isAvailable: true,    // Not available yet
     isActive: false,
   },
   {
     id: 5,
     title: 'Battle Breakers',
     icon: '/Battle breakers logo 1.png',
-    pos: { left: '85%', top: '30%' },
+    pos: { left: '85%', top: '70%' },
     isCompleted: false,    // Not completed
-    isAvailable: false,    // Not available yet
+    isAvailable: true,    // Not available yet
     isActive: false,
   },
 ];
@@ -65,30 +65,30 @@ const generatePaths = (width, height) => {
   return [
     {
       // Quiz Hunters to Code Crushers
-      start: { x: getX('15'), y: getY('100') },
-      end: { x: getX('32'), y: getY('50') },
+      start: { x: getX('15'), y: getY('80') },
+      end: { x: getX('32'), y: getY('45') },
       control: { x: getX('20'), y: getY('65') },
       isAvailable: true // This path is available
     },
     {
       // Code Crushers to Circuit Smashers
-      start: { x: getX('32'), y: getY('50') },
-      end: { x: getX('50'), y: getY('85') },
+      start: { x: getX('32'), y: getY('45') },
+      end: { x: getX('50'), y: getY('80') },
       control: { x: getX('41'), y: getY('60') },
       isAvailable: false // This path is not available yet
     },
     {
       // Circuit Smashers to Route Seekers
-      start: { x: getX('50'), y: getY('85') },
-      end: { x: getX('80'), y: getY('80') },
+      start: { x: getX('50'), y: getY('80') },
+      end: { x: getX('68'), y: getY('45') },
       control: { x: getX('65'), y: getY('85') },
       isAvailable: false // This path is not available yet
     },
     {
       // Route Seekers to Battle Breakers
-      start: { x: getX('80'), y: getY('80') },
-      end: { x: getX('85'), y: getY('40') },
-      control: { x: getX('90'), y: getY('50') },
+      start: { x: getX('68'), y: getY('45') },
+      end: { x: getX('85'), y: getY('76') },
+      control: { x: getX('80'), y: getY('50') },
       isAvailable: false // This path is not available yet
     },
   ];
@@ -176,6 +176,23 @@ export default function GamesRoadmap() {
 
       {/* Header */}
       <Header />
+
+      {/* Winners button - visible for development purposes */}
+      {/* NOTE: In production, this button will be conditionally shown based on game completion and admin status */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }} // Quick appearance for development
+        className="absolute top-24 right-10 z-30"
+      >
+        <a
+          href="/student/winners"
+          className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg flex items-center space-x-2 transition-all"
+        >
+          <span>🏆</span>
+          <span>View Winners (Dev)</span>
+        </a>
+      </motion.div>
 
       {/* SVG paths with color-coded availability */}
       <PathMap
