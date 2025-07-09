@@ -1,17 +1,42 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const themeColor = 'rgba(62, 5, 128, 1)';
+  const navigate = useNavigate();
+
+  // Check if user is already authenticated
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+    if (isAuthenticated) {
+      navigate('/student/games-roadmap');
+    }
+  }, [navigate]);
 
   // Mascot position class - can be adjusted to change position
   const mascotPositionClass = "md:ml-12"; // Add margin-left on medium screens and up
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Login attempt with:', email);
-    // Authentication logic would go here
+    setError('');
+    setIsLoading(true);
+
+    // Simple authentication logic with hardcoded credentials
+    if (email === 'test@coding.lk' && password === 'test@123') {
+      console.log('Login successful, redirecting...');
+      // In a real application, you would store authentication token or user data
+      localStorage.setItem('isAuthenticated', 'true');
+      setTimeout(() => {
+        navigate('/student/games-roadmap');
+      }, 800); // Small delay to show loading state
+    } else {
+      setError('Invalid email or password');
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -50,7 +75,7 @@ function Login() {
                 src="/login-mascot.png"
                 alt="CodemiZe Mascot"
                 className="w-96 md:w-[30rem] lg:w-[34rem] h-auto max-w-full transition-transform duration-300 hover:scale-105 animate-mascot"
-                />
+              />
             </div>
           </div>
 
@@ -73,7 +98,11 @@ function Login() {
                       className="w-full px-3 py-3 bg-white/10 border border-white/30 rounded-md text-white placeholder-white/70 outline-none transition duration-200 focus:ring-2 focus:ring-purple-900"
                       placeholder="Enter your email"
                       required
+                      disabled={isLoading}
                     />
+                    {email === '' && (
+                      <p className="text-xs text-purple-300 mt-1 ml-1">Hint: test@coding.lk</p>
+                    )}
                   </div>
 
                   <div>
@@ -88,17 +117,41 @@ function Login() {
                       className="w-full px-3 py-3 bg-white/10 border border-white/30 rounded-md text-white placeholder-white/70 outline-none transition duration-200 focus:ring-2 focus:ring-purple-900"
                       placeholder="Enter your password"
                       required
+                      disabled={isLoading}
                     />
+                    {password === '' && (
+                      <p className="text-xs text-purple-300 mt-1 ml-1">Hint: test@123</p>
+                    )}
                   </div>
+
+                  {error && (
+                    <div className="bg-red-800/40 border border-red-500/50 rounded-md p-2 mt-2">
+                      <p className="text-red-200 text-sm text-center">{error}</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Sign In button positioned at the bottom of the form */}
                 <div className="mt-auto pt-8">
                   <button
                     type="submit"
-                    className="w-full py-3 px-4 bg-[rgba(62,5,128,1)] hover:bg-[rgba(62,5,128,0.8)] text-white font-medium rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgba(62,5,128,0.2)]"
+                    className={`w-full py-3 px-4 ${isLoading
+                        ? 'bg-[rgba(62,5,128,0.6)] cursor-not-allowed'
+                        : 'bg-[rgba(62,5,128,1)] hover:bg-[rgba(62,5,128,0.8)]'
+                      } text-white font-medium rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgba(62,5,128,0.2)] flex justify-center items-center`}
+                    disabled={isLoading}
                   >
-                    Sign In
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Signing in...
+                      </>
+                    ) : (
+                      'Sign In'
+                    )}
                   </button>
                 </div>
               </form>
