@@ -1,35 +1,43 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import Login from './pages/Login/Login';
+import GamesRoadmap from './pages/Student/GamesRoadmap';
+
+// Import all game pages
+import QuizHunters from './pages/Student/QuizHunters/QuizHunters';
+import CodeCrushers from './pages/Student/CodeCrushers/CodeCrushers';
+import CircuitSmashers from './pages/Student/CircuitSmashers/CircuitSmashers';
+import RouteSeekers from './pages/Student/RouteSeekers/RouteSeekers';
+import BattleBreakers from './pages/Student/BattleBreakers/BattleBreakers';
+
+// Create router with all routes
+const router = createBrowserRouter(
+  [
+    { path: "/", element: <Login /> },
+    { path: "/student/games-roadmap", element: <GamesRoadmap /> },
+    { path: "/student/quiz-hunters", element: <QuizHunters /> },
+    { path: "/student/code-crushers", element: <CodeCrushers /> },
+    { path: "/student/circuit-smashers", element: <CircuitSmashers /> },
+    { path: "/student/route-seekers", element: <RouteSeekers /> },
+    { path: "/student/battle-breakers", element: <BattleBreakers /> },
+  ],
+  {
+    future: {
+      v7_startTransition: true,
+      unstable_wrapRouteLoader: true // Add this to fully silence the warning in latest React Router
+    }
+  }
+);
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="min-h-screen w-full bg-cover bg-center bg-no-repeat bg-fixed relative overflow-hidden"
+      style={{ backgroundImage: "url('/background.jpg')" }}>
+      {/* Dark overlay layer */}
+      <div className="min-h-screen w-full bg-black/70 relative z-10">
+        <RouterProvider router={router} />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;
