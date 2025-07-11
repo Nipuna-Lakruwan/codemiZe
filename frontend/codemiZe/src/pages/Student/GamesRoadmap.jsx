@@ -177,12 +177,12 @@ export default function GamesRoadmap() {
       {/* Header */}
       <Header />
 
-      {/* Winners button - visible for development purposes */}
+      {/* Winners button - only appears after all animations are complete */}
       {/* NOTE: In production, this button will be conditionally shown based on game completion and admin status */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }} // Quick appearance for development
+        transition={{ delay: games.length * 0.6 + 1, duration: 0.5 }} // Delay based on number of games + additional time
         className="absolute top-24 right-10 z-30"
       >
         <a
@@ -190,7 +190,23 @@ export default function GamesRoadmap() {
           className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg flex items-center space-x-2 transition-all"
         >
           <span>🏆</span>
-          <span>View Winners (Dev)</span>
+          <span>View Winners</span>
+        </a>
+      </motion.div>
+
+      {/* Admin Dashboard link - For development purposes */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7, duration: 0.5 }}
+        className="absolute top-24 right-60 z-30"
+      >
+        <a
+          href="/admin/dashboard/battle-breakers"
+          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg flex items-center space-x-2 transition-all"
+        >
+          <span>⚙️</span>
+          <span>Admin Dashboard</span>
         </a>
       </motion.div>
 

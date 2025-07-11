@@ -10,6 +10,7 @@ import CircuitSmashers from './pages/Student/CircuitSmashers/CircuitSmashers';
 import RouteSeekers from './pages/Student/RouteSeekers/RouteSeekers';
 import BattleBreakers from './pages/Student/BattleBreakers/BattleBreakers';
 import Winners from './pages/Student/Winners/Winners';
+import BuzzerDashboard from './pages/Admin/Dashboard/BattleBreakers/BuzzerDashboard';
 
 // Create router with all routes
 const router = createBrowserRouter(
@@ -42,6 +43,10 @@ const router = createBrowserRouter(
     {
       path: "/student/winners",
       element: <ProtectedRoute><Winners /></ProtectedRoute>
+    },
+    {
+      path: "/admin/dashboard/battle-breakers",
+      element: <ProtectedRoute><BuzzerDashboard /></ProtectedRoute>
     },
   ],
   {
