@@ -1,7 +1,6 @@
 import User from "../models/User.js";
 import School from "../models/School.js";
 import jwt from "jsonwebtoken";
-import { VALID_ROLES } from "../utils/roleConstants.js";
 
 // Generate JWT token
 const generateToken = (id) => {
