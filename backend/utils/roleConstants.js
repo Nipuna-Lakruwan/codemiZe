@@ -1,4 +1,3 @@
-// Role constants for consistent usage across the application
 export const ROLES = {
   SCHOOL: 'School',
   JUDGE: 'Judge', 

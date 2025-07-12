@@ -5,6 +5,10 @@ const gameSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  icon: {
+    type: String,
+    required: true
+  },
   allocateTime: {
     type: Number,
     required: true
@@ -13,7 +17,15 @@ const gameSchema = new mongoose.Schema({
     type: String,
     enum: ["Inactive", "Active"],
     default: "Inactive"
-  }
+  },
+  isCompleted: {
+    type: Boolean,
+    default: false
+  },
+  isActive: {
+    type: Boolean,
+    default: false
+  },
 });
 
 export default mongoose.model("Game", gameSchema);
