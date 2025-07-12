@@ -30,6 +30,7 @@ const schoolSchema = new mongoose.Schema(
     },
     role: {
       type: String,
+      enum: ['School', 'Judge', 'Admin'],
       default: "School",
     },
   },
