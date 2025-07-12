@@ -1,9 +1,29 @@
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({ quiet: true });
 import http from "http";
-import app from "./app.js";
+import express from "express";
+import cors from "cors";
+import path from "path";
+import connectToDB from "./config/db.js";
+import logger from "./middleware/logger.js";
 import { Server } from "socket.io";
 import setupSocket from "./sockets/index.js";
+
+// Import routes
+import authRoutes from "./routes/auth.routes.js";
+
+const app = express();
+
+app.use(cors({
+  origin: process.env.CLIENT_URL || "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(logger);
 
 const port = process.env.PORT || 8000;
 const server = http.createServer(app);
@@ -24,3 +44,12 @@ setupSocket(io, app);
 server.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+// Routes
+app.use("api/v1/auth", authRoutes);
+
+// Connect to DB
+connectToDB();
+
+// Static folder
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
