@@ -39,14 +39,14 @@ const schoolSchema = new mongoose.Schema(
 );
 
 // Hash password before saving
-userSchema.pre("save", async function (next) {
+schoolSchema.pre("save", async function (next) {
   if (!this.isModified("password") || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
 // Compare passwords
-userSchema.methods.comparePasswords = async function (password) {
+schoolSchema.methods.comparePasswords = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
