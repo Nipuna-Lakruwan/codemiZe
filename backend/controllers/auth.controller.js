@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import School from "../models/School.js";
 import jwt from "jsonwebtoken";
+import { deleteFromLocal } from "../config/localStorage.js";
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -11,10 +12,10 @@ const generateToken = (id) => {
 
 // Register User
 export const registerUser = async (req, res) => {
-    const { name, email, password, profileImageUrl, role } = req.body;
+    const { name, email, password, role } = req.body;
     
     // validation: Check for missing fields
-    if (!name || !email || !password || !profileImageUrl || !role) {
+    if (!name || !email || !password || !role) {
         return res.status(400).json({ message: "Please fill in all fields" });
     }
 
@@ -25,12 +26,21 @@ export const registerUser = async (req, res) => {
             return res.status(400).json({ message: "Email already in use" });
         }
 
+        // Handle avatar upload
+        let avatarData = { url: '', publicId: '' };
+        if (req.file) {
+            avatarData = {
+                url: `/uploads/avatars/${req.file.filename}`,
+                publicId: req.file.filename
+            };
+        }
+
         // Create new user
         const user = await User.create({
             name,
             email,
             password,
-            profileImageUrl,
+            avatar: avatarData,
             role: role || "Judge",
         });
 
@@ -47,10 +57,10 @@ export const registerUser = async (req, res) => {
 
 // Register School
 export const registerSchool = async (req, res) => {
-    const { name, city, nameInShort, email, password, profileImageUrl, role } = req.body;
+    const { name, city, nameInShort, email, password, role } = req.body;
     
     // validation: Check for missing fields
-    if (!name || !city || !nameInShort || !email || !password || !profileImageUrl || !role) {
+    if (!name || !city || !nameInShort || !email || !password || !role) {
         return res.status(400).json({ message: "Please fill in all fields" });
     }
 
@@ -61,6 +71,15 @@ export const registerSchool = async (req, res) => {
             return res.status(400).json({ message: "Email already in use" });
         }
 
+        // Handle avatar upload
+        let avatarData = { url: '', publicId: '' };
+        if (req.file) {
+            avatarData = {
+                url: `/uploads/avatars/${req.file.filename}`,
+                publicId: req.file.filename
+            };
+        }
+
         // Create school user
         const school = await School.create({
             name,
@@ -68,7 +87,7 @@ export const registerSchool = async (req, res) => {
             nameInShort,
             email,
             password,
-            profileImageUrl,
+            avatar: avatarData,
             role: role || "School",
         });
 
@@ -171,23 +190,93 @@ export const getAllSchools = async (req, res) => {
   }
 };
 
+// Update user avatar
+export const updateAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const userId = req.user._id;
+    let user = req.user;
+    let userType = user.city ? 'school' : 'user';
+    
+    // Delete old avatar file if exists
+    if (user.avatar && user.avatar.publicId) {
+      try {
+        await deleteFromLocal(user.avatar.publicId, 'avatars');
+      } catch (error) {
+        console.log('Error deleting old avatar:', error.message);
+      }
+    }
+
+    // Update avatar data
+    const avatarData = {
+      url: `/uploads/avatars/${req.file.filename}`,
+      publicId: req.file.filename
+    };
+
+    // Update user in appropriate model
+    let updatedUser;
+    if (userType === 'user') {
+      updatedUser = await User.findByIdAndUpdate(
+        userId, 
+        { avatar: avatarData }, 
+        { new: true }
+      ).select('-password');
+    } else {
+      updatedUser = await School.findByIdAndUpdate(
+        userId, 
+        { avatar: avatarData }, 
+        { new: true }
+      ).select('-password');
+    }
+
+    const responseKey = userType === 'user' ? 'user' : 'school';
+    
+    res.status(200).json({
+      message: "Avatar updated successfully",
+      [responseKey]: updatedUser,
+      userType
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error updating avatar", error: err.message });
+  }
+};
+
 // Delete user (Admin only)
 export const deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
     
     // Try to delete from User model first
-    let deletedUser = await User.findByIdAndDelete(userId);
+    let deletedUser = await User.findById(userId);
     let userType = 'user';
     
     // If not found in User model, try School model
     if (!deletedUser) {
-      deletedUser = await School.findByIdAndDelete(userId);
+      deletedUser = await School.findById(userId);
       userType = 'school';
     }
     
     if (!deletedUser) {
       return res.status(404).json({ message: "User not found" });
+    }
+
+    // Delete avatar file if exists
+    if (deletedUser.avatar && deletedUser.avatar.publicId) {
+      try {
+        await deleteFromLocal(deletedUser.avatar.publicId, 'avatars');
+      } catch (error) {
+        console.log('Error deleting avatar file:', error.message);
+      }
+    }
+
+    // Now delete the user from database
+    if (userType === 'user') {
+      await User.findByIdAndDelete(userId);
+    } else {
+      await School.findByIdAndDelete(userId);
     }
     
     res.status(200).json({ 

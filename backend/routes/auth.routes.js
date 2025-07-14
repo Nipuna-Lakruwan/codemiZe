@@ -1,5 +1,6 @@
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
+import { avatarUpload } from "../middleware/uploadMiddleware.js";
 import { 
   requireAdmin, 
   requireJudge, 
@@ -13,17 +14,19 @@ import {
   getAllUsers,
   getAllSchools,
   deleteUser,
+  updateAvatar,
 } from "../controllers/auth.controller.js";
 
 const router = express.Router();
 
 // Public routes
-router.post("/signup", registerUser);
-router.post("/signup-school", registerSchool);
+router.post("/signup", avatarUpload.single('avatar'), registerUser);
+router.post("/signup-school", avatarUpload.single('avatar'), registerSchool);
 router.post("/login", loginUser);
 
 // Protected routes - accessible by all authenticated users
 router.get("/getUserInfo", protect, getUserInfo);
+router.put("/avatar", protect, avatarUpload.single('avatar'), updateAvatar);
 
 // Role-based protected routes
 router.get("/profile", protect, requireSchool, getUserInfo);
