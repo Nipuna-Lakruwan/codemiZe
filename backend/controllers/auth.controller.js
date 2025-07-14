@@ -94,7 +94,6 @@ export const registerSchool = async (req, res) => {
         res.status(201).json({
             id: school._id,
             school,
-            token: generateToken(school._id),
         });
     }
     catch (err) {
