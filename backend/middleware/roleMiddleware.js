@@ -34,11 +34,6 @@ export const requireRole = (...allowedRoles) => {
   };
 };
 
-// Specific role checkers for convenience
-export const requireAdmin = requireRole(ROLES.ADMIN);
-export const requireJudge = requireRole(ROLES.JUDGE, ROLES.ADMIN);
-export const requireSchool = requireRole(ROLES.SCHOOL, ROLES.JUDGE, ROLES.ADMIN);
-
 // Check if user has exact role (not hierarchical)
 export const requireExactRole = (...exactRoles) => {
   return async (req, res, next) => {
@@ -61,6 +56,11 @@ export const requireExactRole = (...exactRoles) => {
     }
   };
 };
+
+// Specific role checkers for convenience
+export const requireAdmin = requireExactRole(ROLES.ADMIN);
+export const requireJudge = requireExactRole(ROLES.JUDGE);
+export const requireSchool = requireExactRole(ROLES.SCHOOL);
 
 // Middleware to check resource ownership (for schools accessing their own data)
 export const requireOwnership = (resourceField = 'userId') => {
