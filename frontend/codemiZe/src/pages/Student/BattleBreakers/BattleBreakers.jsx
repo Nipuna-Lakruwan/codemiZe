@@ -176,9 +176,9 @@ export default function BattleBreakers() {
         questionNumber: currentQuestion + 1,
         school: {
           id: user.id,
-          name: user.name || 'Test School', // Replace with actual school data from user
-          logo: user.avatar?.url || '/scl1.png', // Use user's avatar or default
-          city: user.city || 'Test City' // Replace with actual city from user
+          name: user.name, // Replace with actual school data from user
+          logo: user.avatar?.url, // Use user's avatar or default
+          city: user.city // Replace with actual city from user
         },
         timestamp: new Date().toISOString()
       });
