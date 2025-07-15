@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { ROLES, isAdmin, isJudge, isSchool } from '../utils/roleConstants';
 
 const SocketContext = createContext();
 
@@ -51,15 +52,102 @@ export const SocketProvider = ({ children }) => {
   }, [user?.token]);
 
   const joinGame = (gameType, role) => {
-    if (socket) {
-      socket.emit('join_game', { gameType, role });
+    if (socket && user) {
+      // Only allow school (student) role to join games
+      if (!isSchool(user.role)) {
+        console.warn('Only students can join games');
+        return false;
+      }
+      
+      socket.emit('join_game', { 
+        gameType, 
+        role, 
+        userRole: user.role,
+        userId: user.id 
+      });
+      return true;
     }
+    return false;
   };
 
   const emitBuzzerPress = (data) => {
-    if (socket) {
-      socket.emit('buzzer_press', data);
+    if (socket && user) {
+      // Only allow school (student) role to press buzzers
+      if (!isSchool(user.role)) {
+        console.warn('Only students can press buzzers');
+        return false;
+      }
+      
+      socket.emit('buzzer_press', { 
+        ...data, 
+        userRole: user.role,
+        userId: user.id 
+      });
+      return true;
     }
+    return false;
+  };
+
+  const emitAdminAction = (action, data) => {
+    if (socket && user) {
+      // Only allow admin role to perform admin actions
+      if (!isAdmin(user.role)) {
+        console.warn('Only admins can perform admin actions');
+        return false;
+      }
+      
+      socket.emit(action, { 
+        ...data, 
+        userRole: user.role,
+        userId: user.id,
+        timestamp: new Date().toISOString()
+      });
+      return true;
+    }
+    return false;
+  };
+
+  const emitJudgeAction = (action, data) => {
+    if (socket && user) {
+      // Only allow judge or admin role to perform judge actions
+      if (!isJudge(user.role) && !isAdmin(user.role)) {
+        console.warn('Only judges and admins can perform judge actions');
+        return false;
+      }
+      
+      socket.emit(action, { 
+        ...data, 
+        userRole: user.role,
+        userId: user.id,
+        timestamp: new Date().toISOString()
+      });
+      return true;
+    }
+    return false;
+  };
+
+  const safeEmit = (event, data, requiredRoles) => {
+    if (!socket || !user) return false;
+    
+    const userRoles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+    
+    if (!userRoles.includes(user.role)) {
+      console.warn(`Socket event '${event}' denied: insufficient permissions`);
+      return false;
+    }
+    
+    socket.emit(event, { 
+      ...data, 
+      userRole: user.role,
+      userId: user.id,
+      timestamp: new Date().toISOString()
+    });
+    return true;
+  };
+
+  const emitBattleBreakersDashboard = (action, data) => {
+    // Battle Breakers dashboard is admin-only
+    return emitAdminAction(action, data);
   };
 
   const value = {
@@ -67,6 +155,10 @@ export const SocketProvider = ({ children }) => {
     isConnected,
     joinGame,
     emitBuzzerPress,
+    emitAdminAction,
+    emitJudgeAction,
+    safeEmit,
+    emitBattleBreakersDashboard,
   };
 
   return (
