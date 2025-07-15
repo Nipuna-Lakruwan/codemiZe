@@ -4,6 +4,7 @@ import http from "http";
 import express from "express";
 import cors from "cors";
 import path from "path";
+import cookieParser from 'cookie-parser';
 import connectToDB from "./config/db.js";
 import logger from "./middleware/logger.js";
 import { Server } from "socket.io";
@@ -15,12 +16,14 @@ import authRoutes from "./routes/auth.routes.js";
 const app = express();
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || "*",
+  origin: process.env.CLIENT_URL || "http://localhost:5173",
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
 }));
 
 // Middleware
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(logger);

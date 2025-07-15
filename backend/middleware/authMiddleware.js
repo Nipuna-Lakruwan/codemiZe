@@ -3,7 +3,8 @@ import User from "../models/User.js";
 import School from "../models/School.js";
 
 export const protect = async (req, res, next) => {
-    let token = req.headers.authorization?.split(" ")[1];
+    const token = req.cookies.token;
+    
     if (!token) {
         return res.status(401).json({ message: "Unauthorized" });
     }

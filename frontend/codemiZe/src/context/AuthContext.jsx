@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../utils/axiosInstance';
+import { API_PATHS } from '../utils/apiPaths';
 
 const AuthContext = createContext();
 
@@ -10,92 +12,83 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is authenticated from localStorage
-    const auth = localStorage.getItem('isAuthenticated');
-    const storedUser = localStorage.getItem('user');
-    
-    if (auth === 'true') {
-      setIsAuthenticated(true);
-      if (storedUser) {
-        try {
-          setUser(JSON.parse(storedUser));
-        } catch (error) {
-          console.error('Error parsing stored user data:', error);
+    const fetchSession = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.AUTH.GET_USER_INFO);
+        console.log('Session restored:', response.data.user);
+        setUser(response.data.user);
+        setIsAuthenticated(true);
+      } catch (err) {
+        // 401 is expected when user is not logged in - this is normal
+        if (err.response?.status === 401) {
+          console.log('No active session found - user needs to log in');
+        } else {
+          console.error('Session fetch failed:', err);
         }
+        setIsAuthenticated(false);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    };
+
+    fetchSession();
   }, []);
 
-  const login = (email, password) => {
-    return new Promise((resolve, reject) => {
-      // For this example, we're using hardcoded credentials
-      if (email === 'test@coding.lk' && password === 'test@123') {
-        const userData = {
-          id: 1,
-          email: email,
-          name: 'Test User',
-          token: 'mock-jwt-token-' + Date.now(),
-          role: 'student'
-        };
-        
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('user', JSON.stringify(userData));
-        setIsAuthenticated(true);
+
+  const login = async (email, password) => {
+    try {
+      const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN, { email, password });
+      
+      if (response.status === 200) {
+        const userData = response.data.user || response.data.school;
         setUser(userData);
-        resolve(userData);
-      } else {
-        reject(new Error('Invalid email or password'));
+        setIsAuthenticated(true);
+        return { success: true, data: response.data };
       }
-    });
+    } catch (error) {
+      console.error('Login failed:', error);
+      return { success: false, error: error.response?.data?.message || 'Login failed' };
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
+  const logout = async () => {
+    try {
+      await axiosInstance.post(API_PATHS.AUTH.LOGOUT);
+    } catch (error) {
+      console.error('Logout request failed:', error);
+    }
+    
     setIsAuthenticated(false);
     setUser(null);
     navigate('/');
   };
 
-  // Function to update user data
   const updateUser = (userData) => {
     setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
   };
 
-  // Function to clear user data
   const clearUser = () => {
     setUser(null);
-    localStorage.removeItem('user');
   };
 
-  // Hook to verify authentication status
   const verifyAuth = () => {
-    const auth = localStorage.getItem('isAuthenticated');
-    const storedUser = localStorage.getItem('user');
-    
-    if (auth === 'true' && storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        return { isValid: true, user: userData };
-      } catch (error) {
-        return { isValid: false, user: null };
-      }
-    }
-    return { isValid: false, user: null };
+    return {
+      isValid: isAuthenticated && user !== null,
+      user: user
+    };
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated, 
-      user, 
-      loading, 
-      login, 
-      logout, 
-      updateUser, 
+    <AuthContext.Provider value={{
+      isAuthenticated,
+      user,
+      loading,
+      login,
+      logout,
+      updateUser,
       clearUser,
-      verifyAuth 
+      verifyAuth
     }}>
       {children}
     </AuthContext.Provider>

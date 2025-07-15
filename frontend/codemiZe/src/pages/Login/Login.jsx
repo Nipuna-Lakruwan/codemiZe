@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -8,33 +9,44 @@ function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const themeColor = 'rgba(62, 5, 128, 1)';
   const navigate = useNavigate();
+  const { login, isAuthenticated, loading } = useAuth();
 
   // Check if user is already authenticated
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-    if (isAuthenticated) {
+    if (!loading && isAuthenticated) {
       navigate('/student/games-roadmap');
     }
-  }, [navigate]);
+  }, [isAuthenticated, loading, navigate]);
+
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
 
   // Mascot position class - can be adjusted to change position
   const mascotPositionClass = "md:ml-12"; // Add margin-left on medium screens and up
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Simple authentication logic with hardcoded credentials
-    if (email === 'test@coding.lk' && password === 'test@123') {
-      console.log('Login successful, redirecting...');
-      // In a real application, you would store authentication token or user data
-      localStorage.setItem('isAuthenticated', 'true');
-      setTimeout(() => {
+    try {
+      const result = await login(email, password);
+      
+      if (result.success) {
+        console.log('Login successful, redirecting...');
         navigate('/student/games-roadmap');
-      }, 800); // Small delay to show loading state
-    } else {
-      setError('Invalid email or password');
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError('Something went wrong');
+    } finally {
       setIsLoading(false);
     }
   };
