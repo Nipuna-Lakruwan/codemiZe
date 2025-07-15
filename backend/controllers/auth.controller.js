@@ -10,6 +10,16 @@ const generateToken = (id) => {
   });
 };
 
+// Helper to send token in HTTP-only cookie
+const sendToken = (res, token) => {
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Strict",
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+  });
+};
+
 // Register User
 export const registerUser = async (req, res) => {
     const { name, email, password, role } = req.body;
@@ -47,7 +57,6 @@ export const registerUser = async (req, res) => {
         res.status(201).json({
             id: user._id,
             user,
-            token: generateToken(user._id),
         });
     }
     catch (err) {
@@ -126,11 +135,14 @@ export const loginUser = async (req, res) => {
 
         const responseKey = userType === 'user' ? 'user' : 'school';
         
+        const token = generateToken(user._id);
+        sendToken(res, token);
+
         res.status(200).json({
             id: user._id,
             [responseKey]: user,
             userType,
-            token: generateToken(user._id),
+            message: `${userType.charAt(0).toUpperCase() + userType.slice(1)} logged in successfully`,
         });
     } catch (err) {
         res.status(500).json({ message: "Error logging in user", error: err.message });
@@ -148,10 +160,9 @@ export const getUserInfo = async (req, res) => {
 
     // Determine user type based on the model structure
     const userType = user.city ? 'school' : 'user';
-    const responseKey = userType === 'user' ? 'user' : 'school';
 
     res.status(200).json({
-      [responseKey]: user,
+      user: user,
       userType
     });
   } catch (err) {
@@ -285,4 +296,14 @@ export const deleteUser = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Error deleting user", error: err.message });
   }
+};
+
+// Logout User
+export const logoutUser = (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Strict",
+  });
+  res.status(200).json({ message: "Logged out successfully" });
 };

@@ -15,6 +15,7 @@ import {
   getAllSchools,
   deleteUser,
   updateAvatar,
+  logoutUser,
 } from "../controllers/auth.controller.js";
 
 const router = express.Router();
@@ -23,6 +24,7 @@ const router = express.Router();
 router.post("/signup", avatarUpload.single('avatar'), registerUser);
 router.post("/signup-school", avatarUpload.single('avatar'), registerSchool);
 router.post("/login", loginUser);
+router.post("/logout", logoutUser);
 
 // Protected routes - accessible by all authenticated users
 router.get("/getUserInfo", protect, getUserInfo);
