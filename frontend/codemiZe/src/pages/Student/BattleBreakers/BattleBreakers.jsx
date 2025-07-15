@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
 import GameNodeMini from '../../../components/Games/GameNodeMini';
+import { useSocket } from '../../../context/SocketContext';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function BattleBreakers() {
   // Game state
@@ -17,6 +19,10 @@ export default function BattleBreakers() {
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState(30); // 30 seconds per question
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+  // WebSocket and Auth
+  const { socket, isConnected, joinGame, emitBuzzerPress } = useSocket();
+  const { user } = useAuth();
 
   // Questions data - sample questions for the game
   const questions = [
@@ -107,6 +113,11 @@ export default function BattleBreakers() {
     // Set total questions count
     setTotalQuestionsCount(questions.length);
 
+    // Join the game room when component mounts
+    if (socket && isConnected) {
+      joinGame('battle_breakers', 'student');
+    }
+
     return () => {
       // Clean up audio when component unmounts
       if (buzzerSound.current) {
@@ -114,7 +125,7 @@ export default function BattleBreakers() {
         buzzerSound.current = null;
       }
     };
-  }, []);
+  }, [socket, isConnected]);
 
   // Timer effect
   useEffect(() => {
@@ -158,6 +169,20 @@ export default function BattleBreakers() {
 
     // Play buzzer sound using our mock function
     playBuzzerSound();
+
+    // Emit buzzer press event through WebSocket
+    if (socket && user) {
+      emitBuzzerPress({
+        questionNumber: currentQuestion + 1,
+        school: {
+          id: user.id,
+          name: user.name || 'Test School', // Replace with actual school data from user
+          logo: user.avatar?.url || '/scl1.png', // Use user's avatar or default
+          city: user.city || 'Test City' // Replace with actual city from user
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // Simulate buzzer press animation timing
     setTimeout(() => {

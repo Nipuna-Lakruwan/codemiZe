@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useSocket } from '../../../../context/SocketContext';
 
 // QuestionDisplay Component
 const QuestionDisplay = ({ question, questionNumber, totalQuestions, timeRemaining }) => {
@@ -65,12 +66,13 @@ const TeamRankings = ({ buzzerPresses }) => {
               key={press.id}
               index={index}
               team={press.team}
-              responseTime={index === 0 ? '2.4s' : '4.1s'}
+              responseTime={press.responseTime}
+              isNew={Date.now() - new Date(press.timestamp).getTime() < 3000} // Mark as new for 3 seconds
             />
           ))}
 
           {/* Add empty placeholders for more teams */}
-          {[1, 2, 3].map((_, index) => (
+          {Array.from({ length: Math.max(0, 5 - buzzerPresses.length) }, (_, index) => (
             <EmptyRankItem key={`empty-${index}`} index={index + buzzerPresses.length} />
           ))}
         </div>
@@ -80,7 +82,7 @@ const TeamRankings = ({ buzzerPresses }) => {
 };
 
 // TeamRankItem Component
-const TeamRankItem = ({ index, team, responseTime }) => {
+const TeamRankItem = ({ index, team, responseTime, isNew = false }) => {
   const borderColor = index === 0 ? 'border-green-600' : 'border-blue-500';
 
   return (
@@ -88,7 +90,9 @@ const TeamRankItem = ({ index, team, responseTime }) => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.2 }}
-      className={`w-[516px] h-16 bg-stone-300 rounded-md shadow-[3px_6px_14px_-2px_rgba(0,0,0,0.25)] border-l-[15px] ${borderColor} flex items-center px-4 relative`}
+      className={`w-[516px] h-16 bg-stone-300 rounded-md shadow-[3px_6px_14px_-2px_rgba(0,0,0,0.25)] border-l-[15px] ${borderColor} flex items-center px-4 relative ${
+        isNew ? 'ring-2 ring-yellow-400 animate-pulse' : ''
+      }`}
     >
       {/* Rank number */}
       <div className="w-6 justify-start text-purple-950 text-4xl font-medium font-['Oxanium'] mr-3">
@@ -116,8 +120,15 @@ const TeamRankItem = ({ index, team, responseTime }) => {
 
       {/* Response time */}
       <div className="justify-start text-sky-900 text-2xl font-medium font-['Oxanium']">
-        {responseTime.replace('s', '')} s
+        {responseTime ? responseTime.replace('s', '') : '--'} s
       </div>
+
+      {/* New indicator */}
+      {isNew && (
+        <div className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs px-2 py-1 rounded-full font-bold">
+          NEW!
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -176,6 +187,13 @@ export default function BuzzerDashboard() {
   // Using fixed values for display-only frontend dashboard
   const [timeRemaining] = useState(25);
   const currentQuestionIndex = 0;
+  
+  // State for real-time buzzer presses
+  const [buzzerPresses, setBuzzerPresses] = useState([]);
+  const [currentQuestion, setCurrentQuestion] = useState(1);
+  
+  // WebSocket connection
+  const { socket, isConnected, joinGame } = useSocket();
 
   // Sample questions data - static for display purposes
   const questions = [
@@ -206,29 +224,67 @@ export default function BuzzerDashboard() {
     }
   ];
 
-  // Sample buzzer presses - static for display purposes only
-  const buzzerPresses = [
-    {
-      id: 1,
-      team: {
-        id: 1,
-        name: "Sri Sangabodhi Central College",
-        logo: "/scl2.png",
-        city: "Dankotuwa"
-      },
-      timestamp: new Date().toISOString()
-    },
-    {
-      id: 2,
-      team: {
-        id: 3,
-        name: "Maris Stella College",
-        logo: "/scl1.png",
-        city: "Negombo"
-      },
-      timestamp: new Date(Date.now() - 2000).toISOString()
+  // WebSocket effect to listen for buzzer presses
+  useEffect(() => {
+    if (socket && isConnected) {
+      // Join dashboard room
+      joinGame('battle_breakers', 'dashboard');
+
+      // Listen for buzzer press events
+      socket.on('buzzer_pressed', (data) => {
+        console.log('Buzzer pressed received:', data);
+        
+        // Add the new buzzer press to the list
+        setBuzzerPresses(prev => {
+          // Check if this user already pressed for this question
+          const existingPress = prev.find(press => 
+            press.userId === data.userId && press.questionNumber === data.questionNumber
+          );
+          
+          if (!existingPress) {
+            const newPress = {
+              id: Date.now(), // Simple ID generation
+              userId: data.userId,
+              team: data.school,
+              timestamp: data.timestamp,
+              questionNumber: data.questionNumber,
+              responseTime: calculateResponseTime(data.timestamp)
+            };
+            
+            // Sort by timestamp to maintain order
+            return [...prev, newPress].sort((a, b) => 
+              new Date(a.timestamp) - new Date(b.timestamp)
+            );
+          }
+          
+          return prev;
+        });
+      });
+
+      return () => {
+        socket.off('buzzer_pressed');
+      };
     }
-  ];
+  }, [socket, isConnected, joinGame]);
+
+  // Function to calculate response time (mock implementation)
+  const calculateResponseTime = (timestamp) => {
+    // In a real implementation, you'd calculate based on when the question was shown
+    // For now, return a mock response time
+    const times = ['1.2s', '2.4s', '3.1s', '4.5s', '5.2s'];
+    return times[Math.floor(Math.random() * times.length)];
+  };
+
+  // Function to clear buzzer presses for new question
+  const clearBuzzerPresses = () => {
+    setBuzzerPresses([]);
+  };
+
+  // Function to move to next question
+  const nextQuestion = () => {
+    setCurrentQuestion(prev => prev + 1);
+    clearBuzzerPresses();
+  };
 
   return (
     <div className="min-h-screen w-full bg-cover bg-center bg-no-repeat bg-fixed overflow-hidden"
@@ -263,7 +319,7 @@ export default function BuzzerDashboard() {
           {/* Left column - Question Display Component */}
           <QuestionDisplay
             question={questions[currentQuestionIndex]}
-            questionNumber={currentQuestionIndex + 1}
+            questionNumber={currentQuestion}
             totalQuestions={questions.length}
             timeRemaining={timeRemaining}
           />
@@ -271,6 +327,36 @@ export default function BuzzerDashboard() {
           {/* Right column - Team Rankings Component */}
           <TeamRankings buzzerPresses={buzzerPresses} />
         </motion.div>
+
+        {/* Admin Controls - positioned at bottom */}
+        <div className="absolute bottom-8 right-8 z-30 flex gap-4">
+          <button
+            onClick={clearBuzzerPresses}
+            className="px-4 py-2 bg-red-600/80 text-white rounded-md hover:bg-red-600 transition-colors"
+          >
+            Clear Buzzes
+          </button>
+          <button
+            onClick={nextQuestion}
+            className="px-4 py-2 bg-blue-600/80 text-white rounded-md hover:bg-blue-600 transition-colors"
+          >
+            Next Question
+          </button>
+        </div>
+
+        {/* Connection Status Indicator */}
+        <div className="absolute top-20 right-8 z-30">
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-md ${
+            isConnected ? 'bg-green-600/80 text-white' : 'bg-red-600/80 text-white'
+          }`}>
+            <div className={`w-2 h-2 rounded-full ${
+              isConnected ? 'bg-green-300' : 'bg-red-300'
+            }`} />
+            <span className="text-sm font-medium">
+              {isConnected ? 'Connected' : 'Disconnected'}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
