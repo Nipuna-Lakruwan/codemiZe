@@ -13,7 +13,9 @@
 import { Routes, Route } from 'react-router-dom';
 import Login from './pages/Login/Login';
 import GamesRoadmap from './pages/Student/GamesRoadmap';
-import { ProtectedRoute } from './components/ProtectedRoute';
+import { RoleProtectedRoute } from './components/RoleProtectedRoute';
+import { RoleSecurityMiddleware } from './components/RoleSecurityMiddleware';
+import { ROLES, ROUTE_PERMISSIONS } from './utils/roleConstants';
 
 // Import all game pages
 import QuizHunters from './pages/Student/QuizHunters/QuizHunters';
@@ -33,6 +35,10 @@ import AdminCircuitSmashers from './pages/Admin/CircuitSmashers/AdminCircuitSmas
 import AdminRouteSeekers from './pages/Admin/RouteSeekers/AdminRouteSeekers';
 import AdminBattleBreakers from './pages/Admin/BattleBreakers/AdminBattleBreakers';
 import UserManagement from './pages/Admin/UserManagement/UserManagement';
+
+// Judge pages
+import JudgeDashboard from './pages/Judge/JudgeDashboard';
+import JudgeMarking from './pages/Judge/JudgeMarking';
 
 /**
  * Router Configuration
@@ -59,30 +65,108 @@ function App() {
       style={{ backgroundImage: "url('/background.jpg')" }}>
       {/* Dark overlay layer for better content visibility */}
       <div className="min-h-screen w-full bg-black/70 relative z-10">
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Login />} />
+        <RoleSecurityMiddleware>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Login />} />
 
-          {/* Student routes */}
-          <Route path="/student/games-roadmap" element={<ProtectedRoute><GamesRoadmap /></ProtectedRoute>} />
-          <Route path="/student/quiz-hunters" element={<ProtectedRoute><QuizHunters /></ProtectedRoute>} />
-          <Route path="/student/code-crushers" element={<ProtectedRoute><CodeCrushers /></ProtectedRoute>} />
-          <Route path="/student/circuit-smashers" element={<ProtectedRoute><CircuitSmashers /></ProtectedRoute>} />
-          <Route path="/student/route-seekers" element={<ProtectedRoute><RouteSeekers /></ProtectedRoute>} />
-          <Route path="/student/battle-breakers" element={<ProtectedRoute><BattleBreakers /></ProtectedRoute>} />
-          <Route path="/student/winners" element={<ProtectedRoute><Winners /></ProtectedRoute>} />
+            {/* Student routes - only accessible by School role */}
+            <Route path="/student/games-roadmap" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.STUDENT_GAMES_ROADMAP}>
+                <GamesRoadmap />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/student/quiz-hunters" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.STUDENT_QUIZ_HUNTERS}>
+                <QuizHunters />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/student/code-crushers" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.STUDENT_CODE_CRUSHERS}>
+                <CodeCrushers />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/student/circuit-smashers" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.STUDENT_CIRCUIT_SMASHERS}>
+                <CircuitSmashers />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/student/route-seekers" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.STUDENT_ROUTE_SEEKERS}>
+                <RouteSeekers />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/student/battle-breakers" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.STUDENT_BATTLE_BREAKERS}>
+                <BattleBreakers />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/student/winners" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.STUDENT_WINNERS}>
+                <Winners />
+              </RoleProtectedRoute>
+            } />
 
-          {/* Admin routes */}
-          <Route path="/admin/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/admin/marking-criterias" element={<ProtectedRoute><MarkingCriterias /></ProtectedRoute>} />
-          <Route path="/admin/quiz-hunters" element={<ProtectedRoute><AdminQuizHunters /></ProtectedRoute>} />
-          <Route path="/admin/code-crushers" element={<ProtectedRoute><AdminCodeCrushers /></ProtectedRoute>} />
-          <Route path="/admin/circuit-smashers" element={<ProtectedRoute><AdminCircuitSmashers /></ProtectedRoute>} />
-          <Route path="/admin/route-seekers" element={<ProtectedRoute><AdminRouteSeekers /></ProtectedRoute>} />
-          <Route path="/admin/battle-breakers" element={<ProtectedRoute><AdminBattleBreakers /></ProtectedRoute>} />
-          <Route path="/admin/user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
-          <Route path="/admin/dashboard/battle-breakers" element={<ProtectedRoute><BuzzerDashboard /></ProtectedRoute>} />
-        </Routes>
+            {/* Admin routes - only accessible by Admin role */}
+            <Route path="/admin/dashboard" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.ADMIN_DASHBOARD}>
+                <Dashboard />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/marking-criterias" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.ADMIN_MARKING_CRITERIAS}>
+                <MarkingCriterias />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/quiz-hunters" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.ADMIN_QUIZ_HUNTERS}>
+                <AdminQuizHunters />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/code-crushers" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.ADMIN_CODE_CRUSHERS}>
+                <AdminCodeCrushers />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/circuit-smashers" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.ADMIN_CIRCUIT_SMASHERS}>
+                <AdminCircuitSmashers />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/route-seekers" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.ADMIN_ROUTE_SEEKERS}>
+                <AdminRouteSeekers />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/battle-breakers" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.ADMIN_BATTLE_BREAKERS}>
+                <AdminBattleBreakers />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/user-management" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.ADMIN_USER_MANAGEMENT}>
+                <UserManagement />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/dashboard/battle-breakers" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.ADMIN_BATTLE_BREAKERS_DASHBOARD}>
+                <BuzzerDashboard />
+              </RoleProtectedRoute>
+            } />
+
+            {/* Judge routes - accessible by Judge and Admin roles */}
+            <Route path="/judge/dashboard" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.JUDGE_DASHBOARD}>
+                <JudgeDashboard />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/judge/marking" element={
+              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.JUDGE_MARKING}>
+                <JudgeMarking />
+              </RoleProtectedRoute>
+            } />
+          </Routes>
+        </RoleSecurityMiddleware>
       </div>
     </div>
   );

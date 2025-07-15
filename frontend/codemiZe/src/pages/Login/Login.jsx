@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getDefaultRoute } from '../../utils/roleConstants';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -9,14 +10,15 @@ function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const themeColor = 'rgba(62, 5, 128, 1)';
   const navigate = useNavigate();
-  const { login, isAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated, loading, user } = useAuth();
 
   // Check if user is already authenticated
   useEffect(() => {
-    if (!loading && isAuthenticated) {
-      navigate('/student/games-roadmap');
+    if (!loading && isAuthenticated && user) {
+      const defaultRoute = getDefaultRoute(user.role);
+      navigate(defaultRoute);
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, user, navigate]);
 
   // Show loading spinner while checking authentication
   if (loading) {
@@ -40,7 +42,9 @@ function Login() {
       
       if (result.success) {
         console.log('Login successful, redirecting...');
-        navigate('/student/games-roadmap');
+        const userData = result.data.user || result.data.school;
+        const defaultRoute = getDefaultRoute(userData.role);
+        navigate(defaultRoute);
       } else {
         setError(result.error);
       }
