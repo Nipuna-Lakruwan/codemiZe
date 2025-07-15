@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
 
 export default function AdminLayout({ children }) {
   const location = useLocation();
@@ -17,6 +19,13 @@ export default function AdminLayout({ children }) {
     { name: 'Battle Breakers', path: '/admin/battle-breakers' },
     { name: 'User Management', path: '/admin/user-management' },
   ];
+
+  // Handle logouthandleLogout
+  const handleLogout = async () => {
+    await axiosInstance.post(API_PATHS.AUTH.LOGOUT);
+    console.log('Logout clicked');
+    navigate('/');
+  };
 
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: "rgba(240, 240, 245, 1)" }}>
@@ -68,6 +77,17 @@ export default function AdminLayout({ children }) {
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md shadow transition-colors duration-300"
           >
             Show Winners
+          </motion.button>
+        </div>
+        {/* Show Winners button */}
+        <div className="mt-10">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleLogout}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md shadow transition-colors duration-300"
+          >
+            Logout
           </motion.button>
         </div>
       </div>

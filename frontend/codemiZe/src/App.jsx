@@ -14,7 +14,6 @@ import { Routes, Route } from 'react-router-dom';
 import Login from './pages/Login/Login';
 import GamesRoadmap from './pages/Student/GamesRoadmap';
 import { RoleProtectedRoute } from './components/RoleProtectedRoute';
-import { RoleSecurityMiddleware } from './components/RoleSecurityMiddleware';
 import { ROLES, ROUTE_PERMISSIONS } from './utils/roleConstants';
 
 // Import all game pages
@@ -35,10 +34,6 @@ import AdminCircuitSmashers from './pages/Admin/CircuitSmashers/AdminCircuitSmas
 import AdminRouteSeekers from './pages/Admin/RouteSeekers/AdminRouteSeekers';
 import AdminBattleBreakers from './pages/Admin/BattleBreakers/AdminBattleBreakers';
 import UserManagement from './pages/Admin/UserManagement/UserManagement';
-
-// Judge pages
-import JudgeDashboard from './pages/Judge/JudgeDashboard';
-import JudgeMarking from './pages/Judge/JudgeMarking';
 
 /**
  * Router Configuration
@@ -65,7 +60,6 @@ function App() {
       style={{ backgroundImage: "url('/background.jpg')" }}>
       {/* Dark overlay layer for better content visibility */}
       <div className="min-h-screen w-full bg-black/70 relative z-10">
-        <RoleSecurityMiddleware>
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Login />} />
@@ -153,20 +147,7 @@ function App() {
                 <BuzzerDashboard />
               </RoleProtectedRoute>
             } />
-
-            {/* Judge routes - accessible by Judge and Admin roles */}
-            <Route path="/judge/dashboard" element={
-              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.JUDGE_DASHBOARD}>
-                <JudgeDashboard />
-              </RoleProtectedRoute>
-            } />
-            <Route path="/judge/marking" element={
-              <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.JUDGE_MARKING}>
-                <JudgeMarking />
-              </RoleProtectedRoute>
-            } />
           </Routes>
-        </RoleSecurityMiddleware>
       </div>
     </div>
   );
