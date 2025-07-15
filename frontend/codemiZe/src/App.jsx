@@ -10,7 +10,7 @@
  * - Protected admin routes (dashboard, game management, user management)
  */
 
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import Login from './pages/Login/Login';
 import GamesRoadmap from './pages/Student/GamesRoadmap';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -45,105 +45,11 @@ import UserManagement from './pages/Admin/UserManagement/UserManagement';
  * All protected routes are wrapped with the ProtectedRoute component
  * which handles authentication checking.
  */
-const router = createBrowserRouter(
-  [
-    // Public routes
-    {
-      path: "/",
-      element: <Login />
-    },
-
-    // Student routes
-    {
-      path: "/student",
-      children: [
-        {
-          path: "games-roadmap",
-          element: <ProtectedRoute><GamesRoadmap /></ProtectedRoute>
-        },
-        {
-          path: "quiz-hunters",
-          element: <ProtectedRoute><QuizHunters /></ProtectedRoute>
-        },
-        {
-          path: "code-crushers",
-          element: <ProtectedRoute><CodeCrushers /></ProtectedRoute>
-        },
-        {
-          path: "circuit-smashers",
-          element: <ProtectedRoute><CircuitSmashers /></ProtectedRoute>
-        },
-        {
-          path: "route-seekers",
-          element: <ProtectedRoute><RouteSeekers /></ProtectedRoute>
-        },
-        {
-          path: "battle-breakers",
-          element: <ProtectedRoute><BattleBreakers /></ProtectedRoute>
-        },
-        {
-          path: "winners",
-          element: <ProtectedRoute><Winners /></ProtectedRoute>
-        }
-      ]
-    },
-
-    // Admin routes
-    {
-      path: "/admin",
-      children: [
-        {
-          path: "dashboard",
-          element: <ProtectedRoute><Dashboard /></ProtectedRoute>
-        },
-        {
-          path: "marking-criterias",
-          element: <ProtectedRoute><MarkingCriterias /></ProtectedRoute>
-        },
-        {
-          path: "quiz-hunters",
-          element: <ProtectedRoute><AdminQuizHunters /></ProtectedRoute>
-        },
-        {
-          path: "code-crushers",
-          element: <ProtectedRoute><AdminCodeCrushers /></ProtectedRoute>
-        },
-        {
-          path: "circuit-smashers",
-          element: <ProtectedRoute><AdminCircuitSmashers /></ProtectedRoute>
-        },
-        {
-          path: "route-seekers",
-          element: <ProtectedRoute><AdminRouteSeekers /></ProtectedRoute>
-        },
-        {
-          path: "battle-breakers",
-          element: <ProtectedRoute><AdminBattleBreakers /></ProtectedRoute>
-        },
-        {
-          path: "user-management",
-          element: <ProtectedRoute><UserManagement /></ProtectedRoute>
-        },
-        {
-          path: "dashboard/battle-breakers",
-          element: <ProtectedRoute><BuzzerDashboard /></ProtectedRoute>
-        }
-      ]
-    },
-  ],
-  {
-    future: {
-      v7_startTransition: true,
-      v7_normalizeFormMethod: true
-    }
-  }
-);
-
 /**
  * Main App component
  * 
  * Applies the global layout with background image and dark overlay
- * Renders the router which manages all application routes
+ * Renders the routes which manages all application routes
  * 
  * @returns {JSX.Element} The App component
  */
@@ -153,7 +59,30 @@ function App() {
       style={{ backgroundImage: "url('/background.jpg')" }}>
       {/* Dark overlay layer for better content visibility */}
       <div className="min-h-screen w-full bg-black/70 relative z-10">
-        <RouterProvider router={router} />
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<Login />} />
+
+          {/* Student routes */}
+          <Route path="/student/games-roadmap" element={<ProtectedRoute><GamesRoadmap /></ProtectedRoute>} />
+          <Route path="/student/quiz-hunters" element={<ProtectedRoute><QuizHunters /></ProtectedRoute>} />
+          <Route path="/student/code-crushers" element={<ProtectedRoute><CodeCrushers /></ProtectedRoute>} />
+          <Route path="/student/circuit-smashers" element={<ProtectedRoute><CircuitSmashers /></ProtectedRoute>} />
+          <Route path="/student/route-seekers" element={<ProtectedRoute><RouteSeekers /></ProtectedRoute>} />
+          <Route path="/student/battle-breakers" element={<ProtectedRoute><BattleBreakers /></ProtectedRoute>} />
+          <Route path="/student/winners" element={<ProtectedRoute><Winners /></ProtectedRoute>} />
+
+          {/* Admin routes */}
+          <Route path="/admin/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/admin/marking-criterias" element={<ProtectedRoute><MarkingCriterias /></ProtectedRoute>} />
+          <Route path="/admin/quiz-hunters" element={<ProtectedRoute><AdminQuizHunters /></ProtectedRoute>} />
+          <Route path="/admin/code-crushers" element={<ProtectedRoute><AdminCodeCrushers /></ProtectedRoute>} />
+          <Route path="/admin/circuit-smashers" element={<ProtectedRoute><AdminCircuitSmashers /></ProtectedRoute>} />
+          <Route path="/admin/route-seekers" element={<ProtectedRoute><AdminRouteSeekers /></ProtectedRoute>} />
+          <Route path="/admin/battle-breakers" element={<ProtectedRoute><AdminBattleBreakers /></ProtectedRoute>} />
+          <Route path="/admin/user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+          <Route path="/admin/dashboard/battle-breakers" element={<ProtectedRoute><BuzzerDashboard /></ProtectedRoute>} />
+        </Routes>
       </div>
     </div>
   );
