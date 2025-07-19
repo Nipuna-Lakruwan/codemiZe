@@ -6,9 +6,12 @@ import GameNode from '../../components/GamesRoadMap/GameNode';
 import PathMap from '../../components/GamesRoadMap/PathMap';
 import Header from '../../components/GamesRoadMap/Header';
 import CentralLogo from '../../components/GamesRoadMap/CentralLogo';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
+import { imagePath } from '../../utils/helper';
 
 // Game data with positions and status
-const games = [
+const mockGames = [
   {
     id: 1,
     title: 'Quiz Hunters',
@@ -99,6 +102,36 @@ export default function GamesRoadmap() {
   const containerRef = useRef(null);
   const [containerSize, setContainerSize] = useState({ width: 1000, height: 600 });
   const [paths, setPaths] = useState(generatePaths(1000, 600));
+  const [games, setGames] = useState([]);
+
+  useEffect(() => {
+    const fetchGames = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.GAMES.GET_ALL_GAMES);
+        const backendGames = response.data;
+
+        // Merge with mock data
+        const mergedGames = mockGames.map((mockGame) => {
+          const backendGame = backendGames.find(bg => bg.name === mockGame.title);
+          return {
+            ...mockGame,
+            _id: backendGame?._id || null,
+            icon: imagePath(backendGame?.icon?.url) || mockGame.icon,
+            allocateTime: backendGame?.allocateTime || 0,
+            isCompleted: backendGame?.isCompleted ?? mockGame.isCompleted,
+            isAvailable: backendGame?.isActive ?? mockGame.isAvailable
+          };
+        });
+
+        setGames(mergedGames);
+        console.log('Fetched games:', mergedGames);
+      } catch (error) {
+        console.error('Error fetching games:', error);
+      }
+    };
+
+    fetchGames();
+  }, []);
 
   // Animation states for sequential reveal
   const [visibleGames, setVisibleGames] = useState([]);
@@ -222,7 +255,7 @@ export default function GamesRoadmap() {
       <div className="relative w-full h-full z-20">
         {games.map((game, idx) => (
           <GameNode
-            key={game.id}
+            key={game._id}
             game={game}
             idx={idx}
             visibleGames={visibleGames}

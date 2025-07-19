@@ -12,6 +12,7 @@ import setupSocket from "./sockets/index.js";
 
 // Import routes
 import authRoutes from "./routes/auth.routes.js";
+import gameRoutes from "./routes/game.routes.js";
 
 const app = express();
 
@@ -50,6 +51,7 @@ server.listen(port, () => {
 
 // Routes
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/games", gameRoutes);
 
 // Connect to DB
 connectToDB();
