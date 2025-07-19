@@ -1,0 +1,18 @@
+import express from "express";
+import { protect } from "../middleware/authMiddleware.js";
+import { 
+  requireAdmin, 
+  requireJudge, 
+  requireSchool 
+} from "../middleware/roleMiddleware.js";
+import { activateGame, deactivateGame, getActiveGame, getGames } from "../controllers/Common/gamesController.js";
+
+const router = express.Router();
+
+// Public routes
+router.get("/", protect, getGames);
+router.get("/active", protect, getActiveGame);
+router.patch("/activate/:gameId", protect, requireAdmin, activateGame);
+router.patch("/deactivate/:gameId", protect, requireAdmin, deactivateGame);
+
+export default router;

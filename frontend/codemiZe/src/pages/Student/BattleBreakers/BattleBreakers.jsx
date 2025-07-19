@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
 import GameNodeMini from '../../../components/Games/GameNodeMini';
-import { useSocket } from '../../../context/SocketContext';
 import { useAuth } from '../../../context/AuthContext';
 
 export default function BattleBreakers() {
@@ -20,8 +19,7 @@ export default function BattleBreakers() {
   const [timeRemaining, setTimeRemaining] = useState(30); // 30 seconds per question
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
-  // WebSocket and Auth
-  const { socket, isConnected, joinGame, emitBuzzerPress } = useSocket();
+  // Auth
   const { user } = useAuth();
 
   // Questions data - sample questions for the game
@@ -104,28 +102,6 @@ export default function BattleBreakers() {
       }
     }
   };
-
-  useEffect(() => {
-    // Try to create audio element for buzzer sound if file is available
-    // In production, you would use an actual audio file:
-    // buzzerSound.current = new Audio('/buzz-sound.mp3');
-
-    // Set total questions count
-    setTotalQuestionsCount(questions.length);
-
-    // Join the game room when component mounts
-    if (socket && isConnected) {
-      joinGame('battle_breakers', 'student');
-    }
-
-    return () => {
-      // Clean up audio when component unmounts
-      if (buzzerSound.current) {
-        buzzerSound.current.pause();
-        buzzerSound.current = null;
-      }
-    };
-  }, [socket, isConnected]);
 
   // Timer effect
   useEffect(() => {

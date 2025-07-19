@@ -6,17 +6,18 @@ const gameSchema = new mongoose.Schema({
     required: true
   },
   icon: {
-    type: String,
-    required: true
+    url: {
+      type: String,
+      default: ''
+    },
+    publicId: {
+      type: String,
+      default: ''
+    }
   },
   allocateTime: {
     type: Number,
     required: true
-  },
-  status: {
-    type: String,
-    enum: ["Inactive", "Active"],
-    default: "Inactive"
   },
   isCompleted: {
     type: Boolean,

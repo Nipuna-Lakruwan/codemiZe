@@ -1,12 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
 
 const Header = () => {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    // Clear authentication status and redirect to login
-    localStorage.removeItem('isAuthenticated');
+  const handleLogout = async () => {
+    await axiosInstance.post(API_PATHS.AUTH.LOGOUT);
+    console.log('Logout clicked');
     navigate('/');
   };
 

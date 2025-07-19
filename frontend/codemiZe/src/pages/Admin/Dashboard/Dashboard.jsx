@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import TeamRankItem from '../../../components/Admin/TeamRankItem';
+import { use } from 'react';
+import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
 
 // Modal component for button actions
 const GameActionModal = ({ show, onClose, game }) => {
@@ -59,18 +62,8 @@ export default function Dashboard() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(45); // in minutes
-  const [games, setGames] = useState([
-    { id: 'quiz-hunters', name: 'Quiz Hunters', status: 'completed' },
-    { id: 'code-crushers', name: 'Code Crushers', status: 'active' },
-    { id: 'circuit-smashers', name: 'Circuit Smashers', status: 'not-active' },
-    { id: 'route-seekers', name: 'Route Seekers', status: 'not-active' },
-    { id: 'battle-breakers', name: 'Battle Breakers', status: 'not-active' }
-  ]);
-  const [activeGame, setActiveGame] = useState({
-    id: 'code-crushers',
-    name: 'Code Crushers',
-    status: 'active'
-  });
+  const [games, setGames] = useState([]);
+  const [activeGame, setActiveGame] = useState();
 
   /**
    * BACKEND INTEGRATION POINT:
@@ -88,6 +81,38 @@ export default function Dashboard() {
    * - POST /api/games/:id/deactivate - Deactivate a specific game
    * - POST /api/games/:id/reset - Reset a specific game
    */
+
+  // Fetch games data from backend
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.GAMES.GET_ALL_GAMES);
+        setGames(response.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+
+      // Fetch active game if any
+      try {
+        const activeResponse = await axiosInstance.get(API_PATHS.GAMES.GET_ACTIVE_GAME);
+        setActiveGame(activeResponse.data);
+      } catch (error) {
+        console.error('Error fetching active game:', error);
+      }
+    };
+  
+  const activateGame = async () => {
+    try {
+      const response = await axiosInstance.patch(API_PATHS.GAMES.ACTIVATE_GAME(selectedGame._id));
+      console.log('Game activated:', response.data);
+      fetchData();
+    } catch (error) {
+      console.error('Error activating game:', error);
+    }
+  }
 
   // Mock data is now managed in state  // Score tabs - This should match the game types from your backend
   const scoreTabs = [
@@ -160,16 +185,12 @@ export default function Dashboard() {
   };
 
   // Get button style based on game status
-  const getButtonStyle = (status) => {
-    switch (status) {
-      case 'completed':
-        return "bg-green-600";
-      case 'active':
-        return "bg-sky-600";
-      default:
-        return "bg-purple-800";
-    }
-  };  /**
+  const getButtonStyle = (game) => {
+    if (game.isCompleted) return "bg-green-600";
+    if (game.isActive) return "bg-sky-600";
+    return "bg-purple-800";
+  };
+  /**
    * Event handlers for game management
    * 
    * BACKEND INTEGRATION POINTS:
@@ -181,13 +202,14 @@ export default function Dashboard() {
     setSelectedGame(game);
     setShowModal(true);
   };  // Handle modal action - updates state and would make API calls to backend
+
   const handleModalAction = (action) => {
     if (action !== 'cancel') {
       console.log(`Action ${action} for game ${selectedGame.name}`);
 
       // Frontend implementation with proper state updates
       const updatedGames = [...games];
-      const gameIndex = updatedGames.findIndex(g => g.id === selectedGame.id);
+      const gameIndex = updatedGames.findIndex(g => g._id === selectedGame._id);
 
       if (gameIndex !== -1) {
         switch (action) {
@@ -209,6 +231,7 @@ export default function Dashboard() {
 
             // Set the active game for the ongoing game section
             setActiveGame(updatedGames[gameIndex]);
+            activateGame();
 
             // Reset the timer for the newly activated game
             setTimeRemaining(60); // 60 minutes for a new game
@@ -221,7 +244,7 @@ export default function Dashboard() {
             };
 
             // Clear active game if we're deactivating it
-            if (activeGame && activeGame.id === selectedGame.id) {
+            if (activeGame && activeGame._id === selectedGame._id) {
               setActiveGame(null);
             }
             break;
@@ -233,7 +256,7 @@ export default function Dashboard() {
             };
 
             // Clear active game if we're resetting it
-            if (activeGame && activeGame.id === selectedGame.id) {
+            if (activeGame && activeGame._id === selectedGame._id) {
               setActiveGame(null);
             }
             break;
@@ -266,6 +289,7 @@ export default function Dashboard() {
     }
     setShowModal(false);
   };  // Handle stop game - updates state and would make API call to backend
+
   const handleStopGame = () => {
     if (!activeGame) return;
 
@@ -349,9 +373,9 @@ export default function Dashboard() {
           <div className="flex gap-6 md:gap-8 mt-10 flex-wrap justify-center">
             {games.map((game) => (
               <button
-                key={game.id}
+                key={game._id}
                 onClick={() => handleGameButtonClick(game)}
-                className={`w-44 h-14 ${getButtonStyle(game.status)} rounded-[5px] shadow-[0px_0px_6px_1px_rgba(0,0,0,0.15)] border border-white text-white font-medium text-lg transition-all duration-200 hover:scale-105`}
+                className={`w-44 h-14 ${getButtonStyle(game)} rounded-[5px] shadow-[0px_0px_6px_1px_rgba(0,0,0,0.15)] border border-white text-white font-medium text-lg transition-all duration-200 hover:scale-105`}
               >
                 {game.name}
               </button>
@@ -364,7 +388,7 @@ export default function Dashboard() {
           <div className="justify-start text-black/80 text-2xl font-semibold font-['Inter']">Ongoing Game</div>
           <div className="w-full h-0 outline outline-offset-[-0.50px] outline-black/20 my-5"></div>
 
-          {activeGame && activeGame.status === 'active' ? (
+          {activeGame && activeGame.isActive ? (
             <div className="flex flex-col md:flex-row items-start md:items-center mt-8 bg-gray-50 p-6 rounded-xl">
               <div className="justify-start text-sky-600 text-3xl font-bold font-['Oxanium'] mb-6 md:mb-0 md:mr-8">
                 {activeGame.name}
@@ -433,7 +457,7 @@ export default function Dashboard() {
           </div>
 
           {/* Custom scrollbar styles */}
-          <style jsx>{`
+          <style>{`
             .custom-scrollbar::-webkit-scrollbar {
               width: 10px;
             }

@@ -13,16 +13,19 @@ export function RoleProtectedRoute({ children, allowedRoles }) {
     );
   }
 
+  // If not authenticated, redirect to login
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
+  // If user data is missing, redirect to login
   if (!user) {
     return <Navigate to="/" replace />;
   }
 
   // Check if user has permission to access this route
   if (!canAccessRoute(user.role, allowedRoles)) {
+    console.log(`Access denied: User role ${user.role} not allowed for this route. Allowed roles: ${allowedRoles.join(', ')}`);
     // Redirect to appropriate route based on user role
     const redirectRoute = getUnauthorizedRoute(user.role);
     return <Navigate to={redirectRoute} replace />;
