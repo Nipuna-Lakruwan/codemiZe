@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { motion } from 'framer-motion';
+import { SocketContext } from '../../../../context/SocketContext';
+import { imagePath } from '../../../../utils/helper';
 
 // QuestionDisplay Component
 const QuestionDisplay = ({ question, questionNumber, totalQuestions, timeRemaining }) => {
@@ -62,7 +64,7 @@ const TeamRankings = ({ buzzerPresses }) => {
         <div className="space-y-4">
           {buzzerPresses.map((press, index) => (
             <TeamRankItem
-              key={press.id}
+              key={press._id}
               index={index}
               team={press.team}
               responseTime={press.responseTime}
@@ -183,6 +185,8 @@ export default function BuzzerDashboard() {
     }
   };
 
+  const socket = useContext(SocketContext);
+
   // Using fixed values for display-only frontend dashboard
   const [timeRemaining] = useState(25);
   const currentQuestionIndex = 0;
@@ -227,6 +231,33 @@ export default function BuzzerDashboard() {
     const times = ['1.2s', '2.4s', '3.1s', '4.5s', '5.2s'];
     return times[Math.floor(Math.random() * times.length)];
   };
+
+  useEffect(() => {
+    // Listen for buzzer press events from the server
+    if (socket) {
+      socket.on("buzzerPress", (data) => {
+        setBuzzerPresses((prevPresses) => [
+          ...prevPresses,
+          {
+            _id: data._id || Date.now(), // Fallback ID if not provided
+            team: {
+              name: data.name,
+              city: data.city,
+              logo: imagePath(data.logo),
+            },
+            responseTime: calculateResponseTime(data.timestamp),
+            timestamp: data.timestamp
+          },
+        ]);
+      });
+      
+      // Clean up the event listener when component unmounts
+      return () => {
+        socket.off("buzzerPress");
+      };
+    }
+  }, [socket]);
+
 
   // Function to clear buzzer presses for new question
   const clearBuzzerPresses = () => {

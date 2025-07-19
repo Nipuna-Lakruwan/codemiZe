@@ -14,4 +14,12 @@ export const API_PATHS = {
     ACTIVATE_GAME: (gameId) => `/api/v1/games/activate/${gameId}`,
     DEACTIVATE_GAME: (gameId) => `/api/v1/games/deactivate/${gameId}`,
   },
+  BATTLE_BREAKERS: {
+    GET_QUESTIONS: "/api/v1/battle-breakers",
+    ADD_QUESTION: "/api/v1/battle-breakers/addQuestion",
+    UPLOAD_CSV: "/api/v1/battle-breakers/uploadCSV",
+    DELETE_QUESTION: (questionId) => `/api/v1/battle-breakers/deleteQuestion/${questionId}`,
+    BUZZER_PRESS: "/api/v1/battle-breakers/press",
+    GET_DASHBOARD: (questionId) => `/api/v1/battle-breakers/school/${questionId}`,
+  }
 };

@@ -10,15 +10,13 @@ export const SocketContext = createContext(null);
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
-  // Reconnect socket after page reload if token exists
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (token) {
-      const s = connectSocket(token);
+    console.log("Attempting to connect socket with HttpOnly cookie");
+    const s = connectSocket();
+    if (s) {
       setSocket(s);
-
-      s.on("connect", () => console.log("Socket reconnected on refresh:", s.id));
+      s.on("connect", () => console.log("Socket connected:", s.id));
+      s.on("connect_error", (err) => console.error("Socket connection error:", err.message));
       s.on("disconnect", () => console.log("Socket disconnected"));
     }
 
@@ -29,12 +27,14 @@ export const SocketProvider = ({ children }) => {
 
   // Handle login/logout explicitly
   useEffect(() => {
-    const handleLogin = () => {
-      const token = localStorage.getItem("token");
-      if (!token || (socket && socket.connected)) return;
+    const handleLogin = () => { 
+      if (socket && socket.connected) return;
 
-      const s = connectSocket(token);
-      setSocket(s);
+      const s = connectSocket();
+      if (s) {
+        setSocket(s);
+        s.on("connect_error", (err) => console.error("Socket connection error:", err.message));
+      }
     };
 
     const handleLogout = () => {

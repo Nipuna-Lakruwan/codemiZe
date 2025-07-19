@@ -4,8 +4,8 @@ import jwt from "jsonwebtoken";
 import { deleteFromLocal } from "../config/localStorage.js";
 
 // Generate JWT token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (id, role) => {
+  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
     expiresIn: "1d",
   });
 };
@@ -135,7 +135,7 @@ export const loginUser = async (req, res) => {
 
         const responseKey = userType === 'user' ? 'user' : 'school';
         
-        const token = generateToken(user._id);
+        const token = generateToken(user._id, user.role);
         sendToken(res, token);
 
         res.status(200).json({
