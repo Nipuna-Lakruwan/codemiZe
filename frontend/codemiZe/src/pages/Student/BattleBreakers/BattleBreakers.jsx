@@ -4,6 +4,8 @@ import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
 import GameNodeMini from '../../../components/Games/GameNodeMini';
 import { useAuth } from '../../../context/AuthContext';
+import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
 
 export default function BattleBreakers() {
   // Game state
@@ -13,61 +15,64 @@ export default function BattleBreakers() {
   const [isPressedBuzzer, setIsPressedBuzzer] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
   const [totalQuestionsCount, setTotalQuestionsCount] = useState(10);
-  const [showAnswer, setShowAnswer] = useState(false);
 
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState(30); // 30 seconds per question
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
-  // Auth
-  const { user } = useAuth();
-
   // Questions data - sample questions for the game
   const questions = [
     {
+      _id: "687b997e2e66729e5bdcda73",
       question: "What programming language is used to build React applications?",
       answer: "JavaScript"
     },
     {
+      _id: "1233",
       question: "What does HTML stand for?",
       answer: "Hypertext Markup Language"
     },
     {
+      _id: "1234",
       question: "What does CSS stand for?",
       answer: "Cascading Style Sheets"
     },
     {
+      _id: "1235",
       question: "What data structure follows the LIFO principle?",
       answer: "Stack"
     },
     {
+      _id: "1236",
       question: "Which SQL command is used to retrieve data from a database?",
       answer: "SELECT"
     },
     {
+      _id: "1237",
       question: "What is the time complexity of a binary search?",
       answer: "O(log n)"
     },
     {
+      _id: "1238",
       question: "What does API stand for?",
       answer: "Application Programming Interface"
     },
     {
+      _id: "1239",
       question: "Which protocol is used to load webpages?",
       answer: "HTTP/HTTPS"
     },
     {
+      _id: "1240",
       question: "What is the purpose of a firewall?",
       answer: "To monitor and filter incoming and outgoing network traffic"
     },
     {
+      _id: "1241",
       question: "Which encryption algorithm is considered the most secure?",
       answer: "AES-256"
     }
   ];
-
-  // Buzzer sound effect
-  const buzzerSound = useRef(null);
 
   // Mock buzzer sound functionality
   const playBuzzerSound = () => {
@@ -136,46 +141,22 @@ export default function BattleBreakers() {
   };
 
   // Handle buzzer press
-  const handleBuzzerPress = () => {
+  const handleBuzzerPress = async () => {
     setIsPressedBuzzer(true);
     setIsTimerRunning(false);
 
-    // No longer showing answers as per request
-    // setShowAnswer(true); 
+    await axiosInstance.post(API_PATHS.BATTLE_BREAKERS.BUZZER_PRESS, { questionId: questions[currentQuestion]._id });
 
-    // Play buzzer sound using our mock function
     playBuzzerSound();
-
-    // Emit buzzer press event through WebSocket
-    if (socket && user) {
-      emitBuzzerPress({
-        questionNumber: currentQuestion + 1,
-        school: {
-          id: user.id,
-          name: user.name, // Replace with actual school data from user
-          logo: user.avatar?.url, // Use user's avatar or default
-          city: user.city // Replace with actual city from user
-        },
-        timestamp: new Date().toISOString()
-      });
-    }
 
     // Simulate buzzer press animation timing
     setTimeout(() => {
       setIsPressedBuzzer(false);
-
-      // Auto-proceed to next question after a short delay (in future this will be handled by dashboard)
-      // setTimeout(() => {
-      //   handleNextQuestion();
-      // }, 2000);
     }, 300);
   };
 
   // Move to next question
   const handleNextQuestion = () => {
-    // Reset answer visibility
-    setShowAnswer(false);
-
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setTimeRemaining(30); // Reset timer for next question
@@ -499,14 +480,14 @@ export default function BattleBreakers() {
             </div>
 
                 {/* Administrative button for testing - will be removed in production */}
-            <div className="mt-2 mb-4">
+            {/* <div className="mt-2 mb-4">
               <button
                 className="px-4 py-2 bg-gray-800/50 text-gray-300 text-sm border border-gray-700/50 rounded hover:bg-gray-700/50"
                 onClick={handleNextQuestion}
               >
                 Next Question (Admin)
               </button>
-            </div>
+            </div> */}
 
             {/* Questions remaining indicator */}
             <div className="text-white/90 text-lg">

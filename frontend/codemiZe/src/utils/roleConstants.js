@@ -1,7 +1,8 @@
 export const ROLES = {
   SCHOOL: 'School',
   JUDGE: 'Judge', 
-  ADMIN: 'Admin'
+  ADMIN: 'Admin',
+  DASHBOARD: 'Dashboard'
 };
 
 // Role hierarchy levels
@@ -35,7 +36,7 @@ export const ROUTE_PERMISSIONS = {
   ADMIN_ROUTE_SEEKERS: [ROLES.ADMIN],
   ADMIN_BATTLE_BREAKERS: [ROLES.ADMIN],
   ADMIN_USER_MANAGEMENT: [ROLES.ADMIN],
-  ADMIN_BATTLE_BREAKERS_DASHBOARD: [ROLES.ADMIN]
+  ADMIN_BATTLE_BREAKERS_DASHBOARD: [ROLES.DASHBOARD]
 };
 
 // Helper functions
@@ -64,6 +65,8 @@ export const getDefaultRoute = (userRole) => {
       return '/judge/dashboard';
     case ROLES.ADMIN:
       return '/admin/dashboard';
+    case ROLES.DASHBOARD:
+      return '/admin/dashboard/battle-breakers';
     default:
       return '/';
   }

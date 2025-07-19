@@ -7,32 +7,42 @@ export const buzzerPress = async (req, res) => {
         const { questionId } = req.body;
         const schoolId = req.user.id;
 
-
         // Validate input
         if (!questionId || !schoolId) {
             return res.status(400).json({ message: "questionId and schoolId are required" });
         }
 
-        // Find if a record already exists for the question
-        let record = await BattleBreakersDashboard.findOne({ questionId });
-
         const pressTime = Date.now();
 
+        // Find existing record for the question
+        let record = await BattleBreakersDashboard.findOne({ questionId });
         if (record) {
+            const alreadyPressed = record.schools.some(s => s.schoolId.toString() === schoolId.toString());
+
+            if (alreadyPressed) {
+                return res.status(200).json({ message: "This school has already pressed the buzzer for this question." });
+            }
+
             record.schools.push({ schoolId, time: pressTime });
             await record.save();
         } else {
-            // Create a new record
+            // First buzzer press for this question
             record = await BattleBreakersDashboard.create({
                 questionId,
                 schools: [{ schoolId, time: pressTime }],
             });
         }
 
-        res.status(200).json({
-            message: 'Buzzer press recorded',
-            data: record,
+        const io = req.app.get("io");
+        io.to("scoreboard").emit("buzzerPress", {
+            _id: req.user.id,
+            name: req.user.name,
+            city: req.user.city,
+            logo: req.user.avatar.url,
+            timestamp: Date.now(),
         });
+
+        res.status(200).json({ message: 'Buzzer press recorded' });
     } catch (error) {
         console.error("Error recording buzzer press:", error);
         res.status(500).json({ message: "Internal Server Error" });
