@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useSocket } from '../../../../context/SocketContext';
 
 // QuestionDisplay Component
 const QuestionDisplay = ({ question, questionNumber, totalQuestions, timeRemaining }) => {
@@ -191,9 +190,6 @@ export default function BuzzerDashboard() {
   // State for real-time buzzer presses
   const [buzzerPresses, setBuzzerPresses] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(1);
-  
-  // WebSocket connection
-  const { socket, isConnected, joinGame } = useSocket();
 
   // Sample questions data - static for display purposes
   const questions = [
@@ -223,49 +219,6 @@ export default function BuzzerDashboard() {
       answer: "SELECT"
     }
   ];
-
-  // WebSocket effect to listen for buzzer presses
-  useEffect(() => {
-    if (socket && isConnected) {
-      // Join dashboard room
-      joinGame('battle_breakers', 'dashboard');
-
-      // Listen for buzzer press events
-      socket.on('buzzer_pressed', (data) => {
-        console.log('Buzzer pressed received:', data);
-        
-        // Add the new buzzer press to the list
-        setBuzzerPresses(prev => {
-          // Check if this user already pressed for this question
-          const existingPress = prev.find(press => 
-            press.userId === data.userId && press.questionNumber === data.questionNumber
-          );
-          
-          if (!existingPress) {
-            const newPress = {
-              id: Date.now(), // Simple ID generation
-              userId: data.userId,
-              team: data.school,
-              timestamp: data.timestamp,
-              questionNumber: data.questionNumber,
-              responseTime: calculateResponseTime(data.timestamp)
-            };
-            
-            // Sort by timestamp to maintain order
-            return [...prev, newPress].sort((a, b) => 
-              new Date(a.timestamp) - new Date(b.timestamp)
-            );
-          }
-          
-          return prev;
-        });
-      });
-
-      return () => {
-        socket.off('buzzer_pressed');
-      };
-    }
-  }, [socket, isConnected, joinGame]);
 
   // Function to calculate response time (mock implementation)
   const calculateResponseTime = (timestamp) => {
@@ -345,7 +298,7 @@ export default function BuzzerDashboard() {
         </div>
 
         {/* Connection Status Indicator */}
-        <div className="absolute top-20 right-8 z-30">
+        {/* <div className="absolute top-20 right-8 z-30">
           <div className={`flex items-center gap-2 px-3 py-1 rounded-md ${
             isConnected ? 'bg-green-600/80 text-white' : 'bg-red-600/80 text-white'
           }`}>
@@ -356,7 +309,7 @@ export default function BuzzerDashboard() {
               {isConnected ? 'Connected' : 'Disconnected'}
             </span>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

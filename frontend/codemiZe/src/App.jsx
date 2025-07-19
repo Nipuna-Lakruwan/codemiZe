@@ -13,7 +13,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Login from './pages/Login/Login';
 import GamesRoadmap from './pages/Student/GamesRoadmap';
-import { RoleProtectedRoute } from './components/RoleProtectedRoute';
+import { RoleProtectedRoute } from './routeProtection/RoleProtectedRoute';
 import { ROLES, ROUTE_PERMISSIONS } from './utils/roleConstants';
 
 // Import all game pages
