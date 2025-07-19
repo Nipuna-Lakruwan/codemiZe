@@ -11,11 +11,11 @@ import { CSVUpload } from "../middleware/uploadMiddleware.js";
 const router = express.Router();
 
 // Public routes
-router.get("/", protect, getQuestions);
+router.get("/", protect, requireAdmin, getQuestions);
 router.post("/press", protect, requireSchool, buzzerPress);
 router.get("/school/:questionId", protect, requireAdmin, getDashboard);
 router.post("/addQuestion", protect, requireAdmin, addQuestion);
 router.delete("/deleteQuestion/:questionId", protect, requireAdmin, deleteQuestion);
-router.post("/uploadCSV", protect, requireAdmin, CSVUpload.single('csv'), addQuestionsCSV)
+router.post("/uploadCSV", protect, requireAdmin, CSVUpload.single('csv'), addQuestionsCSV);
 
 export default router;
