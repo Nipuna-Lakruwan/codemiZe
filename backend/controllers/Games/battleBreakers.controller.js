@@ -109,6 +109,16 @@ export const deleteQuestion = async (req, res) => {
     }
 }
 
+export const deleteAllQuestions = async (req, res) => {
+    try {
+        await BattleBreakersQuestion.deleteMany({});
+        res.status(200).json({ message: "All questions deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting all questions:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
 export const addQuestionsCSV = async (req, res) => {
     const csvFile = req.file;
 

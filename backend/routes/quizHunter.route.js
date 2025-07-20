@@ -5,18 +5,20 @@ import {
   requireJudge, 
   requireSchool 
 } from "../middleware/roleMiddleware.js";
-import { addQuestion, addQuestionsCSV, buzzerPress, deleteAllQuestions, deleteQuestion, getDashboard, getQuestions } from "../controllers/Games/battleBreakers.controller.js";
 import { CSVUpload } from "../middleware/uploadMiddleware.js";
+import { addQuestion, addQuestionsCSV, deleteAllQuestions, deleteQuestion, editQuestion, getAllQuestions, getQuestionsWithAnswers, setTime, submitQuiz } from "../controllers/Games/quizHunters.controller.js";
 
 const router = express.Router();
 
 // Public routes
-router.get("/", protect, requireAdmin, getQuestions);
-router.post("/press", protect, requireSchool, buzzerPress);
-router.get("/school/:questionId", protect, requireAdmin, getDashboard);
+router.get("/", protect, requireSchool, getAllQuestions);
+router.get("/QnA", protect, requireAdmin, getQuestionsWithAnswers);
 router.post("/addQuestion", protect, requireAdmin, addQuestion);
+router.put("/editQuestion/:questionId", protect, requireAdmin, editQuestion);
 router.delete("/deleteQuestion/:questionId", protect, requireAdmin, deleteQuestion);
 router.delete("/deleteAllQuestions", protect, requireAdmin, deleteAllQuestions);
 router.post("/uploadCSV", protect, requireAdmin, CSVUpload.single('csv'), addQuestionsCSV);
+router.post("/setTime", protect, requireAdmin, setTime);
+router.post("/submit", protect, requireSchool, submitQuiz);
 
 export default router;

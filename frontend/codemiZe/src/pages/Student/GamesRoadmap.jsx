@@ -166,6 +166,8 @@ export default function GamesRoadmap() {
 
   // Sequential animation effect - Updated for left to right flow
   useEffect(() => {
+    if (games.length === 0) return;
+
     const animateSequence = async () => {
       // Reset animations if needed
       setVisibleGames([]);
@@ -188,7 +190,7 @@ export default function GamesRoadmap() {
     };
 
     animateSequence();
-  }, []);
+  }, [games]);
 
   // Function to handle game button clicks
   const handleGameClick = (gameId) => {
