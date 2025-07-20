@@ -34,7 +34,8 @@ export const activateGame = async (req, res) => {
 
     // Emit the updated games list to all connected clients
     const updatedGames = await Game.find();
-    req.app.get('io').emit('gamesUpdated', updatedGames);
+    const io = req.app.get("io");
+    io.emit('gamesUpdated', updatedGames);
 
     res.status(200).json({ message: 'Game activated successfully' });
   } catch (error) {
