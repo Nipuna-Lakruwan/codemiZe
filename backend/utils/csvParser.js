@@ -22,12 +22,10 @@ export const parseCSVFile = (file, gameType) => {
                     if (row.question && row.correctAnswer && row.wrong1 && row.wrong2 && row.wrong3) {
                         results.push({
                             question: row.question.trim(),
-                            correctAnswer: row.correctAnswer.trim(),
-                            options: [
-                                row.wrong1.trim(),
-                                row.wrong2.trim(),
-                                row.wrong3.trim(),
-                            ],
+                            answer: row.correctAnswer.trim(),
+                            option1: row.wrong1.trim(),
+                            option2: row.wrong2.trim(),
+                            option3: row.wrong3.trim(),
                         });
                     }
                 }
