@@ -8,15 +8,16 @@ export const connectSocket = () => {
     return socket;
   }
 
-  if (socket){ 
+  if (socket) {
     console.log("Disconnecting existing socket");
     socket.disconnect();
     socket = null;
   }
 
-  console.log("Creating new socket connection to:", import.meta.env.VITE_BACKEND_URL || "Backend URL not defined!");
-  
-  socket = io(import.meta.env.VITE_BACKEND_URL, {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  console.log("Creating new socket connection to:", backendUrl);
+
+  socket = io(backendUrl, {
     transports: ["websocket"],
     autoConnect: true,
     reconnectionAttempts: 3,
