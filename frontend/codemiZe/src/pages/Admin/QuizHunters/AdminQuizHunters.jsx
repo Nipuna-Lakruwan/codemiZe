@@ -7,7 +7,8 @@ import QuestionItem from '../../../components/Admin/QuizComponents/QuestionItem'
 import QuestionModal from '../../../components/Admin/QuizComponents/QuestionModal';
 import ConfirmationModal from '../../../components/Admin/QuizComponents/ConfirmationModal';
 import AlertModal from '../../../components/Admin/QuizComponents/AlertModal';
-import axiosInstance from '../../../utils/axiosInstance'; // For real API calls
+import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
 
 export default function AdminQuizHunters() {
   // Questions state
@@ -52,6 +53,14 @@ export default function AdminQuizHunters() {
     { id: '61f8b1e5c7d1f52e4c8b456a', question: 'What does CSS stand for?', options: ['Cascading Style Sheets', 'Computer Style Sheets', 'Creative Style Sheets', 'Colorful Style Sheets'], correct: 'Cascading Style Sheets', difficulty: 'easy' },
     { id: '61f8b1e5c7d1f52e4c8b456b', question: 'Which HTML tag is used for creating an unordered list?', options: ['<ul>', '<ol>', '<li>', '<list>'], correct: '<ul>', difficulty: 'hard' },
   ]);
+
+  useEffect(() => {
+    const getQnA = async () => {
+      const response = await axiosInstance.get(API_PATHS.QUIZ_HUNTERS.GET_Q_WITH_A);
+      setQuestions(response.data);
+    }
+    getQnA();
+  }, []);
 
   // Modal states
   const [showQuestionModal, setShowQuestionModal] = useState(false);
@@ -188,7 +197,15 @@ export default function AdminQuizHunters() {
       //   option3: currentQuestion.options.filter(o => o !== currentQuestion.correct)[2]
       // };
       // axios.post('/api/quizhunters/addQuestion', questionData)
+      const addQuestion = async () => {
+        try {
+          await axiosInstance.post(API_PATHS.QUIZ_HUNTERS.ADD_QUESTION, currentQuestion);
+        } catch (error) {
+          console.error('Error adding question:', error);
+        }
+      };
 
+      addQuestion();
       setQuestions([...questions, currentQuestion]);
       showAlert('Question added successfully', 'Success', 'success');
     } else {
@@ -676,7 +693,7 @@ export default function AdminQuizHunters() {
       />
 
       {/* Custom scrollbar styles */}
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;
         }

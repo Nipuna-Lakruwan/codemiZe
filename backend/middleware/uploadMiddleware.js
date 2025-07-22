@@ -62,6 +62,13 @@ const CSVUpload = createUploadMiddleware({
   maxFileSize: 5 * 1024 * 1024 // 5MB
 });
 
+// Pre-configured upload middleware for documents
+const resourceUpload = createUploadMiddleware({
+  destination: 'resources',
+  allowedMimeTypes: ['text/x-python', 'application/octet-stream', 'text/plain'],
+  maxFileSize: 10 * 1024 * 1024 // 10MB
+});
+
 // Pre-configured upload middleware for general files
 const generalUpload = createUploadMiddleware({
   destination: 'general',
@@ -69,4 +76,4 @@ const generalUpload = createUploadMiddleware({
   maxFileSize: 10 * 1024 * 1024 // 10MB
 });
 
-export { createUploadMiddleware, avatarUpload, slidesUpload, generalUpload, CSVUpload };
+export { createUploadMiddleware, avatarUpload, slidesUpload, generalUpload, CSVUpload, resourceUpload };

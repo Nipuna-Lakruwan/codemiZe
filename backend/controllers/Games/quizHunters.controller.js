@@ -131,9 +131,7 @@ export const addQuestionsCSV = async (req, res) => {
     }
 };
 
-export const setTime = async (req, res) => {
-
-};
+export const setTime = async (req, res) => {};
 
 export const submitQuiz = async (req, res) => {
   try {
