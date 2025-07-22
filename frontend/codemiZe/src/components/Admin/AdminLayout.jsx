@@ -34,7 +34,7 @@ export default function AdminLayout({ children }) {
         <img src="/campus-logo.png" alt="Campus Logo" className="h-20 w-auto" />
       </div>
       {/* Left navigation sidebar */}
-      <div className="w-24 md:w-64 h-full min-h-screen bg-white flex flex-col shadow-lg overflow-hidden justify-between py-6 px-4">
+      <div className="fixed w-24 md:w-64 h-full min-h-screen bg-white flex flex-col shadow-lg overflow-y-auto justify-between py-6 px-4">
         {/* Logo */}
         <div className="mb-8 flex justify-center">
           <img
@@ -45,7 +45,7 @@ export default function AdminLayout({ children }) {
         </div>
 
         {/* Navigation links */}
-        <nav className="flex-1 flex flex-col space-y-4 mt-4 overflow-hidden">
+        <nav className="flex-1 flex flex-col space-y-4 mt-4 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -57,8 +57,8 @@ export default function AdminLayout({ children }) {
                 <NavLink
                   to={item.path}
                   className={`text-sm px-4 py-3 rounded-full transition-all duration-300 ease-in-out text-center block ${isActive
-                      ? "bg-purple-800 text-white font-medium shadow"
-                      : "text-purple-800 hover:text-purple-800 hover:bg-purple-50"
+                    ? "bg-purple-800 text-white font-medium shadow"
+                    : "text-purple-800 hover:text-purple-800 hover:bg-purple-50"
                     }`}
                 >
                   {item.name}
@@ -93,7 +93,7 @@ export default function AdminLayout({ children }) {
       </div>
 
       {/* Main content area */}
-      <div className="flex-1 p-6 md:p-10 flex justify-center">
+      <div className="flex-1 p-6 md:p-10 flex justify-center ml-24 md:ml-64">
         <div className="w-full max-w-[1200px]">
           {children}
         </div>
