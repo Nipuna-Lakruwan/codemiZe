@@ -1,4 +1,4 @@
-export const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+export const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
 export const API_PATHS = {
   AUTH: {
@@ -13,6 +13,12 @@ export const API_PATHS = {
     GET_ACTIVE_GAME: "/api/v1/games/active",
     ACTIVATE_GAME: (gameId) => `/api/v1/games/activate/${gameId}`,
     DEACTIVATE_GAME: (gameId) => `/api/v1/games/deactivate/${gameId}`,
+  },
+  CRITERIA: {
+    GET_ALL: "/api/v1/criteria",
+    CREATE: "/api/v1/criteria",
+    UPDATE: (id) => `/api/v1/criteria/${id}`,
+    DELETE: (id) => `/api/v1/criteria/${id}`,
   },
   BATTLE_BREAKERS: {
     GET_QUESTIONS: "/api/v1/battle-breakers",

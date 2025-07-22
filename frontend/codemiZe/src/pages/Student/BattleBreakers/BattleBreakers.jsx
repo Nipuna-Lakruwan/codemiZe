@@ -23,7 +23,7 @@ export default function BattleBreakers() {
   // Questions data - sample questions for the game
   const questions = [
     {
-      _id: "687b997e2e66729e5bdcda73",
+      _id: "687b997e2e66729e5bdcda72",
       question: "What programming language is used to build React applications?",
       answer: "JavaScript"
     },

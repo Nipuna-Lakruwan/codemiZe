@@ -1,13 +1,13 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL,
-  timeout: 10000,
-  withCredentials: true,
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  },
+    baseURL: import.meta.env.VITE_BACKEND_URL || "http://localhost:8000",
+    timeout: 10000,
+    withCredentials: true,
+    headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+    },
 });
 
 // Response interceptor
@@ -23,12 +23,12 @@ axiosInstance.interceptors.response.use(
                 // and if it's not an authentication check request
                 const currentPath = window.location.pathname;
                 const isAuthCheckRequest = error.config?.url?.includes('/getUserInfo');
-                
+
                 // Don't log 401 errors for auth check requests as they're expected
                 if (!isAuthCheckRequest) {
                     console.log('Authentication required - redirecting to login');
                 }
-                
+
                 if (currentPath !== '/' && !isAuthCheckRequest) {
                     window.location.href = "/";
                 }
