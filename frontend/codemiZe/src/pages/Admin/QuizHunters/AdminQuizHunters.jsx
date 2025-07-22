@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { motion } from 'framer-motion';
 import { FaUpload, FaPlus, FaTrashAlt, FaFileAlt } from 'react-icons/fa';
@@ -7,6 +7,8 @@ import QuestionItem from '../../../components/Admin/QuizComponents/QuestionItem'
 import QuestionModal from '../../../components/Admin/QuizComponents/QuestionModal';
 import ConfirmationModal from '../../../components/Admin/QuizComponents/ConfirmationModal';
 import AlertModal from '../../../components/Admin/QuizComponents/AlertModal';
+import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
 
 export default function AdminQuizHunters() {
   // Questions state
@@ -14,12 +16,20 @@ export default function AdminQuizHunters() {
   const [allocatedTime, setAllocatedTime] = useState(30); // Default 30 minutes
   const [customTime, setCustomTime] = useState("");
   const [questions, setQuestions] = useState([
-    { id: 1, question: 'What is the capital of Sri Lanka?', options: ['Colombo', 'Kandy', 'Galle', 'Jaffna'], correct: 'Colombo' },
+    { id: 1, question: 'What is the capital of Sri Lanka?', options: ['Kandy', 'Galle', 'Jaffna'], correct: 'Colombo' },
     { id: 2, question: 'Which data structure uses LIFO?', options: ['Queue', 'Stack', 'Linked List', 'Tree'], correct: 'Stack' },
     { id: 3, question: 'Which programming language is known as the "mother of all languages"?', options: ['C', 'Java', 'Python', 'COBOL'], correct: 'C' },
     { id: 4, question: 'What does CSS stand for?', options: ['Computer Style Sheets', 'Cascading Style Sheets', 'Creative Style Sheets', 'Colorful Style Sheets'], correct: 'Cascading Style Sheets' },
     { id: 5, question: 'Which HTML tag is used for creating an unordered list?', options: ['<ol>', '<li>', '<ul>', '<list>'], correct: '<ul>' },
   ]);
+
+  useEffect(() => {
+    const getQnA = async () => {
+      const response = await axiosInstance.get(API_PATHS.QUIZ_HUNTERS.GET_Q_WITH_A);
+      setQuestions(response.data);
+    }
+    getQnA();
+  },[]);
 
   // Modal states
   const [showQuestionModal, setShowQuestionModal] = useState(false);
@@ -113,6 +123,15 @@ export default function AdminQuizHunters() {
 
     if (modalMode === 'add') {
       // Add new question
+      const addQuestion = async () => {
+        try {
+          await axiosInstance.post(API_PATHS.QUIZ_HUNTERS.ADD_QUESTION, currentQuestion);
+        } catch (error) {
+          console.error('Error adding question:', error);
+        }
+      };
+
+      addQuestion();
       setQuestions([...questions, currentQuestion]);
       showAlert('Question added successfully', 'Success', 'success');
     } else {
@@ -386,7 +405,7 @@ export default function AdminQuizHunters() {
       />
 
       {/* Custom scrollbar styles */}
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;
         }
