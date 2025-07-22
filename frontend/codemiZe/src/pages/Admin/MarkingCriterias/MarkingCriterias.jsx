@@ -10,15 +10,15 @@ import AlertModal from '../../../components/Admin/QuizComponents/AlertModal';
 import ConfirmationModal from '../../../components/Admin/QuizComponents/ConfirmationModal';
 
 export default function MarkingCriterias() {
-  // State for criteria
-  const [criterias, setCriterias] = useState({ common: [], gameSpecific: {} });
+  // State for criteria - removed common criteria
+  const [criterias, setCriterias] = useState({ gameSpecific: {} });
   const [newCriteria, setNewCriteria] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [editingCriteria, setEditingCriteria] = useState({ id: null, text: '', gameId: null });
   const [isLoading, setIsLoading] = useState(true);
   const [draggedItem, setDraggedItem] = useState(null);
-  const [activeTab, setActiveTab] = useState('common');
-  const [selectedGame, setSelectedGame] = useState(null);
+  // Default to game specific criteria as we removed common
+  const [selectedGame, setSelectedGame] = useState('g3'); // Default to Code Crushers
 
   // State for modals
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -30,35 +30,17 @@ export default function MarkingCriterias() {
     type: 'info', // 'info', 'success', 'warning', or 'error'
   });
 
-  // Mock data for common criteria
-  const mockCommonCriteria = [
-    { _id: 'c1', criteria: 'Code quality and organization' },
-    { _id: 'c2', criteria: 'Functionality and completeness' },
-    { _id: 'c3', criteria: 'Efficiency and performance' },
-    { _id: 'c4', criteria: 'User interface design' },
-    { _id: 'c5', criteria: 'Documentation and comments' }
-  ];
+  // Removed mock data for common criteria
 
-  // Mock data for games
+  // Mock data for games - only including Code Crushers, Circuit Smashers, and Route Seekers
   const mockGames = [
-    { _id: 'g1', name: 'Quiz Hunters', icon: '📝' },
-    { _id: 'g2', name: 'Battle Breakers', icon: '⚔️' },
     { _id: 'g3', name: 'Code Crushers', icon: '💻' },
     { _id: 'g4', name: 'Circuit Smashers', icon: '⚡' },
     { _id: 'g5', name: 'Route Seekers', icon: '🔍' }
   ];
 
-  // Mock data for game-specific criteria
+  // Mock data for game-specific criteria - only including Code Crushers, Circuit Smashers, and Route Seekers
   const mockGameCriteria = {
-    g1: [
-      { _id: 'qh1', criteria: 'Question accuracy', gameId: 'g1' },
-      { _id: 'qh2', criteria: 'Response time', gameId: 'g1' },
-      { _id: 'qh3', criteria: 'Answer completeness', gameId: 'g1' }
-    ],
-    g2: [
-      { _id: 'bb1', criteria: 'Strategy development', gameId: 'g2' },
-      { _id: 'bb2', criteria: 'Resource management', gameId: 'g2' }
-    ],
     g3: [
       { _id: 'cc1', criteria: 'Algorithm complexity', gameId: 'g3' },
       { _id: 'cc2', criteria: 'Code readability', gameId: 'g3' },
@@ -85,7 +67,6 @@ export default function MarkingCriterias() {
       // Simulating API call with mock data
       setTimeout(() => {
         setCriterias({
-          common: mockCommonCriteria,
           gameSpecific: mockGameCriteria
         });
         setIsLoading(false);
@@ -109,15 +90,11 @@ export default function MarkingCriterias() {
         const newItem = {
           _id: Date.now().toString(), // Use timestamp as mock ID
           criteria: newCriteria.trim(),
-          ...(activeTab === 'gameSpecific' && selectedGame ? { gameId: selectedGame } : {})
+          gameId: selectedGame
         };
 
-        if (activeTab === 'common') {
-          setCriterias(prev => ({
-            ...prev,
-            common: [...prev.common, newItem]
-          }));
-        } else if (activeTab === 'gameSpecific' && selectedGame) {
+        // Only handling game-specific criteria
+        if (selectedGame) {
           setCriterias(prev => ({
             ...prev,
             gameSpecific: {
@@ -157,30 +134,18 @@ export default function MarkingCriterias() {
     try {
       // Simulate API call with mock data
       setTimeout(() => {
-        if (editingCriteria.gameId) {
-          // Update game-specific criteria
-          setCriterias(prev => ({
-            ...prev,
-            gameSpecific: {
-              ...prev.gameSpecific,
-              [editingCriteria.gameId]: prev.gameSpecific[editingCriteria.gameId].map(c =>
-                c._id === editingCriteria.id
-                  ? { ...c, criteria: editingCriteria.text.trim() }
-                  : c
-              )
-            }
-          }));
-        } else {
-          // Update common criteria
-          setCriterias(prev => ({
-            ...prev,
-            common: prev.common.map(c =>
+        // Only update game-specific criteria
+        setCriterias(prev => ({
+          ...prev,
+          gameSpecific: {
+            ...prev.gameSpecific,
+            [editingCriteria.gameId]: prev.gameSpecific[editingCriteria.gameId].map(c =>
               c._id === editingCriteria.id
                 ? { ...c, criteria: editingCriteria.text.trim() }
                 : c
             )
-          }));
-        }
+          }
+        }));
 
         cancelEditing();
         showAlert('Criteria updated successfully', 'Success', 'success');
@@ -202,24 +167,16 @@ export default function MarkingCriterias() {
     try {
       // Simulate API call with mock data
       setTimeout(() => {
-        if (criteriaToDelete.gameId) {
-          // Delete game-specific criteria
-          setCriterias(prev => ({
-            ...prev,
-            gameSpecific: {
-              ...prev.gameSpecific,
-              [criteriaToDelete.gameId]: prev.gameSpecific[criteriaToDelete.gameId].filter(
-                c => c._id !== criteriaToDelete._id
-              )
-            }
-          }));
-        } else {
-          // Delete common criteria
-          setCriterias(prev => ({
-            ...prev,
-            common: prev.common.filter(c => c._id !== criteriaToDelete._id)
-          }));
-        }
+        // Only handling game-specific criteria
+        setCriterias(prev => ({
+          ...prev,
+          gameSpecific: {
+            ...prev.gameSpecific,
+            [criteriaToDelete.gameId]: prev.gameSpecific[criteriaToDelete.gameId].filter(
+              c => c._id !== criteriaToDelete._id
+            )
+          }
+        }));
 
         setShowDeleteModal(false);
         setCriteriaToDelete(null);
@@ -250,7 +207,7 @@ export default function MarkingCriterias() {
     setDraggedItem({ index, gameId });
   };
 
-  const handleDragOver = (e, index, gameId = null) => {
+  const handleDragOver = (e, index, gameId) => {
     e.preventDefault();
 
     if (!draggedItem) return;
@@ -260,108 +217,64 @@ export default function MarkingCriterias() {
       return;
     }
 
-    // Ensure we're dragging within the same list (common or same game)
+    // Ensure we're dragging within the same game
     if (draggedItem.gameId !== gameId) {
-      return; // Can't drag between common and game-specific or between different games
+      return; // Can't drag between different games
     }
 
-    if (gameId) {
-      // Handle game-specific criteria reordering
-      setCriterias(prev => {
-        const gameItems = [...prev.gameSpecific[gameId]];
-        const draggedItemContent = gameItems.splice(draggedItem.index, 1)[0];
-        gameItems.splice(index, 0, draggedItemContent);
+    // Handle game-specific criteria reordering
+    setCriterias(prev => {
+      const gameItems = [...prev.gameSpecific[gameId]];
+      const draggedItemContent = gameItems.splice(draggedItem.index, 1)[0];
+      gameItems.splice(index, 0, draggedItemContent);
 
-        return {
-          ...prev,
-          gameSpecific: {
-            ...prev.gameSpecific,
-            [gameId]: gameItems
-          }
-        };
-      });
-    } else {
-      // Handle common criteria reordering
-      setCriterias(prev => {
-        const commonItems = [...prev.common];
-        const draggedItemContent = commonItems.splice(draggedItem.index, 1)[0];
-        commonItems.splice(index, 0, draggedItemContent);
-
-        return {
-          ...prev,
-          common: commonItems
-        };
-      });
-    }
+      return {
+        ...prev,
+        gameSpecific: {
+          ...prev.gameSpecific,
+          [gameId]: gameItems
+        }
+      };
+    });
 
     // Update draggedItem index
     setDraggedItem({ index, gameId });
-  }; return (
+  };
+
+  return (
     <AdminLayout>
       <div className="p-6">
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Marking Criterias</h1>
         <p className="text-gray-600 mb-6">
-          Configure marking criteria for all games commonly or for each game individually.
+          Configure marking criteria for Code Crushers, Circuit Smashers, and Route Seekers games.
         </p>
 
-        {/* Tabs for Common/Game-specific */}
-        <div className="flex border-b mb-6">
-          <button
-            className={`py-2 px-4 font-medium ${activeTab === 'common'
-              ? 'border-b-2 border-purple-600 text-purple-600'
-              : 'text-gray-600'}`}
-            onClick={() => {
-              setActiveTab('common');
-              setSelectedGame(null);
-            }}
-          >
-            Common Criteria
-          </button>
-          <button
-            className={`py-2 px-4 font-medium ${activeTab === 'gameSpecific'
-              ? 'border-b-2 border-purple-600 text-purple-600'
-              : 'text-gray-600'}`}
-            onClick={() => {
-              setActiveTab('gameSpecific');
-              if (!selectedGame && mockGames.length > 0) {
-                setSelectedGame(mockGames[0]._id);
-              }
-            }}
-          >
-            Game-specific Criteria
-          </button>
-        </div>
-
-        {activeTab === 'gameSpecific' && (
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Select Game:
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {mockGames.map(game => (
-                <button
-                  key={game._id}
-                  onClick={() => setSelectedGame(game._id)}
-                  className={`px-4 py-2 rounded-md ${selectedGame === game._id
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
-                    }`}
-                >
-                  <span className="mr-2">{game.icon}</span>
-                  {game.name}
-                </button>
-              ))}
-            </div>
+        {/* Game selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Select Game:
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {mockGames.map(game => (
+              <button
+                key={game._id}
+                onClick={() => setSelectedGame(game._id)}
+                className={`px-4 py-2 rounded-md ${selectedGame === game._id
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                  }`}
+              >
+                <span className="mr-2">{game.icon}</span>
+                {game.name}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Add New Criteria Box */}
           <AdminBox
-            title={activeTab === 'common'
-              ? "Add New Common Criteria"
-              : `Add New Criteria for ${mockGames.find(g => g._id === selectedGame)?.name || 'Game'}`
-            }
+            title={`Add New Criteria for ${mockGames.find(g => g._id === selectedGame)?.name || 'Game'}`}
             width="w-full"
           >
             <div className="flex flex-col space-y-4">
@@ -377,45 +290,38 @@ export default function MarkingCriterias() {
                       handleAddCriteria();
                     }
                   }}
-                  disabled={activeTab === 'gameSpecific' && !selectedGame}
+                  disabled={!selectedGame}
                 />
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleAddCriteria}
                   className="bg-purple-600 text-white px-4 py-2 rounded-r-md flex items-center justify-center hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed"
-                  disabled={!newCriteria.trim() || (activeTab === 'gameSpecific' && !selectedGame)}
+                  disabled={!newCriteria.trim() || !selectedGame}
                 >
                   <FaPlus className="mr-2" /> Add
                 </motion.button>
               </div>
               <p className="text-sm text-gray-500">
-                {activeTab === 'common'
-                  ? "Add marking criteria that will be used for evaluating student work across all games."
-                  : `Add specific marking criteria for ${mockGames.find(g => g._id === selectedGame)?.name || 'this game'}.`
-                }
+                {`Add specific marking criteria for ${mockGames.find(g => g._id === selectedGame)?.name || 'this game'}.`}
               </p>
             </div>
           </AdminBox>
 
           {/* Existing Criteria Box */}
           <AdminBox
-            title={activeTab === 'common'
-              ? "Existing Common Criteria"
-              : `Criteria for ${mockGames.find(g => g._id === selectedGame)?.name || 'Game'}`
-            }
+            title={`Criteria for ${mockGames.find(g => g._id === selectedGame)?.name || 'Game'}`}
             width="w-full"
           >
             {isLoading ? (
               <div className="flex justify-center items-center h-32">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
               </div>
-            ) : (activeTab === 'common' && criterias.common.length === 0) ||
-              (activeTab === 'gameSpecific' && selectedGame &&
-                (!criterias.gameSpecific[selectedGame] || criterias.gameSpecific[selectedGame].length === 0)) ? (
+            ) : (selectedGame &&
+              (!criterias.gameSpecific[selectedGame] || criterias.gameSpecific[selectedGame].length === 0)) ? (
               <div className="text-center py-8">
                 <p className="text-gray-500">
-                  No {activeTab === 'common' ? 'common' : 'game-specific'} marking criteria found. Add your first criteria above.
+                  No marking criteria found for this game. Add your first criteria above.
                 </p>
               </div>
             ) : (
@@ -446,12 +352,10 @@ export default function MarkingCriterias() {
                 </div>
                 <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                   {(() => {
-                    // Determine which criteria to show based on active tab and selected game
-                    const currentCriterias = activeTab === 'common'
-                      ? criterias.common
-                      : (selectedGame && criterias.gameSpecific[selectedGame])
-                        ? criterias.gameSpecific[selectedGame]
-                        : [];
+                    // Get criteria for selected game
+                    const currentCriterias = (selectedGame && criterias.gameSpecific[selectedGame])
+                      ? criterias.gameSpecific[selectedGame]
+                      : [];
 
                     // Filter by search term
                     const filteredCriterias = currentCriterias.filter(criteria =>
@@ -471,7 +375,7 @@ export default function MarkingCriterias() {
                             </button>
                           </div>
                         );
-                      } else if (activeTab === 'gameSpecific' && !selectedGame) {
+                      } else if (!selectedGame) {
                         return (
                           <div className="text-center py-8">
                             <p className="text-gray-500">Please select a game to view its criteria.</p>
@@ -484,14 +388,14 @@ export default function MarkingCriterias() {
                       <div
                         key={criteria._id}
                         draggable
-                        onDragStart={() => handleDragStart(index, activeTab === 'gameSpecific' ? selectedGame : null)}
-                        onDragOver={(e) => handleDragOver(e, index, activeTab === 'gameSpecific' ? selectedGame : null)}
+                        onDragStart={() => handleDragStart(index, selectedGame)}
+                        onDragOver={(e) => handleDragOver(e, index, selectedGame)}
                         onDragEnd={() => setDraggedItem(null)}
                         className={`cursor-move ${draggedItem &&
-                            draggedItem.index === index &&
-                            draggedItem.gameId === (activeTab === 'gameSpecific' ? selectedGame : null)
-                            ? 'opacity-50 bg-gray-100 border border-dashed border-purple-500'
-                            : ''
+                          draggedItem.index === index &&
+                          draggedItem.gameId === selectedGame
+                          ? 'opacity-50 bg-gray-100 border border-dashed border-purple-500'
+                          : ''
                           }`}
                       >
                         <CriteriaItem
@@ -499,17 +403,11 @@ export default function MarkingCriterias() {
                           isEditing={editingCriteria.id === criteria._id}
                           editingText={editingCriteria.text}
                           onEditChange={(value) => setEditingCriteria({ ...editingCriteria, text: value })}
-                          onStartEdit={() => startEditingCriteria(
-                            criteria,
-                            activeTab === 'gameSpecific' ? selectedGame : null
-                          )}
+                          onStartEdit={() => startEditingCriteria(criteria, selectedGame)}
                           onSaveEdit={handleUpdateCriteria}
                           onCancelEdit={cancelEditing}
-                          onDelete={() => confirmDeleteCriteria(
-                            criteria,
-                            activeTab === 'gameSpecific' ? selectedGame : null
-                          )}
-                          gameSpecific={activeTab === 'gameSpecific'}
+                          onDelete={() => confirmDeleteCriteria(criteria, selectedGame)}
+                          gameSpecific={true}
                           gameName={selectedGame ? mockGames.find(g => g._id === selectedGame)?.name : ''}
                         />
                       </div>
@@ -538,10 +436,7 @@ export default function MarkingCriterias() {
           title="Delete Criteria"
           message={
             criteriaToDelete
-              ? `Are you sure you want to delete this ${criteriaToDelete.gameId ? 'game-specific' : 'common'} criteria: "${criteriaToDelete?.criteria}"? ${criteriaToDelete.gameId
-                ? `This will only affect ${mockGames.find(g => g._id === criteriaToDelete.gameId)?.name || 'this game'}.`
-                : 'This will affect all games.'
-              } This action cannot be undone.`
+              ? `Are you sure you want to delete this criteria: "${criteriaToDelete?.criteria}"? This will only affect ${mockGames.find(g => g._id === criteriaToDelete.gameId)?.name || 'this game'}. This action cannot be undone.`
               : 'Are you sure you want to delete this criteria? This action cannot be undone.'
           }
           confirmText="Delete"
