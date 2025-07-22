@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const gameSlidesSchema = new mongoose.Schema(
   {
-    gameId: { type: mongoose.Schema.Types.ObjectId, ref: "Game" },
+    gameType: { type: String, required: true },
     slides: [String]
   },
   { timestamps: true }

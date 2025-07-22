@@ -14,6 +14,8 @@ import setupSocket from "./sockets/index.js";
 import authRoutes from "./routes/auth.routes.js";
 import gameRoutes from "./routes/game.routes.js";
 import battleBreakerRoutes from "./routes/battleBreaker.routes.js";
+import quizHunterRoutes from "./routes/quizHunter.routes.js";
+import codeCrusherRoutes from "./routes/codeCrusher.routes.js";
 
 const app = express();
 
@@ -54,6 +56,8 @@ server.listen(port, () => {
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/games", gameRoutes);
 app.use("/api/v1/battle-breakers", battleBreakerRoutes);
+app.use("/api/v1/quiz-hunters", quizHunterRoutes)
+app.use("/api/v1/code-crushers", codeCrusherRoutes);
 
 // Connect to DB
 connectToDB();

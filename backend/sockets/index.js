@@ -6,7 +6,6 @@ const setupSocket = (io, app) => {
   socketAuth(io);
 
   io.on("connection", (socket) => {
-    console.log("New socket connection:", socket.user);
     const userId = socket.user?.id;
 
     if (!userId) {
