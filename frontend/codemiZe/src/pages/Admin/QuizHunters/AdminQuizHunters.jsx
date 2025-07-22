@@ -29,7 +29,7 @@ export default function AdminQuizHunters() {
       setQuestions(response.data);
     }
     getQnA();
-  },[]);
+  }, []);
 
   // Modal states
   const [showQuestionModal, setShowQuestionModal] = useState(false);

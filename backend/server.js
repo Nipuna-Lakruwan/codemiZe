@@ -56,7 +56,7 @@ server.listen(port, () => {
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/games", gameRoutes);
 app.use("/api/v1/battle-breakers", battleBreakerRoutes);
-app.use("/api/v1/quiz-hunters", quizHunterRoutes)
+app.use("/api/v1/quiz-hunters", quizHunterRoutes);
 app.use("/api/v1/code-crushers", codeCrusherRoutes);
 
 // Connect to DB

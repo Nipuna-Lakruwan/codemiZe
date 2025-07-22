@@ -30,7 +30,6 @@ export const getSlides = async (req, res) => {
 };
 
 export const deleteAllSlides = async (req, res) => {
-
     if (!slideId) {
         return res.status(400).json({ message: "Slide ID is required" });
     }
@@ -45,7 +44,7 @@ export const deleteAllSlides = async (req, res) => {
 };
 
 export const uploadResource = async (req, res) => {
-    const { file } = req.files;
+    const file = req.files;
 
     if (!file) {
         return res.status(400).json({ message: "No file uploaded" });
