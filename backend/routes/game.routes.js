@@ -5,7 +5,7 @@ import {
   requireJudge, 
   requireSchool 
 } from "../middleware/roleMiddleware.js";
-import { activateGame, deactivateGame, getActiveGame, getGames } from "../controllers/Common/gamesController.js";
+import { activateGame, deactivateGame, getActiveGame, getGames } from "../controllers/Common/games.controller.js";
 
 const router = express.Router();
 

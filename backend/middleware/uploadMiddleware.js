@@ -65,7 +65,7 @@ const CSVUpload = createUploadMiddleware({
 // Pre-configured upload middleware for documents
 const resourceUpload = createUploadMiddleware({
   destination: 'resources',
-  allowedMimeTypes: ['text/csv', 'application/vnd.ms-excel', 'application/csv'],
+  allowedMimeTypes: ['text/x-python', 'application/octet-stream', 'text/plain'],
   maxFileSize: 10 * 1024 * 1024 // 10MB
 });
 

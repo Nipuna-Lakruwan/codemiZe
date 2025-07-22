@@ -6,7 +6,7 @@ import {
   requireSchool 
 } from "../middleware/roleMiddleware.js";
 import { resourceUpload, slidesUpload } from "../middleware/uploadMiddleware.js";
-import { deleteAllSlides, getAllResources, getResource, getSlides, setTime, uploadResource, uploadSlides } from "../controllers/Games/codeCrushers.controller.js";
+import { deleteAllSlides, getAllResources, getResource, getSlides, setTime, uploadResource, uploadSlides } from "../controllers/Games/circuitSmashers.controller.js";
 
 const router = express.Router();
 
