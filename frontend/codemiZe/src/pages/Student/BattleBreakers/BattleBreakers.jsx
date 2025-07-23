@@ -169,7 +169,7 @@ export default function BattleBreakers() {
   };
 
   return (
-    <GameLayout>
+    <GameLayout gameName={isGameStarted && !gameCompleted ? "Battle Breakers" : ""}>
       {!isGameStarted ? (
         <div className="flex flex-col items-center justify-center min-h-screen p-4 relative overflow-hidden">
           {/* Top right decorative image */}
@@ -386,11 +386,6 @@ export default function BattleBreakers() {
                   Question {currentQuestion + 1} of {questions.length}
                 </span>
               </div>
-              <div className="bg-violet-900/40 px-4 py-2 rounded-lg border border-violet-700/30 shadow-lg">
-                <span className="text-white font-medium">
-                  Round 1
-                </span>
-              </div>
             </div>
 
             {/* Question display area - with improved styling */}
@@ -439,12 +434,12 @@ export default function BattleBreakers() {
                     damping: 25
                   }}
                   onClick={handleBuzzerPress}
-                  style={{ 
+                  style={{
                     marginBottom: "-140px", // Negative margin to move closer to base
-                    zIndex: 10 
+                    zIndex: 10
                   }}
                 >
-                  <motion.div 
+                  <motion.div
                     className="w-72 h-40 rounded-full flex items-center justify-center cursor-pointer"
                     whileHover={{
                       scale: 1.03,
@@ -479,7 +474,7 @@ export default function BattleBreakers() {
               <p className="text-white/90 mt-4 font-medium">Press to answer!</p>
             </div>
 
-                {/* Administrative button for testing - will be removed in production */}
+            {/* Administrative button for testing - will be removed in production */}
             {/* <div className="mt-2 mb-4">
               <button
                 className="px-4 py-2 bg-gray-800/50 text-gray-300 text-sm border border-gray-700/50 rounded hover:bg-gray-700/50"
@@ -488,11 +483,6 @@ export default function BattleBreakers() {
                 Next Question (Admin)
               </button>
             </div> */}
-
-            {/* Questions remaining indicator */}
-            <div className="text-white/90 text-lg">
-              Remaining Questions: {questions.length - currentQuestion - 1}
-            </div>
           </motion.div>
 
           {/* Spacer */}

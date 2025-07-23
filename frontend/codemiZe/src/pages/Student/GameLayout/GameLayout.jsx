@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function GameLayout({ children }) {
+export default function GameLayout({ children, gameName = "CodemiZe" }) {
   return (
     <div
       className="relative min-h-screen w-full bg-cover bg-center bg-no-repeat bg-fixed overflow-hidden flex flex-col"
@@ -16,8 +16,13 @@ export default function GameLayout({ children }) {
           className="w-150 h-150 opacity-90"
         />
       </div>
-      {/* Title image in top right */}
-      <div className="absolute top-6 right-8 z-20">
+      {/* Game name text in top right */}
+      <div className="absolute top-20 right-110 z-20">
+        <div className="justify-start text-white text-7xl font-normal font-['Jersey_25']">{gameName}</div>
+      </div>
+
+      {/* Title image in bottom right */}
+      <div className="absolute bottom-6 right-6 z-20">
         <img
           src="/title2.png"
           alt="CodemiZe"
