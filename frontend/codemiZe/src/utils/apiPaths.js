@@ -14,6 +14,13 @@ export const API_PATHS = {
     ACTIVATE_GAME: (gameId) => `/api/v1/games/activate/${gameId}`,
     DEACTIVATE_GAME: (gameId) => `/api/v1/games/deactivate/${gameId}`,
   },
+  ADMIN: {
+    GET_ALL_USERS: "/api/v1/admin/users",
+    GET_ALL_SCHOOLS: "/api/v1/admin/schools",
+    GET_USER: (id) => `/api/v1/admin/users/${id}`,
+    CREATE_USER: "/api/v1/admin/users",
+    DELETE_USER: (id) => `/api/v1/admin/users/${id}`,
+  },
   CRITERIA: {
     GET_ALL: "/api/v1/criteria",
     CREATE: "/api/v1/criteria",
@@ -48,5 +55,16 @@ export const API_PATHS = {
     GET_ALL_RESOURCES: "/api/v1/code-crushers/resources",
     GET_RESOURCE: (id) => `/api/v1/code-crushers/resources/${id}`,
     SET_TIME: "/api/v1/code-crushers/time",
+  },
+  CIRCUIT_SMASHERS: {
+    GET_CRITERIA: "/api/v1/circuit-smashers/criteria",
+    GET_SLIDES: "/api/v1/circuit-smashers/",
+    UPLOAD_SLIDES: "/api/v1/circuit-smashers/slides",
+    DELETE_ALL_SLIDES: "/api/v1/circuit-smashers/slides/delete",
+    UPLOAD_RESOURCE: "/api/v1/circuit-smashers/upload",
+    GET_ALL_RESOURCES: "/api/v1/circuit-smashers/resources",
+    GET_RESOURCE: (id) => `/api/v1/circuit-smashers/resources/${id}`,
+    GET_MARKINGS: "/api/v1/circuit-smashers/markings",
+    SET_TIME: "/api/v1/circuit-smashers/time",
   },
 };
