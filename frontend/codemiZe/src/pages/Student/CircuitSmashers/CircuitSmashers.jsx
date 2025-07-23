@@ -13,6 +13,7 @@ export default function CircuitSmashers() {
   // PDF viewer state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(5); // Set to actual number of PDF pages
+  const [showFullscreenPdf, setShowFullscreenPdf] = useState(false);
 
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState(30 * 60); // 30 minutes in seconds
@@ -24,6 +25,44 @@ export default function CircuitSmashers() {
   const [isFileValid, setIsFileValid] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Listen for messages from popup window
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data.action === 'prevPage') {
+        if (currentPage > 1) {
+          const newPage = currentPage - 1;
+          setCurrentPage(newPage);
+          // Update the popup
+          if (event.source) {
+            event.source.postMessage({
+              action: 'updatePage',
+              page: newPage,
+              totalPages
+            }, '*');
+          }
+        }
+      } else if (event.data.action === 'nextPage') {
+        if (currentPage < totalPages) {
+          const newPage = currentPage + 1;
+          setCurrentPage(newPage);
+          // Update the popup
+          if (event.source) {
+            event.source.postMessage({
+              action: 'updatePage',
+              page: newPage,
+              totalPages
+            }, '*');
+          }
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [currentPage, totalPages]);
 
   // Timer effect
   useEffect(() => {
@@ -83,12 +122,19 @@ export default function CircuitSmashers() {
   // File upload handlers
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
-    if (file && (file.name.endsWith('.ino') || file.name.endsWith('.c') || file.name.endsWith('.cpp'))) {
-      setUploadedFile(file);
-      setIsFileValid(true);
-    } else {
-      setUploadedFile(file);
-      setIsFileValid(false);
+
+    // Check if it's an Arduino file (.ino), C file (.c), or C++ file (.cpp) or a zip file
+    if (file) {
+      if (file.name.endsWith('.ino') || file.name.endsWith('.c') || file.name.endsWith('.cpp')) {
+        setUploadedFile(file);
+        setIsFileValid(true);
+      } else if (file.name.endsWith('.zip')) {
+        setUploadedFile(file);
+        setIsFileValid(true);
+      } else {
+        setUploadedFile(file);
+        setIsFileValid(false);
+      }
     }
   };
 
@@ -100,9 +146,20 @@ export default function CircuitSmashers() {
 
   // Game end handler (time's up)
   const handleGameEnd = () => {
-    // Handle game end logic
-    if (isFileValid) {
-      setGameCompleted(true);
+    // Show the time's up modal but don't auto-submit
+    // The user will see their file status and can proceed to results if a file is uploaded
+    // Otherwise, they'll have one last chance to upload a file
+
+    // After a reasonable delay to let the user respond, proceed with auto-submission
+    // if they haven't taken action
+    if (isFileValid && uploadedFile) {
+      // Set a longer timeout to auto-submit if the user doesn't click "View Results"
+      setTimeout(() => {
+        // Only auto-submit if the time's up modal is still showing (user hasn't clicked)
+        if (timeIsUp && !gameCompleted) {
+          setGameCompleted(true);
+        }
+      }, 15000); // 15 seconds delay
     }
   };
 
@@ -240,45 +297,18 @@ export default function CircuitSmashers() {
   };
 
   return (
-    <GameLayout>
+    <GameLayout gameName={isGameStarted && !gameCompleted ? "Circuit Smashers" : ""}>
       {!isGameStarted ? (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4">
-          {/* Transparent glass box - with responsive sizing */}
-          <motion.div
-            className="w-full max-w-lg sm:w-[90%] md:w-[70%] lg:w-[50%] xl:w-[40%] 2xl:w-[35%] h-auto aspect-[4/5] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center justify-center p-4 sm:p-6 md:p-8"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            {/* Game Icon - responsive sizing */}
-            <motion.img
-              src="/circuit samshers logo 1.png"
-              alt="Circuit Smashers"
-              className="w-[40%] sm:w-[45%] md:w-[50%] lg:w-[55%] aspect-square object-contain mb-4 sm:mb-6"
-              variants={iconVariants}
-            />
-
-            {/* Game Name - responsive text */}
-            <motion.h2
-              className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-6 sm:mb-8 md:mb-12 text-center"
-              variants={textVariants}
-            >
-              Circuit Smashers
-            </motion.h2>
-
-            {/* Start Button - responsive width */}
-            <motion.button
-              className="w-full max-w-xs h-10 sm:h-12 bg-purple-950 rounded-[3px] border border-slate-500/40 text-white font-medium flex items-center justify-center"
-              variants={buttonVariants}
-              whileHover="hover"
-              whileTap="tap"
-              onClick={handleStartGame}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Loading...' : 'Start Game'}
-            </motion.button>
-          </motion.div>
-        </div>
+        <StartGameComponent
+          title="Circuit Smashers"
+          iconSrc="/circuit samshers logo 1.png"
+          iconAlt="Circuit Smashers"
+          onStart={handleStartGame}
+          isLoading={isLoading}
+          topRightImageSrc="/robo1.png"
+          bottomLeftImageSrc="/robo2.png"
+          showScoreInfo={false}
+        />
       ) : gameCompleted ? (
         // Game completed screen
         <div className="flex flex-col items-center justify-center min-h-screen p-4 relative">
@@ -404,24 +434,32 @@ export default function CircuitSmashers() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <h2 className="text-3xl font-bold text-red-100 mb-2">Time's Up!</h2>
-                  <p className="text-red-200 mb-6">Please submit your Arduino code or try again.</p>
+                  <p className="text-red-200 mb-6">
+                    {uploadedFile
+                      ? `Your uploaded file "${uploadedFile.name}" will be submitted.`
+                      : "Time's up! You haven't uploaded any file yet."}
+                  </p>
                   <div className="flex space-x-4 justify-center">
-                    <motion.button
-                      className="px-6 py-2 bg-red-800 text-white rounded-md border border-red-600/30"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setTimeIsUp(false)}
-                    >
-                      Continue
-                    </motion.button>
-                    {isFileValid && (
+                    {uploadedFile ? (
                       <motion.button
                         className="px-6 py-2 bg-green-800 text-white rounded-md border border-green-600/30"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleSubmitCode}
                       >
-                        Submit Code
+                        View Results
+                      </motion.button>
+                    ) : (
+                      <motion.button
+                        className="px-6 py-2 bg-amber-800 text-white rounded-md border border-amber-600/30"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setTimeIsUp(false);
+                          setShowUploadModal(true);
+                        }}
+                      >
+                        Upload File
                       </motion.button>
                     )}
                   </div>
@@ -449,14 +487,19 @@ export default function CircuitSmashers() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h3 className="text-2xl font-bold text-white mb-4">Upload Arduino Code</h3>
-                  <p className="text-white/70 mb-6">Please upload an Arduino (.ino), C (.c) or C++ (.cpp) file with your circuit solution.</p>
+                  <p className="text-white/70 mb-4">Please upload your solution:</p>
+                  <ul className="text-white/70 mb-6 list-disc list-inside space-y-1 text-sm">
+                    <li>Upload a .ino, .c, or .cpp file directly</li>
+                    <li>For multiple files, create a .zip archive</li>
+                    <li>Files with the same name will be overwritten</li>
+                  </ul>
 
                   <div className="mb-6">
                     <input
                       type="file"
                       ref={fileInputRef}
                       onChange={handleFileUpload}
-                      accept=".ino,.c,.cpp"
+                      accept=".ino,.c,.cpp,.zip"
                       className="hidden"
                       id="file-upload"
                     />
@@ -468,7 +511,7 @@ export default function CircuitSmashers() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
                       <span className="text-sm text-violet-300">Click to select a file</span>
-                      <span className="text-xs text-violet-400/70 mt-1">(Arduino .ino, C .c, or C++ .cpp files only)</span>
+                      <span className="text-xs text-violet-400/70 mt-1">(Arduino .ino, .c, .cpp, or .zip files)</span>
                     </label>
                   </div>
 
@@ -481,7 +524,7 @@ export default function CircuitSmashers() {
                         {uploadedFile.name}
                         {!isFileValid && (
                           <span className="ml-auto text-red-400 text-sm">
-                            Invalid file type (must be .ino, .c, or .cpp)
+                            Invalid file type (must be .ino, .c, .cpp, or .zip)
                           </span>
                         )}
                       </p>
@@ -499,10 +542,15 @@ export default function CircuitSmashers() {
                       className={`px-4 py-2 rounded ${isFileValid
                         ? 'bg-violet-700 text-white hover:bg-violet-600'
                         : 'bg-violet-900/40 text-white/50 cursor-not-allowed'} transition-colors`}
-                      onClick={handleSubmitCode}
+                      onClick={() => {
+                        // Just close the modal and keep the file - don't submit until time's up
+                        if (isFileValid) {
+                          setShowUploadModal(false);
+                        }
+                      }}
                       disabled={!isFileValid}
                     >
-                      Submit
+                      Save File
                     </button>
                   </div>
                 </motion.div>
@@ -510,12 +558,52 @@ export default function CircuitSmashers() {
             )}
           </AnimatePresence>
 
-          {/* Game node mini in the bottom left corner */}
-          <div className="absolute bottom-8 left-8 z-10">
-            <GameNodeMini
-              title="Circuit Smashers"
-              icon="/circuit samshers logo 1.png"
-            />
+          {/* Game node mini in the bottom left corner - only shown during active game */}
+          {!gameCompleted && (
+            <div className="absolute bottom-8 left-8 z-10">
+              <GameNodeMini
+                title="Circuit Smashers"
+                icon="/circuit samshers logo 1.png"
+                linkTo="/student/games-roadmap"
+              />
+            </div>
+          )}
+
+          {/* File upload buttons positioned at the top left outside the box */}
+          <div className="absolute top-32 left-110 flex space-x-3 z-10">
+            <motion.button
+              className="w-36 h-9 bg-purple-950 rounded-[3px] border border-slate-500/40 text-white font-medium flex items-center justify-center gap-1"
+              whileHover={{ scale: 1.05, boxShadow: "0px 0px 8px rgba(140, 20, 252, 0.6)" }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowUploadModal(true)}
+              disabled={timeIsUp}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Upload File
+            </motion.button>
+
+            {uploadedFile && (
+              <div className="w-36 h-9 relative">
+                <div className="w-36 h-9 left-0 top-0 absolute bg-white/0 rounded-[3px] border border-white" />
+                <motion.button
+                  className="w-36 h-9 absolute top-0 left-0 text-white font-medium flex items-center justify-center gap-1"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setUploadedFile(null);
+                    setIsFileValid(false);
+                  }}
+                  disabled={timeIsUp}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Remove
+                </motion.button>
+              </div>
+            )}
           </div>
 
           {/* Main PDF viewer container */}
@@ -525,12 +613,137 @@ export default function CircuitSmashers() {
             initial="hidden"
             animate="visible"
           >
-            {/* PDF content area */}
-            <div className="w-[973px] h-[466px] bg-zinc-300 rounded-md flex items-center justify-center mb-4">
-              <div className="text-center">
-                <p className="text-2xl text-gray-600 font-semibold">Circuit Diagram Viewer</p>
-                <p className="text-gray-500">Page {currentPage} of {totalPages}</p>
-                <p className="text-sm text-gray-400 mt-4">Arduino circuit schematics and programming challenges would appear here</p>
+            {/* PDF content area with fullscreen option */}
+            <div className="w-[973px] h-[466px] bg-zinc-300 rounded-md flex flex-col relative mb-4">
+              {/* PDF Viewer Controls - Top right */}
+              <div className="absolute top-2 right-2 flex space-x-2 z-10">
+                <button
+                  className="bg-violet-800/80 hover:bg-violet-700 text-white px-3 py-1 rounded flex items-center text-sm"
+                  onClick={() => {
+                    // Open a new window/tab with the PDF viewer
+                    const pdfWindow = window.open('', '_blank');
+                    pdfWindow.document.write(`
+                      <html>
+                        <head>
+                          <title>Circuit Smashers - Problem Statement</title>
+                          <style>
+                            body { 
+                              margin: 0; 
+                              padding: 0; 
+                              background-color: #1e1e1e;
+                              color: white;
+                              font-family: Arial, sans-serif;
+                              overflow: hidden;
+                            }
+                            .pdf-container {
+                              display: flex;
+                              flex-direction: column;
+                              height: 100vh;
+                              padding: 16px;
+                            }
+                            .header {
+                              display: flex;
+                              justify-content: space-between;
+                              align-items: center;
+                              margin-bottom: 16px;
+                            }
+                            .pdf-content {
+                              background-color: #d4d4d8;
+                              border-radius: 8px;
+                              flex-grow: 1;
+                              display: flex;
+                              align-items: center;
+                              justify-content: center;
+                              margin-bottom: 16px;
+                            }
+                            .footer {
+                              display: flex;
+                              justify-content: center;
+                              align-items: center;
+                              gap: 24px;
+                            }
+                            .nav-button {
+                              background-color: #6d28d9;
+                              color: white;
+                              border: none;
+                              border-radius: 4px;
+                              padding: 8px 16px;
+                              cursor: pointer;
+                            }
+                            .nav-button:disabled {
+                              background-color: #71717a;
+                              cursor: not-allowed;
+                            }
+                            .nav-button:hover:not(:disabled) {
+                              background-color: #7c3aed;
+                            }
+                          </style>
+                        </head>
+                        <body>
+                          <div class="pdf-container">
+                            <div class="header">
+                              <h1>Circuit Smashers - Problem Statement</h1>
+                              <span>Page ${currentPage} of ${totalPages}</span>
+                            </div>
+                            <div class="pdf-content">
+                              <div class="text-center">
+                                <p style="font-size: 24px; color: #4b5563; font-weight: 600;">Circuit Diagram Viewer</p>
+                                <p style="color: #6b7280;">Page ${currentPage} of ${totalPages}</p>
+                                <p style="font-size: 14px; color: #9ca3af; margin-top: 16px;">Arduino circuit schematics and programming challenges would appear here</p>
+                              </div>
+                            </div>
+                            <div class="footer">
+                              <button class="nav-button" onclick="prevPage()" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+                              <span>Page ${currentPage} of ${totalPages}</span>
+                              <button class="nav-button" onclick="nextPage()" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+                            </div>
+                          </div>
+                          <script>
+                            function prevPage() {
+                              window.opener.postMessage({ action: 'prevPage' }, '*');
+                            }
+                            function nextPage() {
+                              window.opener.postMessage({ action: 'nextPage' }, '*');
+                            }
+                            // Listen for page updates from parent window
+                            window.addEventListener('message', (event) => {
+                              if (event.data.action === 'updatePage') {
+                                document.querySelectorAll('.footer span, .header span').forEach(el => {
+                                  el.textContent = 'Page ' + event.data.page + ' of ' + event.data.totalPages;
+                                });
+                              }
+                            });
+                          </script>
+                        </body>
+                      </html>
+                    `);
+                    pdfWindow.document.close();
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  Open in New Tab
+                </button>
+                <button
+                  className="bg-violet-800/80 hover:bg-violet-700 text-white px-3 py-1 rounded flex items-center text-sm"
+                  onClick={() => {
+                    // Create a fullscreen modal with the PDF
+                    setShowFullscreenPdf(true);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                  </svg>
+                  Fullscreen
+                </button>
+              </div>
+              <div className="flex-grow flex items-center justify-center">
+                <div className="text-center">
+                  <p className="text-2xl text-gray-600 font-semibold">Circuit Diagram Viewer</p>
+                  <p className="text-gray-500">Page {currentPage} of {totalPages}</p>
+                  <p className="text-sm text-gray-400 mt-4">Arduino circuit schematics and programming challenges would appear here</p>
+                </div>
               </div>
             </div>
 
@@ -574,7 +787,7 @@ export default function CircuitSmashers() {
                   } h-2.5 rounded-full`}
                 initial={{ width: "100%" }}
                 animate={{ width: `${calculateProgress()}%` }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
               />
             </div>
           </motion.div>
@@ -591,29 +804,74 @@ export default function CircuitSmashers() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span className={`font-mono font-medium ${timeRemaining < 60 ? 'text-red-400 animate-pulse' :
-                  timeRemaining < 300 ? 'text-violet-300' :
-                    'text-white/80'
+                timeRemaining < 300 ? 'text-violet-300' :
+                  'text-white/80'
                 }`}>
                 Time remaining: {formatTime(timeRemaining)}
               </span>
+              {uploadedFile && (
+                <span className="ml-4 bg-green-600/20 text-green-400 px-2 py-1 rounded-full text-xs border border-green-500/30">
+                  File uploaded: {uploadedFile.name}
+                </span>
+              )}
             </div>
           </motion.div>
 
-          {/* Upload code button */}
-          <motion.button
-            className="px-8 py-3 bg-purple-950 rounded-[3px] border border-slate-500/40 text-white font-medium flex items-center gap-2"
-            variants={uploadButtonVariants}
-            initial="hidden"
-            animate="visible"
-            whileHover="hover"
-            whileTap="tap"
-            onClick={() => setShowUploadModal(true)}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            Upload Arduino Code (.ino, .c, .cpp)
-          </motion.button>
+          {/* Fullscreen PDF Modal */}
+          <AnimatePresence>
+            {showFullscreenPdf && (
+              <motion.div
+                className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <div className="w-full flex justify-between items-center p-4 bg-gray-900/80 border-b border-gray-700">
+                  <h2 className="text-xl font-semibold text-white">Circuit Smashers - Problem Statement</h2>
+                  <button
+                    className="text-white bg-gray-700 hover:bg-gray-600 p-2 rounded-full"
+                    onClick={() => setShowFullscreenPdf(false)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="flex-grow w-full overflow-auto p-8 flex items-center justify-center">
+                  <div className="w-full max-w-5xl h-[80vh] bg-zinc-300 rounded-md flex items-center justify-center">
+                    <div className="text-center">
+                      <p className="text-3xl text-gray-600 font-semibold">Circuit Diagram Viewer (Fullscreen)</p>
+                      <p className="text-gray-500 text-xl">Page {currentPage} of {totalPages}</p>
+                      <p className="text-gray-400 mt-4">Arduino circuit schematics and programming challenges would appear here</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-full flex justify-center space-x-8 p-4 bg-gray-900/80 border-t border-gray-700">
+                  <button
+                    className={`px-6 py-3 rounded-md ${currentPage === 1 ? 'bg-gray-600 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1}
+                  >
+                    Previous Page
+                  </button>
+
+                  <div className="text-white/80 flex items-center text-xl">
+                    Page {currentPage} of {totalPages}
+                  </div>
+
+                  <button
+                    className={`px-6 py-3 rounded-md ${currentPage === totalPages ? 'bg-gray-600 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next Page
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </GameLayout>

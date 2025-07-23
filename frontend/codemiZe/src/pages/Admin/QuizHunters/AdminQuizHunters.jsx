@@ -17,7 +17,6 @@ export default function AdminQuizHunters() {
   const [customTime, setCustomTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterDifficulty, setFilterDifficulty] = useState('all'); // 'all', 'easy', 'medium', 'hard'
 
   // Fetch questions from API on component mount
   useEffect(() => {
@@ -45,29 +44,45 @@ export default function AdminQuizHunters() {
     // };
     // fetchQuestions();
   }, []);
-  // Mock questions that match the backend structure with added difficulty property
+  // Mock questions that match the backend structure
   const [questions, setQuestions] = useState([
-    { id: '61f8b1e5c7d1f52e4c8b4567', question: 'What is the capital of Sri Lanka?', options: ['Colombo', 'Kandy', 'Galle', 'Jaffna'], correct: 'Colombo', difficulty: 'easy' },
-    { id: '61f8b1e5c7d1f52e4c8b4568', question: 'Which data structure uses LIFO?', options: ['Stack', 'Queue', 'Linked List', 'Tree'], correct: 'Stack', difficulty: 'medium' },
-    { id: '61f8b1e5c7d1f52e4c8b4569', question: 'Which programming language is known as the "mother of all languages"?', options: ['C', 'Java', 'Python', 'COBOL'], correct: 'C', difficulty: 'medium' },
-    { id: '61f8b1e5c7d1f52e4c8b456a', question: 'What does CSS stand for?', options: ['Cascading Style Sheets', 'Computer Style Sheets', 'Creative Style Sheets', 'Colorful Style Sheets'], correct: 'Cascading Style Sheets', difficulty: 'easy' },
-    { id: '61f8b1e5c7d1f52e4c8b456b', question: 'Which HTML tag is used for creating an unordered list?', options: ['<ul>', '<ol>', '<li>', '<list>'], correct: '<ul>', difficulty: 'hard' },
+    { _id: '61f8b1e5c7d1f52e4c8b4567', question: 'What is the capital of Sri Lanka?', answer: 'Colombo', option1: 'Kandy', option2: 'Galle', option3: 'Jaffna' },
+    { _id: '61f8b1e5c7d1f52e4c8b4568', question: 'Which data structure uses LIFO?', answer: 'Stack', option1: 'Queue', option2: 'Linked List', option3: 'Tree' },
+    { _id: '61f8b1e5c7d1f52e4c8b4569', question: 'Which programming language is known as the "mother of all languages"?', answer: 'C', option1: 'Java', option2: 'Python', option3: 'COBOL' },
+    { _id: '61f8b1e5c7d1f52e4c8b456a', question: 'What does CSS stand for?', answer: 'Cascading Style Sheets', option1: 'Computer Style Sheets', option2: 'Creative Style Sheets', option3: 'Colorful Style Sheets' },
+    { _id: '61f8b1e5c7d1f52e4c8b456b', question: 'Which HTML tag is used for creating an unordered list?', answer: '<ul>', option1: '<ol>', option2: '<li>', option3: '<list>' },
   ]);
 
   useEffect(() => {
     const getQnA = async () => {
-      const response = await axiosInstance.get(API_PATHS.QUIZ_HUNTERS.GET_Q_WITH_A);
-      setQuestions(response.data);
+      setIsLoading(true);
+      try {
+        const response = await axiosInstance.get(API_PATHS.QUIZ_HUNTERS.GET_Q_WITH_A);
+        if (response.data && response.data.questions) {
+          setQuestions(response.data.questions);
+        }
+      } catch (error) {
+        console.error('Error fetching questions:', error);
+        showAlert('Failed to load questions', 'Error', 'error');
+      } finally {
+        setIsLoading(false);
+      }
     }
-    getQnA();
+    // Uncomment this line to fetch data from API when ready
+    // getQnA();
   }, []);
 
   // Modal states
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
   const [currentQuestion, setCurrentQuestion] = useState({
-    id: null,
+    _id: null,
     question: '',
+    answer: '',
+    option1: '',
+    option2: '',
+    option3: '',
+    // For UI display
     options: ['', '', '', ''],
     correct: ''
   });
@@ -93,40 +108,50 @@ export default function AdminQuizHunters() {
 
   const handleFileUpload = () => {
     if (selectedFile) {
-      // Here you would handle the CSV upload to the backend using formData
-      console.log('Uploading file:', selectedFile);
+      const uploadCSV = async () => {
+        try {
+          // Here you would handle the CSV upload to the backend using formData
+          console.log('Uploading file:', selectedFile);
 
-      // In a real implementation, you would use:
-      // const formData = new FormData();
-      // formData.append('csv', selectedFile);
-      // axios.post('/api/quizhunters/uploadCSV', formData)
+          // In a real implementation, you would use:
+          // const formData = new FormData();
+          // formData.append('csv', selectedFile);
+          // await axiosInstance.post(API_PATHS.QUIZ_HUNTERS.UPLOAD_CSV, formData);
+          // const response = await axiosInstance.get(API_PATHS.QUIZ_HUNTERS.GET_Q_WITH_A);
+          // if (response.data && response.data.questions) {
+          //   setQuestions(response.data.questions);
+          // }
 
-      // Simulating new questions added - create 5 sample questions that match backend structure
-      const newQuestions = Array.from({ length: 5 }, (_, i) => {
-        // Generate MongoDB-style ObjectId
-        const timestamp = Math.floor(new Date().getTime() / 1000).toString(16);
-        const machineId = Math.floor(Math.random() * 16777216).toString(16).padStart(6, '0');
-        const processId = Math.floor(Math.random() * 65536).toString(16).padStart(4, '0');
-        const counter = Math.floor(Math.random() * 16777216).toString(16).padStart(6, '0');
-        const id = timestamp + machineId + processId + counter;
+          // For now, simulate adding questions from CSV
+          const newQuestions = Array.from({ length: 5 }, (_, i) => {
+            // Generate MongoDB-style ObjectId
+            const timestamp = Math.floor(new Date().getTime() / 1000).toString(16);
+            const machineId = Math.floor(Math.random() * 16777216).toString(16).padStart(6, '0');
+            const processId = Math.floor(Math.random() * 65536).toString(16).padStart(4, '0');
+            const counter = Math.floor(Math.random() * 16777216).toString(16).padStart(6, '0');
+            const id = timestamp + machineId + processId + counter;
 
-        return {
-          id,
-          question: `Sample Question ${questions.length + i + 1} from CSV`,
-          // In backend: first option is the correct answer, followed by 3 wrong options
-          options: [
-            `Correct Answer for Q${questions.length + i + 1}`,
-            `Wrong Option 1 for Q${questions.length + i + 1}`,
-            `Wrong Option 2 for Q${questions.length + i + 1}`,
-            `Wrong Option 3 for Q${questions.length + i + 1}`
-          ],
-          correct: `Correct Answer for Q${questions.length + i + 1}`
-        };
-      });
+            // Create questions in backend format
+            return {
+              _id: id,
+              question: `Sample Question ${questions.length + i + 1} from CSV`,
+              answer: `Correct Answer for Q${questions.length + i + 1}`,
+              option1: `Wrong Option 1 for Q${questions.length + i + 1}`,
+              option2: `Wrong Option 2 for Q${questions.length + i + 1}`,
+              option3: `Wrong Option 3 for Q${questions.length + i + 1}`
+            };
+          });
 
-      setQuestions([...questions, ...newQuestions]);
+          setQuestions([...questions, ...newQuestions]);
+          showAlert('CSV file uploaded: ' + selectedFile.name, 'Upload Successful', 'success');
+        } catch (error) {
+          console.error('Error uploading CSV:', error);
+          showAlert('Failed to upload CSV', 'Error', 'error');
+        }
+      };
+
+      uploadCSV();
       setSelectedFile(null); // Reset file input after upload
-      showAlert('CSV file uploaded: ' + selectedFile.name, 'Upload Successful', 'success');
     } else {
       showAlert('Please select a file first', 'Upload Error', 'error');
     }
@@ -143,9 +168,14 @@ export default function AdminQuizHunters() {
     const id = timestamp + machineId + processId + counter;
 
     setCurrentQuestion({
-      id: id,
+      _id: id,
       question: '',
-      options: ['', '', '', ''], // First option should be the correct answer in the backend
+      answer: '',
+      option1: '',
+      option2: '',
+      option3: '',
+      // For UI display, we'll also track these properties
+      options: ['', '', '', ''],
       correct: ''
     });
     setShowQuestionModal(true);
@@ -153,7 +183,16 @@ export default function AdminQuizHunters() {
 
   const handleEditQuestion = (question) => {
     setModalMode('edit');
-    setCurrentQuestion({ ...question });
+
+    // Convert backend format to UI format for editing
+    const options = [question.answer, question.option1, question.option2, question.option3];
+
+    setCurrentQuestion({
+      ...question,
+      options,
+      correct: question.answer
+    });
+
     setShowQuestionModal(true);
   };
 
@@ -184,47 +223,65 @@ export default function AdminQuizHunters() {
       return;
     }
 
+    // Prepare the data for backend format
+    const questionData = {
+      question: currentQuestion.question,
+      answer: currentQuestion.correct,
+      option1: currentQuestion.options.filter(o => o !== currentQuestion.correct)[0],
+      option2: currentQuestion.options.filter(o => o !== currentQuestion.correct)[1],
+      option3: currentQuestion.options.filter(o => o !== currentQuestion.correct)[2]
+    };
+
+    // Create a backend-formatted question for state
+    const stateQuestion = {
+      ...questionData,
+      _id: currentQuestion._id
+    };
+
     if (modalMode === 'add') {
       // Add new question
       // In a real implementation, you would:
-      // 1. Prepare the data for backend format
-      // 2. Submit to API
-      // const questionData = {
-      //   question: currentQuestion.question,
-      //   answer: currentQuestion.correct,
-      //   option1: currentQuestion.options.filter(o => o !== currentQuestion.correct)[0],
-      //   option2: currentQuestion.options.filter(o => o !== currentQuestion.correct)[1],
-      //   option3: currentQuestion.options.filter(o => o !== currentQuestion.correct)[2]
-      // };
-      // axios.post('/api/quizhunters/addQuestion', questionData)
       const addQuestion = async () => {
         try {
-          await axiosInstance.post(API_PATHS.QUIZ_HUNTERS.ADD_QUESTION, currentQuestion);
+          // Uncomment when ready for API integration
+          // const response = await axiosInstance.post(API_PATHS.QUIZ_HUNTERS.ADD_QUESTION, questionData);
+          // if (response.data && response.data.question) {
+          //   setQuestions([...questions, response.data.question]);
+          // }
+
+          // For now, just update the state
+          setQuestions([...questions, stateQuestion]);
+          showAlert('Question added successfully', 'Success', 'success');
         } catch (error) {
           console.error('Error adding question:', error);
+          showAlert('Failed to add question', 'Error', 'error');
         }
       };
 
       addQuestion();
-      setQuestions([...questions, currentQuestion]);
-      showAlert('Question added successfully', 'Success', 'success');
     } else {
       // Update existing question
-      // In a real implementation, you would:
-      // const questionData = {
-      //   question: currentQuestion.question,
-      //   answer: currentQuestion.correct,
-      //   option1: currentQuestion.options.filter(o => o !== currentQuestion.correct)[0],
-      //   option2: currentQuestion.options.filter(o => o !== currentQuestion.correct)[1],
-      //   option3: currentQuestion.options.filter(o => o !== currentQuestion.correct)[2]
-      // };
-      // axios.put(`/api/quizhunters/editQuestion/${currentQuestion.id}`, questionData)
+      const updateQuestion = async () => {
+        try {
+          // Uncomment when ready for API integration
+          // const response = await axiosInstance.put(
+          //   API_PATHS.QUIZ_HUNTERS.EDIT_QUESTION(currentQuestion._id), 
+          //   questionData
+          // );
 
-      const updatedQuestions = questions.map(q =>
-        q.id === currentQuestion.id ? currentQuestion : q
-      );
-      setQuestions(updatedQuestions);
-      showAlert('Question updated successfully', 'Success', 'success');
+          // For now, just update the state
+          const updatedQuestions = questions.map(q =>
+            q._id === currentQuestion._id ? stateQuestion : q
+          );
+          setQuestions(updatedQuestions);
+          showAlert('Question updated successfully', 'Success', 'success');
+        } catch (error) {
+          console.error('Error updating question:', error);
+          showAlert('Failed to update question', 'Error', 'error');
+        }
+      };
+
+      updateQuestion();
     }
     setShowQuestionModal(false);
   };
@@ -248,20 +305,21 @@ export default function AdminQuizHunters() {
   };
 
   const confirmDeleteAllQuestions = () => {
-    // In a real implementation, you would:
-    // axios.delete('/api/quizhunters/deleteAllQuestions')
-    //   .then(() => {
-    //     setQuestions([]);
-    //     showAlert('All questions have been deleted', 'Delete Successful', 'success');
-    //   })
-    //   .catch(error => {
-    //     console.error('Error deleting all questions:', error);
-    //     showAlert('Failed to delete all questions', 'Error', 'error');
-    //   });
+    const deleteAllQuestions = async () => {
+      try {
+        // Uncomment when ready for API integration
+        // await axiosInstance.delete(API_PATHS.QUIZ_HUNTERS.DELETE_ALL_QUESTIONS);
 
-    setQuestions([]);
+        setQuestions([]);
+        showAlert('All questions have been deleted', 'Delete Successful', 'success');
+      } catch (error) {
+        console.error('Error deleting all questions:', error);
+        showAlert('Failed to delete all questions', 'Error', 'error');
+      }
+    };
+
+    deleteAllQuestions();
     setShowDeleteAllModal(false);
-    showAlert('All questions have been deleted', 'Delete Successful', 'success');
   };
 
   const handleDeleteQuestion = (id) => {
@@ -271,14 +329,24 @@ export default function AdminQuizHunters() {
 
   const confirmDeleteQuestion = () => {
     if (questionToDelete !== null) {
-      // In a real implementation, you would:
-      // axios.delete(`/api/quizhunters/deleteQuestion/${questionToDelete}`)
+      // Delete the question
+      const deleteQuestion = async () => {
+        try {
+          // Uncomment when ready for API integration
+          // await axiosInstance.delete(API_PATHS.QUIZ_HUNTERS.DELETE_QUESTION(questionToDelete));
 
-      const updatedQuestions = questions.filter(q => q.id !== questionToDelete);
-      setQuestions(updatedQuestions);
+          const updatedQuestions = questions.filter(q => q._id !== questionToDelete);
+          setQuestions(updatedQuestions);
+          showAlert('Question has been deleted', 'Delete Successful', 'success');
+        } catch (error) {
+          console.error('Error deleting question:', error);
+          showAlert('Failed to delete question', 'Error', 'error');
+        }
+      };
+
+      deleteQuestion();
       setQuestionToDelete(null);
       setShowDeleteModal(false);
-      showAlert('Question has been deleted', 'Delete Successful', 'success');
     }
   };
 
@@ -339,19 +407,12 @@ export default function AdminQuizHunters() {
     let csvContent = "question,correctAnswer,wrong1,wrong2,wrong3\n";
 
     questions.forEach(q => {
-      // Get wrong options (all options except the correct answer)
-      const wrongOptions = q.options.filter(opt => opt !== q.correct);
-      // Make sure we have exactly 3 wrong options
-      while (wrongOptions.length < 3) {
-        wrongOptions.push(''); // Add empty strings if needed
-      }
-
       // Escape any commas in the text fields
       const escapedQuestion = q.question.replace(/,/g, '","');
-      const escapedCorrect = q.correct.replace(/,/g, '","');
-      const escapedWrong1 = wrongOptions[0].replace(/,/g, '","');
-      const escapedWrong2 = wrongOptions[1].replace(/,/g, '","');
-      const escapedWrong3 = wrongOptions[2].replace(/,/g, '","');
+      const escapedCorrect = q.answer.replace(/,/g, '","');
+      const escapedWrong1 = q.option1.replace(/,/g, '","');
+      const escapedWrong2 = q.option2.replace(/,/g, '","');
+      const escapedWrong3 = q.option3.replace(/,/g, '","');
 
       csvContent += `"${escapedQuestion}","${escapedCorrect}","${escapedWrong1}","${escapedWrong2}","${escapedWrong3}"\n`;
     });
@@ -543,17 +604,6 @@ export default function AdminQuizHunters() {
           <div className="flex flex-shrink-0 space-x-2">
             <select
               className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
-              value={filterDifficulty}
-              onChange={(e) => setFilterDifficulty(e.target.value)}
-            >
-              <option value="all">All Difficulties</option>
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
-            </select>
-
-            <select
-              className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
               onChange={(e) => {
                 const action = e.target.value;
                 if (action === 'delete-all') {
@@ -581,62 +631,74 @@ export default function AdminQuizHunters() {
             // Filter questions based on search term
             questions
               .filter(q =>
-                (searchTerm === '' ||
-                  q.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  q.options.some(opt => opt.toLowerCase().includes(searchTerm.toLowerCase()))) &&
-                (filterDifficulty === 'all' || q.difficulty === filterDifficulty)
+                searchTerm === '' ||
+                q.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                q.answer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                q.option1.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                q.option2.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                q.option3.toLowerCase().includes(searchTerm.toLowerCase())
               )
-              .map((q, index) => (
-                <QuestionItem
-                  key={q.id}
-                  question={q}
-                  number={index + 1}
-                  onEdit={handleEditQuestion}
-                  onDelete={handleDeleteQuestion}
-                />
-              )).length > 0 ? (
+              .map((q, index) => {
+                // Convert backend format to UI format for QuestionItem component
+                const questionForDisplay = {
+                  id: q._id,
+                  question: q.question,
+                  options: [q.answer, q.option1, q.option2, q.option3],
+                  correct: q.answer
+                };
+                return (
+                  <QuestionItem
+                    key={q._id}
+                    question={questionForDisplay}
+                    number={index + 1}
+                    onEdit={() => handleEditQuestion(q)}
+                    onDelete={() => handleDeleteQuestion(q._id)}
+                  />
+                );
+              }).length > 0 ? (
               questions
                 .filter(q =>
-                  (searchTerm === '' ||
-                    q.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    q.options.some(opt => opt.toLowerCase().includes(searchTerm.toLowerCase()))) &&
-                  (filterDifficulty === 'all' || q.difficulty === filterDifficulty)
+                  searchTerm === '' ||
+                  q.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  q.answer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  q.option1.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  q.option2.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  q.option3.toLowerCase().includes(searchTerm.toLowerCase())
                 )
-                .map((q, index) => (
-                  <QuestionItem
-                    key={q.id}
-                    question={q}
-                    number={index + 1}
-                    onEdit={handleEditQuestion}
-                    onDelete={handleDeleteQuestion}
-                  />
-                ))
+                .map((q, index) => {
+                  // Convert backend format to UI format for QuestionItem component
+                  const questionForDisplay = {
+                    id: q._id,
+                    question: q.question,
+                    options: [q.answer, q.option1, q.option2, q.option3],
+                    correct: q.answer
+                  };
+                  return (
+                    <QuestionItem
+                      key={q._id}
+                      question={questionForDisplay}
+                      number={index + 1}
+                      onEdit={() => handleEditQuestion(q)}
+                      onDelete={() => handleDeleteQuestion(q._id)}
+                    />
+                  );
+                })
             ) : (
               <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
-                {searchTerm && filterDifficulty !== 'all' ?
-                  `No ${filterDifficulty} questions match your search for "${searchTerm}"` :
-                  searchTerm ?
-                    `No questions match your search for "${searchTerm}"` :
-                    `No ${filterDifficulty} difficulty questions found`
+                {searchTerm ?
+                  `No questions match your search for "${searchTerm}"` :
+                  'No questions found'
                 }
-                <div className="flex justify-center gap-3 mt-2">
-                  {searchTerm && (
+                {searchTerm && (
+                  <div className="flex justify-center gap-3 mt-2">
                     <button
                       onClick={() => setSearchTerm('')}
                       className="text-purple-600 hover:text-purple-800 underline"
                     >
                       Clear search
                     </button>
-                  )}
-                  {filterDifficulty !== 'all' && (
-                    <button
-                      onClick={() => setFilterDifficulty('all')}
-                      className="text-purple-600 hover:text-purple-800 underline"
-                    >
-                      Show all difficulties
-                    </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )
           ) : (
