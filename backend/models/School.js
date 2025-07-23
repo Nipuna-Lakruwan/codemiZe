@@ -31,6 +31,10 @@ const schoolSchema = new mongoose.Schema(
       lowercase: true,
       match: [/\S+@\S+\.\S+/, 'Please fill a valid email address'],
     },
+    score: {
+      type: Number,
+      default: 0,
+    },
     password: {
       type: String,
       required: [true, 'User Password is required'],
