@@ -1,20 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { FaUpload, FaPlus, FaEye, FaClock, FaPlayCircle, FaStopCircle, FaChevronLeft, FaChevronRight, FaCheck, FaTimes, FaEdit, FaTrash, FaSearch, FaFilter } from 'react-icons/fa';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import AdminBox from '../../../components/Admin/QuizComponents/AdminBox';
+import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
+import { SocketContext } from '../../../context/SocketContext';
 
 // Mock data for demonstration
-const mockQuestions = [
-  { _id: '1', question: 'What is a firewall in network security?', answer: 'A network security device that monitors and filters incoming and outgoing network traffic.' },
-  { _id: '2', question: 'What is the purpose of DNS?', answer: 'Domain Name System translates human-readable domain names to IP addresses.' },
-  { _id: '3', question: 'What is a subnet mask used for?', answer: 'It divides an IP address into network and host portions.' },
-  { _id: '4', question: 'What is DHCP?', answer: 'Dynamic Host Configuration Protocol automatically assigns IP addresses to devices on a network.' },
-  { _id: '5', question: 'What is the difference between TCP and UDP?', answer: 'TCP is connection-oriented and guarantees delivery, while UDP is connectionless and doesn\'t guarantee delivery.' },
-  { _id: '6', question: 'What is an IP address?', answer: 'A numerical label assigned to each device connected to a computer network that uses the Internet Protocol for communication.' },
-  { _id: '7', question: 'What is a router?', answer: 'A device that forwards data packets between computer networks.' },
-  { _id: '8', question: 'What is a VPN?', answer: 'Virtual Private Network extends a private network across a public network, enabling users to send and receive data as if their devices were directly connected to the private network.' }
-];
+const mockQuestions = [];
 
 const mockSchools = [
   { _id: '1', nameInShort: 'SMC', name: 'St. Mary\'s College', avatar: { url: '/c-logo.png' } },
@@ -27,11 +21,10 @@ const mockSchools = [
   { _id: '8', nameInShort: 'ISC', name: 'Isipathana College', avatar: { url: '/c-logo.png' } },
   { _id: '9', nameInShort: 'MUS', name: 'Muslim Ladies College', avatar: { url: '/c-logo.png' } },
   { _id: '10', nameInShort: 'NAL', name: 'Nalanda College', avatar: { url: '/c-logo.png' } },
-  { _id: '11', nameInShort: 'THR', name: 'Thurstan College', avatar: { url: '/c-logo.png' } },
-  { _id: '12', nameInShort: 'MAH', name: 'Mahanama College', avatar: { url: '/c-logo.png' } },
 ];
 
 export default function AdminBattleBreakers() {
+  const socket = useContext(SocketContext)
   const [activeTab, setActiveTab] = useState('Upload');
   const [questions, setQuestions] = useState(mockQuestions);
   const [filteredQuestions, setFilteredQuestions] = useState(mockQuestions);
@@ -59,6 +52,25 @@ export default function AdminBattleBreakers() {
   const timerRef = useRef(null);
   const fileInputRef = useRef(null);
   const tableRef = useRef(null);
+
+  // Fetch Questions
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      const response = await axiosInstance.get(API_PATHS.BATTLE_BREAKERS.GET_QUESTIONS);
+      setQuestions(response.data);
+      setFilteredQuestions(response.data);
+    };
+    fetchQuestions();
+  }, []);
+
+  // Fetch Schools
+  useEffect(() => {
+    const fetchSchools = async () => {
+      const response = await axiosInstance.get(API_PATHS.ADMIN.GET_ALL_SCHOOLS);
+      setSchools(response.data.schools);
+    };
+    fetchSchools();
+  }, []);
 
   // Timer effect for countdown and track attempts
   useEffect(() => {
@@ -129,48 +141,60 @@ export default function AdminBattleBreakers() {
     }
   }, [searchTerm, questions]);
 
-  const handleFileUpload = (event) => {
+  const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+    const formData = new FormData();
+    formData.append("csv", file);
 
-    // Simulate file upload - in a real application, this would parse the CSV
-    setTimeout(() => {
-      // Add some sample questions as if they were loaded from CSV
-      const newQuestions = [
-        { _id: `${Date.now()}-1`, question: 'What is NAT?', answer: 'Network Address Translation is a method of mapping an IP address space into another.' },
-        { _id: `${Date.now()}-2`, question: 'What is a MAC address?', answer: 'Media Access Control address is a unique identifier assigned to a network interface controller.' },
-        { _id: `${Date.now()}-3`, question: 'What is a switch?', answer: 'A network device that connects devices within a network and uses MAC addresses to forward data to the right destination.' },
-      ];
+    const response = await axiosInstance.post(API_PATHS.BATTLE_BREAKERS.UPLOAD_CSV, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    const newQuestions = response.data.data;
 
-      setQuestions(prevQuestions => [...prevQuestions, ...newQuestions]);
-      alert('Questions uploaded successfully!');
-    }, 1000);
+    setQuestions(prevQuestions => [...prevQuestions, ...newQuestions]);
+    alert('Questions uploaded successfully!');
   };
 
-  const handleAddQuestion = () => {
+  const handleAddQuestion = async () => {
     if (!questionText.trim() || !answerText.trim()) {
       alert('Question and answer are required!');
       return;
     }
 
     if (editingQuestionId) {
-      // Update existing question
-      setQuestions(prevQuestions =>
-        prevQuestions.map(q =>
-          q._id === editingQuestionId
-            ? { ...q, question: questionText, answer: answerText }
-            : q
-        )
-      );
+      try {
+        await axiosInstance.put(API_PATHS.BATTLE_BREAKERS.EDIT_QUESTION(editingQuestionId), {
+          question: questionText,
+          answer: answerText
+        });
+        setQuestions(prevQuestions =>
+          prevQuestions.map(q =>
+            q._id === editingQuestionId
+              ? { ...q, question: questionText, answer: answerText }
+              : q
+          )
+        );
+      } catch (error) {
+        console.error("Error editing question:", error);
+      }
+
       setEditingQuestionId(null);
     } else {
       // Add new question
       const newQuestion = {
-        _id: `${Date.now()}`,
         question: questionText,
         answer: answerText
       };
-      setQuestions(prevQuestions => [...prevQuestions, newQuestion]);
+      
+      try {
+        const response = await axiosInstance.post(API_PATHS.BATTLE_BREAKERS.ADD_QUESTION, newQuestion);
+        setQuestions(prevQuestions => [...prevQuestions, response.data]);
+      } catch (error) {
+        console.error("Error adding question:", error);
+      }
     }
 
     setQuestionText('');
@@ -187,6 +211,7 @@ export default function AdminBattleBreakers() {
 
   const handleDeleteQuestion = (questionId) => {
     if (window.confirm('Are you sure you want to delete this question?')) {
+      axiosInstance.delete(API_PATHS.BATTLE_BREAKERS.DELETE_QUESTION(questionId));
       setQuestions(prevQuestions => prevQuestions.filter(q => q._id !== questionId));
 
       // If we're deleting the current question, adjust currentQuestionIndex
@@ -200,6 +225,14 @@ export default function AdminBattleBreakers() {
 
   const startQuestion = () => {
     if (questions.length === 0) return;
+    // Emit the active question via socket
+    const currentQuestion = questions[currentQuestionIndex];
+    if (currentQuestion) {
+      socket.emit('battleBreakers-startQuestion', {
+        _id: currentQuestion._id,
+        question: currentQuestion.question,
+      });
+    }
 
     setTimeRemaining(allocatedTime);
     setIsQuestionActive(true);
@@ -430,6 +463,13 @@ export default function AdminBattleBreakers() {
     document.body.style.userSelect = 'none';
   };
 
+  const handleDeleteAll = async () => {
+    if (window.confirm('Are you sure you want to delete all questions?')) {
+      await axiosInstance.delete(API_PATHS.BATTLE_BREAKERS.DELETE_ALL_QUESTIONS);
+      setQuestions([]);
+    }
+  }
+
   const handleResizeMove = (e) => {
     if (!isResizing) return;
 
@@ -592,11 +632,7 @@ export default function AdminBattleBreakers() {
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        if (window.confirm('Are you sure you want to delete all questions?')) {
-                          setQuestions([]);
-                        }
-                      }}
+                      onClick={handleDeleteAll}
                       className="w-32 h-8 bg-sky-600 rounded-[3px] text-white text-xs flex items-center justify-center"
                       disabled={questions.length === 0}
                     >
@@ -777,7 +813,7 @@ export default function AdminBattleBreakers() {
               <img src="/under-line.png" alt="underline" className="w-full h-1" />
 
               <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-600">Table showing all 12 school teams</div>
+                <div className="text-sm text-gray-600"></div>
                 <div className="flex gap-2 items-center">
                   {isResizing && (
                     <span className="text-xs text-purple-800 italic">Resizing column...</span>

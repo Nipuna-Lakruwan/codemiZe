@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
@@ -6,8 +6,10 @@ import GameNodeMini from '../../../components/Games/GameNodeMini';
 import { useAuth } from '../../../context/AuthContext';
 import axiosInstance from '../../../utils/axiosInstance';
 import { API_PATHS } from '../../../utils/apiPaths';
+import { SocketContext } from '../../../context/SocketContext';
 
 export default function BattleBreakers() {
+  const socket = useContext(SocketContext);
   // Game state
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -15,64 +17,34 @@ export default function BattleBreakers() {
   const [isPressedBuzzer, setIsPressedBuzzer] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
   const [totalQuestionsCount, setTotalQuestionsCount] = useState(10);
+  const [questions, setQuestions] = useState([    {
+      _id: "",
+      question: "",
+      answer: ""
+    },]);
 
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState(30); // 30 seconds per question
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
-  // Questions data - sample questions for the game
-  const questions = [
-    {
-      _id: "687b997e2e66729e5bdcda72",
-      question: "What programming language is used to build React applications?",
-      answer: "JavaScript"
-    },
-    {
-      _id: "1233",
-      question: "What does HTML stand for?",
-      answer: "Hypertext Markup Language"
-    },
-    {
-      _id: "1234",
-      question: "What does CSS stand for?",
-      answer: "Cascading Style Sheets"
-    },
-    {
-      _id: "1235",
-      question: "What data structure follows the LIFO principle?",
-      answer: "Stack"
-    },
-    {
-      _id: "1236",
-      question: "Which SQL command is used to retrieve data from a database?",
-      answer: "SELECT"
-    },
-    {
-      _id: "1237",
-      question: "What is the time complexity of a binary search?",
-      answer: "O(log n)"
-    },
-    {
-      _id: "1238",
-      question: "What does API stand for?",
-      answer: "Application Programming Interface"
-    },
-    {
-      _id: "1239",
-      question: "Which protocol is used to load webpages?",
-      answer: "HTTP/HTTPS"
-    },
-    {
-      _id: "1240",
-      question: "What is the purpose of a firewall?",
-      answer: "To monitor and filter incoming and outgoing network traffic"
-    },
-    {
-      _id: "1241",
-      question: "Which encryption algorithm is considered the most secure?",
-      answer: "AES-256"
+  useEffect(() => {
+    // Listen for buzzer press events from the server
+    if (socket) {
+      socket.on("battleBreakers-startQuestionclient", (data) => {
+        setQuestions(() => [
+          {
+            _id: data._id,
+            question: data.question,
+          },
+        ]);
+      });
+      
+      // Clean up the event listener when component unmounts
+      return () => {
+        socket.off("battleBreakers-startQuestionclient");
+      };
     }
-  ];
+  }, [socket]);
 
   // Mock buzzer sound functionality
   const playBuzzerSound = () => {

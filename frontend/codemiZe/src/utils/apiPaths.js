@@ -31,6 +31,7 @@ export const API_PATHS = {
     GET_QUESTIONS: "/api/v1/battle-breakers",
     ADD_QUESTION: "/api/v1/battle-breakers/addQuestion",
     UPLOAD_CSV: "/api/v1/battle-breakers/uploadCSV",
+    EDIT_QUESTION: (questionId) => `/api/v1/battle-breakers/editQuestion/${questionId}`,
     DELETE_QUESTION: (questionId) => `/api/v1/battle-breakers/deleteQuestion/${questionId}`,
     DELETE_ALL_QUESTIONS: "/api/v1/battle-breakers/deleteAllQuestions",
     BUZZER_PRESS: "/api/v1/battle-breakers/press",
