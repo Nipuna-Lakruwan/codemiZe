@@ -23,8 +23,8 @@ export default function UserManagement() {
 
       try {
         setSchools(scls.data.schools);
-        setJudges(jds.data.users);
-        setUsers(usrs.data.users);1
+        setJudges(jds.data.judges);
+        setUsers(usrs.data.users);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -39,9 +39,9 @@ export default function UserManagement() {
   const [showAddUserModal, setShowAddUserModal] = useState(false);
 
   // State for form inputs
-  const [newSchool, setNewSchool] = useState({ name: '', city: '', nameInShort: '', username: '', password: '' });
-  const [newJudge, setNewJudge] = useState({ name: '', username: '', password: '' });
-  const [newUser, setNewUser] = useState({ name: '', username: '', password: '', role: 'Staff' });
+  const [newSchool, setNewSchool] = useState({ name: '', city: '', nameInShort: '', email: '', password: '' });
+  const [newJudge, setNewJudge] = useState({ name: '', email: '', password: '' });
+  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'Dashboard' });
 
   // State for file uploads
   const [schoolLogo, setSchoolLogo] = useState(null);
@@ -90,7 +90,7 @@ export default function UserManagement() {
         avatar: { url: schoolLogo ? URL.createObjectURL(schoolLogo) : '/c-logo.png' }
       }]);
     }
-    setNewSchool({ name: '', city: '', nameInShort: '', username: '', password: '' });
+    setNewSchool({ name: '', city: '', nameInShort: '', email: '', password: '' });
     setSchoolLogo(null);
     setShowAddSchoolModal(false);
   };
@@ -113,7 +113,7 @@ export default function UserManagement() {
         avatar: { url: judgePhoto ? URL.createObjectURL(judgePhoto) : '/c-logo.png' }
       }]);
     }
-    setNewJudge({ name: '', username: '', password: '' });
+    setNewJudge({ name: '', email: '', password: '' });
     setJudgePhoto(null);
     setShowAddJudgeModal(false);
   };
@@ -136,7 +136,7 @@ export default function UserManagement() {
         avatar: { url: userPhoto ? URL.createObjectURL(userPhoto) : '/c-logo.png' }
       }]);
     }
-    setNewUser({ name: '', username: '', password: '', role: 'Staff' });
+    setNewUser({ name: '', email: '', password: '', role: 'Staff' });
     setUserPhoto(null);
     setShowAddUserModal(false);
   };
@@ -152,7 +152,7 @@ export default function UserManagement() {
         name: school.name,
         city: school.city,
         nameInShort: school.nameInShort,
-        username: school.username,
+        email: school.email,
         password: '' // We don't populate password for security reasons
       });
       setShowAddSchoolModal(true);
@@ -160,7 +160,7 @@ export default function UserManagement() {
       const judge = judges.find(j => j.id === id);
       setNewJudge({
         name: judge.name,
-        username: judge.username,
+        email: judge.email,
         password: '' // We don't populate password for security reasons
       });
       setShowAddJudgeModal(true);
@@ -168,7 +168,7 @@ export default function UserManagement() {
       const user = users.find(u => u.id === id);
       setNewUser({
         name: user.name,
-        username: user.username,
+        email: user.email,
         password: '', // We don't populate password for security reasons
         role: user.role
       });
@@ -198,7 +198,7 @@ export default function UserManagement() {
           onAdd={() => {
             setEditingId(null);
             setEditingType(null);
-            setNewSchool({ name: '', city: '', nameInShort: '', username: '', password: '' });
+            setNewSchool({ name: '', city: '', nameInShort: '', email: '', password: '' });
             setSchoolLogo(null);
             setShowAddSchoolModal(true);
           }}
@@ -212,7 +212,7 @@ export default function UserManagement() {
           onAdd={() => {
             setEditingId(null);
             setEditingType(null);
-            setNewJudge({ name: '', username: '', password: '' });
+            setNewJudge({ name: '', email: '', password: '' });
             setJudgePhoto(null);
             setShowAddJudgeModal(true);
           }}
@@ -226,7 +226,7 @@ export default function UserManagement() {
           onAdd={() => {
             setEditingId(null);
             setEditingType(null);
-            setNewUser({ name: '', username: '', password: '', role: 'Staff' });
+            setNewUser({ name: '', email: '', password: '', role: 'Staff' });
             setUserPhoto(null);
             setShowAddUserModal(true);
           }}
