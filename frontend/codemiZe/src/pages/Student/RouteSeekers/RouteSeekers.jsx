@@ -9,14 +9,17 @@ export default function RouteSeekers() {
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
+  const [activity, setActivity] = useState(null); // 'questionnaire' or 'network'
+  const [questionnaireCompleted, setQuestionnaireCompleted] = useState(false);
+  const [networkCompleted, setNetworkCompleted] = useState(false);
 
   // PDF viewer state
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(5); // Set to actual number of PDF pages
+  const [totalPages, setTotalPages] = useState(5);
   const [showFullscreenPDF, setShowFullscreenPDF] = useState(false);
 
   // Timer state
-  const [timeRemaining, setTimeRemaining] = useState(45 * 60); // 45 minutes in seconds
+  const [timeRemaining, setTimeRemaining] = useState(45 * 60);
   const [showTimeWarning, setShowTimeWarning] = useState(false);
   const [timeIsUp, setTimeIsUp] = useState(false);
 
@@ -27,6 +30,14 @@ export default function RouteSeekers() {
   const [showResourcesModal, setShowResourcesModal] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Questionnaire state
+  const [answers, setAnswers] = useState(['', '', '']);
+  const questions = [
+    "What is the purpose of a default gateway in a network?",
+    "Explain the difference between a router and a switch.",
+    "How does subnetting help in network management?"
+  ];
+
   // Listen for messages from popup window
   useEffect(() => {
     const handleMessage = (event) => {
@@ -34,7 +45,6 @@ export default function RouteSeekers() {
         if (currentPage > 1) {
           const newPage = currentPage - 1;
           setCurrentPage(newPage);
-          // Update the popup
           if (event.source) {
             event.source.postMessage({
               action: 'updatePage',
@@ -47,7 +57,6 @@ export default function RouteSeekers() {
         if (currentPage < totalPages) {
           const newPage = currentPage + 1;
           setCurrentPage(newPage);
-          // Update the popup
           if (event.source) {
             event.source.postMessage({
               action: 'updatePage',
@@ -71,12 +80,10 @@ export default function RouteSeekers() {
     if (isGameStarted && !gameCompleted && !timeIsUp && timeRemaining > 0) {
       timer = setInterval(() => {
         setTimeRemaining(prev => {
-          // Show warning when 5 minutes remain
           if (prev === 5 * 60) {
             setShowTimeWarning(true);
             setTimeout(() => setShowTimeWarning(false), 5000);
           }
-          // Show warning when 1 minute remains
           else if (prev === 60) {
             setShowTimeWarning(true);
             setTimeout(() => setShowTimeWarning(false), 5000);
@@ -134,26 +141,35 @@ export default function RouteSeekers() {
 
   const handleSubmitPacketTracer = () => {
     if (isFileValid) {
+      setNetworkCompleted(true);
+      if (questionnaireCompleted) {
+        setGameCompleted(true);
+      }
+    }
+  };
+
+  // Questionnaire handlers
+  const handleAnswerChange = (index, value) => {
+    const newAnswers = [...answers];
+    newAnswers[index] = value;
+    setAnswers(newAnswers);
+  };
+
+  const handleSubmitQuestionnaire = () => {
+    setQuestionnaireCompleted(true);
+    if (networkCompleted) {
       setGameCompleted(true);
     }
   };
 
   // Game end handler (time's up)
   const handleGameEnd = () => {
-    // Show the time's up modal but don't auto-submit
-    // The user will see their file status and can proceed to results if a file is uploaded
-    // Otherwise, they'll have one last chance to upload a file
-
-    // After a reasonable delay to let the user respond, proceed with auto-submission
-    // if they haven't taken action
     if (isFileValid && uploadedFile) {
-      // Set a longer timeout to auto-submit if the user doesn't click "View Results"
       setTimeout(() => {
-        // Only auto-submit if the time's up modal is still showing (user hasn't clicked)
         if (timeIsUp && !gameCompleted) {
           setGameCompleted(true);
         }
-      }, 15000); // 15 seconds delay
+      }, 15000);
     }
   };
 
@@ -299,6 +315,168 @@ export default function RouteSeekers() {
     }
   };
 
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { 
+        duration: 0.4,
+        ease: "easeOut"
+      }
+    },
+    hover: {
+      scale: 1.05,
+      boxShadow: "0px 0px 20px rgba(140, 20, 252, 0.4)",
+      transition: {
+        duration: 0.2
+      }
+    }
+  };
+
+  // Activity Selection Screen
+  const ActivitySelection = () => (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 relative">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-white mb-2">Route Seekers</h1>
+        <p className="text-white/80">Complete both activities to get full marks</p>
+      </div>
+
+      <div className="flex justify-center gap-10">
+        {/* Questionnaire Card */}
+        <motion.div
+          className="w-80 h-96 bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 cursor-pointer"
+          variants={cardVariants}
+          whileHover="hover"
+          onClick={() => setActivity('questionnaire')}
+        >
+          <div className="bg-violet-900/30 rounded-full p-4 mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-white mb-4">Questionnaire</h2>
+          <p className="text-white/70 text-center mb-6">
+            Answer network-related questions to test your knowledge
+          </p>
+          <div className={`px-4 py-1 rounded-full ${questionnaireCompleted ? 'bg-green-500/20 text-green-400' : 'bg-violet-500/20 text-violet-400'}`}>
+            {questionnaireCompleted ? 'Completed' : 'Not Started'}
+          </div>
+        </motion.div>
+
+        {/* Network Diagram Card */}
+        <motion.div
+          className="w-80 h-96 bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 cursor-pointer"
+          variants={cardVariants}
+          whileHover="hover"
+          onClick={() => setActivity('network')}
+        >
+          <div className="bg-violet-900/30 rounded-full p-4 mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16l2.879-2.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-white mb-4">Network Diagram</h2>
+          <p className="text-white/70 text-center mb-6">
+            Design and upload your network solution using Packet Tracer
+          </p>
+          <div className={`px-4 py-1 rounded-full ${networkCompleted ? 'bg-green-500/20 text-green-400' : 'bg-violet-500/20 text-violet-400'}`}>
+            {networkCompleted ? 'Completed' : 'Not Started'}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Progress status */}
+      <div className="mt-10 text-center">
+        <div className="inline-flex items-center bg-stone-800/40 px-4 py-2 rounded-full">
+          <span className="text-white mr-4">Progress:</span>
+          <div className="flex items-center">
+            <div className={`w-6 h-6 rounded-full mr-2 ${questionnaireCompleted ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+            <span className="text-white">Questionnaire</span>
+          </div>
+          <div className="mx-4 text-white">+</div>
+          <div className="flex items-center">
+            <div className={`w-6 h-6 rounded-full mr-2 ${networkCompleted ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+            <span className="text-white">Network Diagram</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Questionnaire Activity
+  const QuestionnaireActivity = () => (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      {/* Back to selection button */}
+      <button 
+        className="absolute top-4 left-4 text-white flex items-center"
+        onClick={() => setActivity(null)}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to Activities
+      </button>
+
+      {/* Main container */}
+      <motion.div
+        className="w-[1029px] h-[566px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 relative"
+        variants={pdfContainerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <h2 className="text-2xl font-bold text-white mb-6">Questionnaire</h2>
+        
+        <div className="w-[973px] h-[466px] bg-zinc-300 rounded-md flex flex-col p-6 overflow-auto">
+          {questions.map((question, index) => (
+            <div key={index} className="mb-8">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                Question {index + 1}: {question}
+              </h3>
+              <textarea
+                value={answers[index]}
+                onChange={(e) => handleAnswerChange(index, e.target.value)}
+                className="w-full h-32 p-3 rounded-md bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                placeholder="Type your answer here..."
+                disabled={questionnaireCompleted}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Submit button */}
+        {!questionnaireCompleted ? (
+          <motion.button
+            className="mt-4 px-6 py-2 bg-violet-700 text-white rounded-md font-medium"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleSubmitQuestionnaire}
+            disabled={answers.some(a => a.trim() === '')}
+          >
+            Submit Questionnaire
+          </motion.button>
+        ) : (
+          <div className="mt-4 px-6 py-2 bg-green-600 text-white rounded-md font-medium flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Questionnaire Submitted
+          </div>
+        )}
+
+        {/* Network status */}
+        <div className="absolute bottom-6 right-6">
+          <div className="flex items-center">
+            <span className="text-white mr-2">Network Diagram:</span>
+            <div className={`px-3 py-1 rounded-full ${networkCompleted ? 'bg-green-500/20 text-green-400' : 'bg-violet-500/20 text-violet-400'}`}>
+              {networkCompleted ? 'Completed' : 'Pending'}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+
   return (
     <GameLayout gameName={isGameStarted && !gameCompleted ? "Route Seekers" : ""}>
       {!isGameStarted ? (
@@ -357,23 +535,28 @@ export default function RouteSeekers() {
                 Well Done!
               </h3>
               <p className="text-xl text-white/80">
-                Your Packet Tracer network solution has been successfully submitted!
+                {questionnaireCompleted && networkCompleted 
+                  ? "You've completed both activities and earned full marks!" 
+                  : "You've completed one activity. Submit both for full marks next time!"}
               </p>
             </motion.div>
 
-            {/* File name display */}
-            {uploadedFile && (
-              <motion.div
-                className="bg-purple-900/30 border border-purple-500/30 rounded-md p-4 mb-8 w-full max-w-md"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-              >
-                <p className="text-white text-center">
-                  <span className="font-medium">Submitted file:</span> {uploadedFile.name}
+            {/* Activity status */}
+            <div className="grid grid-cols-2 gap-6 w-full max-w-2xl mb-8">
+              <div className="bg-purple-900/30 rounded-md p-4 text-center">
+                <h4 className="text-lg font-semibold text-white mb-2">Questionnaire</h4>
+                <p className={questionnaireCompleted ? "text-green-400" : "text-red-400"}>
+                  {questionnaireCompleted ? "Completed" : "Not Completed"}
                 </p>
-              </motion.div>
-            )}
+              </div>
+              <div className="bg-purple-900/30 rounded-md p-4 text-center">
+                <h4 className="text-lg font-semibold text-white mb-2">Network Diagram</h4>
+                <p className={networkCompleted ? "text-green-400" : "text-red-400"}>
+                  {networkCompleted ? "Completed" : "Not Completed"}
+                </p>
+                {uploadedFile && <p className="text-white/70 text-sm mt-1">File: {uploadedFile.name}</p>}
+              </div>
+            </div>
 
             {/* Road Map button with map icon */}
             <motion.button
@@ -392,8 +575,12 @@ export default function RouteSeekers() {
             </motion.button>
           </div>
         </div>
+      ) : !activity ? (
+        <ActivitySelection />
+      ) : activity === 'questionnaire' ? (
+        <QuestionnaireActivity />
       ) : (
-        // Active game screen with PDF viewer
+        // Active game screen with Network Diagram
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
           {/* Time warning popup */}
           <AnimatePresence>
@@ -546,7 +733,6 @@ export default function RouteSeekers() {
                         ? 'bg-violet-700 text-white hover:bg-violet-600'
                         : 'bg-violet-900/40 text-white/50 cursor-not-allowed'} transition-colors`}
                       onClick={() => {
-                        // Just close the modal and keep the file - don't submit until time's up
                         if (isFileValid) {
                           setShowUploadModal(false);
                         }
@@ -718,6 +904,25 @@ export default function RouteSeekers() {
                 </motion.button>
               </div>
             )}
+          </div>
+
+          {/* Back to selection button */}
+          <button 
+            className="absolute top-4 left-4 text-white flex items-center"
+            onClick={() => setActivity(null)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Activities
+          </button>
+
+          {/* Questionnaire status */}
+          <div className="absolute top-4 right-4 flex items-center">
+            <span className="text-white mr-2">Questionnaire:</span>
+            <div className={`px-3 py-1 rounded-full ${questionnaireCompleted ? 'bg-green-500/20 text-green-400' : 'bg-violet-500/20 text-violet-400'}`}>
+              {questionnaireCompleted ? 'Completed' : 'Pending'}
+            </div>
           </div>
 
           {/* Main PDF viewer container */}

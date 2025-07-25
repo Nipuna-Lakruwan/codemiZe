@@ -10,52 +10,42 @@ import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPaths';
 import { imagePath } from '../../utils/helper';
 
-// Game data with positions and status
+// Game data with positions and status (status: 'completed', 'active', 'available', 'locked')
 const mockGames = [
   {
     id: 1,
     title: 'Quiz Hunters',
     icon: '/quiz_hunters_logo-removebg 1.png',
     pos: { left: '15%', top: '75%' },
-    isCompleted: true,     // This game is completed
-    isAvailable: true,     // This game is available
-    isActive: true,
+    status: 'completed',
   },
   {
     id: 2,
     title: 'Code Crushers',
     icon: '/code crushers logo 1.png',
     pos: { left: '32%', top: '40%' },
-    isCompleted: false,    // Not completed
-    isAvailable: true,     // But available to play
-    isActive: true,
+    status: 'active',
   },
   {
     id: 3,
     title: 'Circuit Smashers',
     icon: '/circuit samshers logo 1.png',
     pos: { left: '50%', top: '75%' },
-    isCompleted: false,    // Not completed
-    isAvailable: true,    // Not available yet
-    isActive: false,
+    status: 'available',
   },
   {
     id: 4,
     title: 'Route Seekers',
     icon: '/circuit samshers logo 1.png',
     pos: { left: '68%', top: '40%' },
-    isCompleted: false,    // Not completed
-    isAvailable: true,    // Not available yet
-    isActive: false,
+    status: 'available',
   },
   {
     id: 5,
     title: 'Battle Breakers',
     icon: '/Battle breakers logo 1.png',
     pos: { left: '85%', top: '70%' },
-    isCompleted: false,    // Not completed
-    isAvailable: true,    // Not available yet
-    isActive: false,
+    status: 'available',
   },
 ];
 
@@ -110,16 +100,26 @@ export default function GamesRoadmap() {
         const response = await axiosInstance.get(API_PATHS.GAMES.GET_ALL_GAMES);
         const backendGames = response.data;
 
-        // Merge with mock data
+
+        // Merge with mock data and compute status
         const mergedGames = mockGames.map((mockGame) => {
           const backendGame = backendGames.find(bg => bg.name === mockGame.title);
+          let status = mockGame.status;
+          if (backendGame) {
+            if (backendGame.isCompleted) {
+              status = 'completed';
+            } else if (backendGame.isActive) {
+              status = 'active';
+            } else {
+              status = 'available';
+            }
+          }
           return {
             ...mockGame,
             _id: backendGame?._id || null,
             icon: imagePath(backendGame?.icon?.url) || mockGame.icon,
             allocateTime: backendGame?.allocateTime || 0,
-            isCompleted: backendGame?.isCompleted ?? mockGame.isCompleted,
-            isAvailable: backendGame?.isActive ?? mockGame.isAvailable
+            status,
           };
         });
 
