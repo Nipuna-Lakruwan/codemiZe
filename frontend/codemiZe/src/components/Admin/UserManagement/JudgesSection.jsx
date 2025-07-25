@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
 import AdminBox from '../QuizComponents/AdminBox';
+import { imagePath } from '../../../utils/helper';
 
 export default function JudgesSection({
   judges,
@@ -30,12 +31,12 @@ export default function JudgesSection({
         <div className="flex flex-col space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar">
           {judges.map(judge => (
             <div
-              key={judge.id}
+              key={judge._id}
               className="bg-white rounded-md shadow-[3px_6px_14.2px_-2px_rgba(0,0,0,0.25)] border-l-[15px] border-purple-400 flex items-center h-16 relative overflow-hidden w-full"
             >
               {/* Judge Photo */}
               <div className="w-14 h-16 bg-neutral-500 flex items-center justify-center">
-                <img src={judge.avatar.url} alt={judge.name} className="max-w-full max-h-full object-cover" />
+                <img src={imagePath(judge.avatar.url)} alt={judge.name} className="max-w-full max-h-full object-cover" />
               </div>
 
               {/* Judge Info */}

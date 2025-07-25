@@ -10,6 +10,7 @@ const router = express.Router();
 
 // Public routes
 router.get("/users", protect, requireAdmin, getAllUsers);
+router.get("/judges", protect, requireAdmin, getAllUsers);
 router.get("/schools", protect, requireAdminorJudge, getAllSchools);
 router.delete("/school/:schoolId", protect, requireAdmin, deleteUser);
 

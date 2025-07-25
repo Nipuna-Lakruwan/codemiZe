@@ -16,6 +16,7 @@ export const API_PATHS = {
   },
   ADMIN: {
     GET_ALL_USERS: "/api/v1/admin/users",
+    GET_ALL_JUDGES: "/api/v1/admin/judges",
     GET_ALL_SCHOOLS: "/api/v1/admin/schools",
     GET_USER: (id) => `/api/v1/admin/users/${id}`,
     CREATE_USER: "/api/v1/admin/users",

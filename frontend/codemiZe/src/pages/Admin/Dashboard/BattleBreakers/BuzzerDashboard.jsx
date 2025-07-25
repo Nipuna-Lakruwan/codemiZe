@@ -4,7 +4,7 @@ import { SocketContext } from '../../../../context/SocketContext';
 import { imagePath } from '../../../../utils/helper';
 
 // QuestionDisplay Component
-const QuestionDisplay = ({ question, questionNumber, totalQuestions, timeRemaining }) => {
+const QuestionDisplay = ({ question, questionNumber, timeRemaining }) => {
   return (
     <motion.div
       className="w-[568px] h-[709px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-purple-500/20 backdrop-blur-[8px] p-6 flex flex-col items-center justify-center"
@@ -43,7 +43,7 @@ const QuestionDisplay = ({ question, questionNumber, totalQuestions, timeRemaini
 
         {/* Question text */}
         <div className="text-center text-black text-xl font-semibold font-['Inter'] w-full mx-auto">
-          {question?.text || "What is HTML Stands for?"}
+          {question?.question}
         </div>
       </div>
     </motion.div>
@@ -193,36 +193,8 @@ export default function BuzzerDashboard() {
   
   // State for real-time buzzer presses
   const [buzzerPresses, setBuzzerPresses] = useState([]);
-  const [currentQuestion, setCurrentQuestion] = useState(1);
-
-  // Sample questions data - static for display purposes
-  const questions = [
-    {
-      id: 1,
-      text: "What programming language is used to build React applications?",
-      answer: "JavaScript"
-    },
-    {
-      id: 2,
-      text: "What does HTML stand for?",
-      answer: "Hypertext Markup Language"
-    },
-    {
-      id: 3,
-      text: "What does CSS stand for?",
-      answer: "Cascading Style Sheets"
-    },
-    {
-      id: 4,
-      text: "What data structure follows the LIFO principle?",
-      answer: "Stack"
-    },
-    {
-      id: 5,
-      text: "Which SQL command is used to retrieve data from a database?",
-      answer: "SELECT"
-    }
-  ];
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [questions, setQuestions] = useState([{_id: "", question: ""}])
 
   // Function to calculate response time (mock implementation)
   const calculateResponseTime = (timestamp) => {
@@ -239,7 +211,7 @@ export default function BuzzerDashboard() {
         setBuzzerPresses((prevPresses) => [
           ...prevPresses,
           {
-            _id: data._id || Date.now(), // Fallback ID if not provided
+            _id: data._id,
             team: {
               name: data.name,
               city: data.city,
@@ -250,10 +222,22 @@ export default function BuzzerDashboard() {
           },
         ]);
       });
+
+      socket.on("battleBreakers-startQuestionclient", (data) => {
+        clearBuzzerPresses();
+        setQuestions(() => [
+          {
+            _id: data._id,
+            question: data.question,
+          },
+        ]);
+        setCurrentQuestion(prev => prev + 1);
+      });
       
       // Clean up the event listener when component unmounts
       return () => {
         socket.off("buzzerPress");
+        socket.off("battleBreakers-startQuestionclient");
       };
     }
   }, [socket]);
@@ -313,7 +297,7 @@ export default function BuzzerDashboard() {
         </motion.div>
 
         {/* Admin Controls - positioned at bottom */}
-        <div className="absolute bottom-8 right-8 z-30 flex gap-4">
+        {/* <div className="absolute bottom-8 right-8 z-30 flex gap-4">
           <button
             onClick={clearBuzzerPresses}
             className="px-4 py-2 bg-red-600/80 text-white rounded-md hover:bg-red-600 transition-colors"
@@ -326,7 +310,7 @@ export default function BuzzerDashboard() {
           >
             Next Question
           </button>
-        </div>
+        </div> */}
 
         {/* Connection Status Indicator */}
         {/* <div className="absolute top-20 right-8 z-30">

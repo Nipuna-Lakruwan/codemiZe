@@ -4,7 +4,7 @@ import User from "../../models/User.js";
 // Get all users (Admin only)
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password -__v");
+    const users = await User.find({ role: { $in: ["Admin", "Dashboard"] } }).select("-password -__v");
     const schools = await School.find().select("-password -__v");
     
     res.status(200).json({
@@ -14,6 +14,17 @@ export const getAllUsers = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: "Error getting users", error: err.message });
+  }
+};
+
+export const getAllJudges = async (req, res) => {
+  try {
+    const judges = await User.find({ role: "Judge" }).select("-password -__v");
+    res.status(200).json({
+      judges,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error getting judges", error: err.message });
   }
 };
 

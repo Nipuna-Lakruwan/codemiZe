@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import SchoolsSection from '../../../components/Admin/UserManagement/SchoolsSection';
 import JudgesSection from '../../../components/Admin/UserManagement/JudgesSection';
@@ -7,27 +7,31 @@ import SchoolModal from '../../../components/Admin/UserManagement/SchoolModal';
 import JudgeModal from '../../../components/Admin/UserManagement/JudgeModal';
 import UserModal from '../../../components/Admin/UserManagement/UserModal';
 import ScrollbarStyles from '../../../components/Admin/UserManagement/ScrollbarStyles';
+import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
 
 export default function UserManagement() {
-  // Mock data for Schools, Judges, and Users
-  const [schools, setSchools] = useState([
-    { id: 1, name: 'Royal College', city: 'Colombo', nameInShort: 'RC', username: 'royal_college', avatar: { url: '/c-logo.png' } },
-    { id: 2, name: 'Ananda College', city: 'Colombo', nameInShort: 'AC', username: 'ananda_college', avatar: { url: '/c-logo.png' } },
-    { id: 3, name: 'St. Joseph\'s College', city: 'Colombo', nameInShort: 'SJC', username: 'stjosephs_college', avatar: { url: '/c-logo.png' } },
-    { id: 4, name: 'D.S. Senanayake College', city: 'Colombo', nameInShort: 'DSC', username: 'dssenanayake_college', avatar: { url: '/c-logo.png' } }
-  ]);
+  const [schools, setSchools] = useState([]);
+  const [judges, setJudges] = useState([]);
+  const [users, setUsers] = useState([]);
 
-  const [judges, setJudges] = useState([
-    { id: 1, name: 'John Smith', username: 'john_smith', avatar: { url: '/c-logo.png' } },
-    { id: 2, name: 'Sarah Johnson', username: 'sarah_johnson', avatar: { url: '/c-logo.png' } },
-    { id: 3, name: 'Michael Brown', username: 'michael_brown', avatar: { url: '/c-logo.png' } }
-  ]);
+  useEffect(() => {
+    const getInfo = async () => {
+      const scls = await axiosInstance.get(API_PATHS.ADMIN.GET_ALL_SCHOOLS);
+      const jds = await axiosInstance.get(API_PATHS.ADMIN.GET_ALL_JUDGES);
+      const usrs = await axiosInstance.get(API_PATHS.ADMIN.GET_ALL_USERS);
 
-  const [users, setUsers] = useState([
-    { id: 1, name: 'Admin User', username: 'admin_user', role: 'Admin', avatar: { url: '/c-logo.png' } },
-    { id: 2, name: 'Support Staff', username: 'support_staff', role: 'Staff', avatar: { url: '/c-logo.png' } },
-    { id: 3, name: 'Content Manager', username: 'content_manager', role: 'Staff', avatar: { url: '/c-logo.png' } }
-  ]);
+      try {
+        setSchools(scls.data.schools);
+        setJudges(jds.data.users);
+        setUsers(usrs.data.users);1
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    }
+
+    getInfo();
+  }, []);
 
   // State for modals
   const [showAddSchoolModal, setShowAddSchoolModal] = useState(false);
