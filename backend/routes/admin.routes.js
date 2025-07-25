@@ -4,7 +4,7 @@ import {
   requireAdmin, 
   requireAdminorJudge
 } from "../middleware/roleMiddleware.js";
-import { deleteUser, getAllJudges, getAllSchools, getAllUsers } from "../controllers/Common/admin.controller.js";
+import { deleteSchool, deleteUser, editSchool, editUser, getAllJudges, getAllSchools, getAllUsers } from "../controllers/Common/admin.controller.js";
 
 const router = express.Router();
 
@@ -12,6 +12,9 @@ const router = express.Router();
 router.get("/users", protect, requireAdmin, getAllUsers);
 router.get("/judges", protect, requireAdmin, getAllJudges);
 router.get("/schools", protect, requireAdminorJudge, getAllSchools);
-router.delete("/school/:schoolId", protect, requireAdmin, deleteUser);
+router.put("/schools/:id", protect, requireAdmin, editSchool);
+router.put("/users/:id", protect, requireAdmin, editUser);
+router.delete("/school/:schoolId", protect, requireAdmin, deleteSchool);
+router.delete("/user/:userId", protect, requireAdmin, deleteUser);
 
 export default router;

@@ -73,7 +73,7 @@ export default function UserManagement() {
   };
 
   // Handle add/edit school
-  const handleAddOrUpdateSchool = () => {
+  const handleAddOrUpdateSchool = async () => {
     if (editingId !== null) {
       setSchools(schools.map(school =>
         school.id === editingId
@@ -83,7 +83,11 @@ export default function UserManagement() {
       setEditingId(null);
       setEditingType(null);
     } else {
-      const newId = Math.max(0, ...schools.map(s => s.id)) + 1;
+      try {
+       await axiosInstance.post(API_PATHS.AUTH.CREATE_SCHOOL, { name: newSchool.name, email: newSchool.email, city: newSchool.city, nameInShort: newSchool.nameInShort, password: newSchool.password, avatar: schoolLogo, role: "School" });
+      } catch (error) {
+        console.error('Error creating school:', error);
+      }
       setSchools([...schools, {
         id: newId,
         ...newSchool,
@@ -91,6 +95,7 @@ export default function UserManagement() {
       }]);
     }
     setNewSchool({ name: '', city: '', nameInShort: '', email: '', password: '' });
+
     setSchoolLogo(null);
     setShowAddSchoolModal(false);
   };

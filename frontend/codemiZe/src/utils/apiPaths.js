@@ -18,9 +18,10 @@ export const API_PATHS = {
     GET_ALL_USERS: "/api/v1/admin/users",
     GET_ALL_JUDGES: "/api/v1/admin/judges",
     GET_ALL_SCHOOLS: "/api/v1/admin/schools",
-    GET_USER: (id) => `/api/v1/admin/users/${id}`,
-    CREATE_USER: "/api/v1/admin/users",
+    EDIT_SCHOOL: (id) => `/api/v1/admin/schools/${id}`,
+    EDIT_USER: (id) => `/api/v1/admin/users/${id}`,
     DELETE_USER: (id) => `/api/v1/admin/users/${id}`,
+    DELETE_SCHOOL: (id) => `/api/v1/admin/schools/${id}`,
   },
   CRITERIA: {
     GET_ALL: "/api/v1/criteria",
