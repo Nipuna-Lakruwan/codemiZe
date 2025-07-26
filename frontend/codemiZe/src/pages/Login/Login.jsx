@@ -42,6 +42,7 @@ function Login() {
       
       if (result.success) {
         console.log('Login successful, redirecting...');
+        window.dispatchEvent(new Event("login"));
         const userData = result.data.user || result.data.school;
         const defaultRoute = getDefaultRoute(userData.role);
         navigate(defaultRoute);

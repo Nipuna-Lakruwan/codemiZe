@@ -83,9 +83,35 @@ export const addQuestion = async (req, res) => {
 
     try {
         const createdQuestions = await BattleBreakersQuestion.create({ question, answer });
-        res.status(200).json({ message: "Questions added successfully" });
+        res.status(200).json({ message: "Questions added successfully", createdQuestions });
     } catch (error) {
         console.error("Error adding questions:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+export const editQuestion = async (req, res) => {
+    const { questionId } = req.params;
+    const { question, answer } = req.body;
+
+    if (!questionId || !question || !answer) {
+        return res.status(400).json({ message: "Question ID, question text, and answer are required" });
+    }
+
+    try {
+        const updatedQuestion = await BattleBreakersQuestion.findByIdAndUpdate(
+            questionId,
+            { question, answer },
+            { new: true }
+        );
+
+        if (!updatedQuestion) {
+            return res.status(404).json({ message: "Question not found" });
+        }
+
+        res.status(200).json({ message: "Question updated successfully", updatedQuestion });
+    } catch (error) {
+        console.error("Error updating question:", error);
         res.status(500).json({ message: "Internal Server Error" });
     }
 }
@@ -128,8 +154,8 @@ export const addQuestionsCSV = async (req, res) => {
 
     try {
         const results = await parseCSVFile(csvFile, "battle-breakers");
-        await BattleBreakersQuestion.insertMany(results);
-        res.status(200).json({ message: "Questions added successfully" });
+        const questions = await BattleBreakersQuestion.insertMany(results);
+        res.status(200).json({ message: "Questions added successfully", data: questions });
     } catch (error) {
         console.error("Error adding questions from CSV:", error);
         res.status(500).json({ message: "Internal Server Error" });

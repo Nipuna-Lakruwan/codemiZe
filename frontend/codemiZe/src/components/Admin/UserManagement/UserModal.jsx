@@ -39,11 +39,11 @@ export default function UserModal({
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-2 text-sm font-medium">Username</label>
+            <label className="block text-gray-700 mb-2 text-sm font-medium">Email</label>
             <input
               type="text"
               name="username"
-              value={userData.username}
+              value={userData.email}
               onChange={onChange}
               className="w-full p-2 border rounded"
               placeholder="Enter username"
@@ -71,7 +71,7 @@ export default function UserModal({
               className="w-full p-2 border rounded"
             >
               <option value="Admin">Admin</option>
-              <option value="Staff">Staff</option>
+              <option value="Dashboard">Dashboard</option>
             </select>
           </div>
 

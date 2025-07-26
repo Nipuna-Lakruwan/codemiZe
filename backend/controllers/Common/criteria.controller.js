@@ -26,6 +26,31 @@ export const createCriterion = async (req, res) => {
   }
 };
 
+export const createCriterias = async (req, res) => {
+  try {
+    const { criteria, gameType } = req.body;
+
+    if (!criteria || !Array.isArray(criteria)) {
+      return res.status(400).json({ success: false, message: 'Criteria array is required' });
+    }
+
+    if (!gameType || !["circuitSmashers", "codeCrushers", "routeSeekers"].includes(gameType)) {
+      return res.status(400).json({ success: false, message: 'Valid gameType is required' });
+    }
+
+    const createdCriterias = await Criteria.insertMany(
+      criteria.map(item => ({
+        criteria: item,
+        gameType: gameType
+      }))
+    );
+
+    res.status(201).json({ success: true, data: createdCriterias });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Update a criterion
 export const updateCriterion = async (req, res) => {
   try {

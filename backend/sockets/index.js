@@ -21,6 +21,19 @@ const setupSocket = (io, app) => {
       console.log("Scoreboard client joined");
     }
 
+    if (socket.user.role === "School" || socket.user.role === "Dashboard") {
+      socket.join("battleBreakers");
+      console.log("BattleBreakers client joined");
+    }
+
+    socket.on("battleBreakers-startQuestion", (data) => {
+      const { _id, question } = data;
+      io.to("battleBreakers").emit("battleBreakers-startQuestionclient", {
+        _id,
+        question,
+      });
+    });
+
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${userId}`);
       onlineUsers.delete(userId.toString());

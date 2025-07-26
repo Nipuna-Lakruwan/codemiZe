@@ -37,16 +37,18 @@ export const getQuestionsWithAnswers = async (req, res) => {
 };
 
 export const addQuestion = async (req, res) => {
-    const { questionText, options, correctAnswer } = req.body;
+    const { questionText, option1, option2, option3, correctAnswer } = req.body;
 
-    if (!questionText || !options || !correctAnswer) {
+    if (!questionText || !option1 || !option2 || !option3 || !correctAnswer) {
         return res.status(400).json({ message: "All fields are required" });
     }
 
     try {
         const newQuestion = new QuizHuntersQuestion({
             questionText,
-            options,
+            option1,
+            option2,
+            option3,
             correctAnswer
         });
         await newQuestion.save();

@@ -368,7 +368,7 @@ export default function AdminCodeCrushers() {
       />
 
       {/* Custom scrollbar styles */}
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;
         }

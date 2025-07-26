@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
 import AdminBox from '../QuizComponents/AdminBox';
+import { imagePath } from '../../../utils/helper';
 
 export default function UsersSection({
   users,
@@ -30,12 +31,12 @@ export default function UsersSection({
         <div className="flex flex-col space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar">
           {users.map(user => (
             <div
-              key={user.id}
+              key={user._id}
               className="bg-white rounded-md shadow-[3px_6px_14.2px_-2px_rgba(0,0,0,0.25)] border-l-[15px] border-green-400 flex items-center h-16 relative overflow-hidden w-full"
             >
               {/* User Photo */}
               <div className="w-14 h-16 bg-neutral-500 flex items-center justify-center">
-                <img src={user.avatar.url} alt={user.name} className="max-w-full max-h-full object-cover" />
+                <img src={imagePath(user.avatar.url)} alt={user.name} className="max-w-full max-h-full object-cover" />
               </div>
 
               {/* User Info */}

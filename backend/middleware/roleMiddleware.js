@@ -62,6 +62,9 @@ export const requireAdmin = requireExactRole(ROLES.ADMIN);
 export const requireJudge = requireExactRole(ROLES.JUDGE);
 export const requireSchool = requireExactRole(ROLES.SCHOOL);
 
+// Other
+export const requireAdminorJudge = requireRole(ROLES.ADMIN, ROLES.JUDGE);
+
 // Middleware to check resource ownership (for schools accessing their own data)
 export const requireOwnership = (resourceField = 'userId') => {
   return async (req, res, next) => {
