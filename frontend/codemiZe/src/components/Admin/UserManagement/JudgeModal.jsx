@@ -39,11 +39,11 @@ export default function JudgeModal({
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-2 text-sm font-medium">Username</label>
+            <label className="block text-gray-700 mb-2 text-sm font-medium">Email</label>
             <input
               type="text"
               name="username"
-              value={judgeData.username}
+              value={judgeData.email}
               onChange={onChange}
               className="w-full p-2 border rounded"
               placeholder="Enter username"

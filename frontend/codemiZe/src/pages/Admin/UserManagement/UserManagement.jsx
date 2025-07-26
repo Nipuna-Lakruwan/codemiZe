@@ -75,6 +75,7 @@ export default function UserManagement() {
   // Handle add/edit school
   const handleAddOrUpdateSchool = async () => {
     if (editingId !== null) {
+      await axiosInstance.put(API_PATHS.ADMIN.EDIT_SCHOOL(editingId), { name: newSchool.name, email: newSchool.email, city: newSchool.city, nameInShort: newSchool.nameInShort, password: newSchool.password, avatar: schoolLogo });
       setSchools(schools.map(school =>
         school.id === editingId
           ? { ...school, ...newSchool, avatar: schoolLogo ? { url: URL.createObjectURL(schoolLogo) } : school.avatar }
@@ -84,15 +85,15 @@ export default function UserManagement() {
       setEditingType(null);
     } else {
       try {
-       await axiosInstance.post(API_PATHS.AUTH.CREATE_SCHOOL, { name: newSchool.name, email: newSchool.email, city: newSchool.city, nameInShort: newSchool.nameInShort, password: newSchool.password, avatar: schoolLogo, role: "School" });
+        const response = await axiosInstance.post(API_PATHS.AUTH.CREATE_SCHOOL, { name: newSchool.name, email: newSchool.email, city: newSchool.city, nameInShort: newSchool.nameInShort, password: newSchool.password, avatar: schoolLogo, role: "School" });
+        setSchools([...schools, {
+         id: response.data.id,
+         ...newSchool,
+         avatar: { url: schoolLogo ? URL.createObjectURL(schoolLogo) : '/c-logo.png' }
+        }]);
       } catch (error) {
         console.error('Error creating school:', error);
       }
-      setSchools([...schools, {
-        id: newId,
-        ...newSchool,
-        avatar: { url: schoolLogo ? URL.createObjectURL(schoolLogo) : '/c-logo.png' }
-      }]);
     }
     setNewSchool({ name: '', city: '', nameInShort: '', email: '', password: '' });
 
@@ -101,22 +102,31 @@ export default function UserManagement() {
   };
 
   // Handle add/edit judge
-  const handleAddOrUpdateJudge = () => {
+  const handleAddOrUpdateJudge = async () => {
     if (editingId !== null) {
-      setJudges(judges.map(judge =>
-        judge.id === editingId
-          ? { ...judge, ...newJudge, avatar: judgePhoto ? { url: URL.createObjectURL(judgePhoto) } : judge.avatar }
-          : judge
-      ));
+      try {
+        await axiosInstance.put(API_PATHS.ADMIN.EDIT_USER, { name: newUser.name, email: newUser.email, password: newUser.password, role: newUser.role, avatar: userPhoto });
+        setJudges(judges.map(judge =>
+          judge.id === editingId
+            ? { ...judge, ...newJudge, avatar: judgePhoto ? { url: URL.createObjectURL(judgePhoto) } : judge.avatar }
+            : judge
+        ));
+      } catch (error) {
+        console.error("Error updating user", error)
+      }
       setEditingId(null);
       setEditingType(null);
     } else {
-      const newId = Math.max(0, ...judges.map(j => j.id)) + 1;
-      setJudges([...judges, {
-        id: newId,
-        ...newJudge,
-        avatar: { url: judgePhoto ? URL.createObjectURL(judgePhoto) : '/c-logo.png' }
-      }]);
+      try {
+        const response = await axiosInstance.post(API_PATHS.AUTH.CREATE_USER, { name: newUser.name, email: newUser.email, password: newUser.password, role: "Judge", avatar: userPhoto });
+        setJudges([...judges, {
+          id: response.data.id,
+          ...newJudge,
+          avatar: { url: judgePhoto ? URL.createObjectURL(judgePhoto) : '/c-logo.png' }
+        }]);
+      } catch (error) {
+        console.error("Error updating user", error)
+      }
     }
     setNewJudge({ name: '', email: '', password: '' });
     setJudgePhoto(null);
@@ -124,24 +134,33 @@ export default function UserManagement() {
   };
 
   // Handle add/edit user
-  const handleAddOrUpdateUser = () => {
+  const handleAddOrUpdateUser = async () => {
     if (editingId !== null) {
-      setUsers(users.map(user =>
-        user.id === editingId
-          ? { ...user, ...newUser, avatar: userPhoto ? { url: URL.createObjectURL(userPhoto) } : user.avatar }
-          : user
-      ));
+      try {
+        await axiosInstance.put(API_PATHS.ADMIN.EDIT_USER, { name: newUser.name, email: newUser.email, password: newUser.password, role: newUser.role, avatar: userPhoto });
+        setUsers(users.map(user =>
+          user.id === editingId
+            ? { ...user, ...newUser, avatar: userPhoto ? { url: URL.createObjectURL(userPhoto) } : user.avatar }
+            : user
+        ));
+      } catch (error) {
+        console.error('Error updating user:', error);
+      }
       setEditingId(null);
       setEditingType(null);
     } else {
-      const newId = Math.max(0, ...users.map(u => u.id)) + 1;
-      setUsers([...users, {
-        id: newId,
-        ...newUser,
-        avatar: { url: userPhoto ? URL.createObjectURL(userPhoto) : '/c-logo.png' }
-      }]);
+      try {
+        const response = await axiosInstance.post(API_PATHS.AUTH.CREATE_USER, { name: newUser.name, email: newUser.email, password: newUser.password, role: newUser.role, avatar: userPhoto });
+        setUsers([...users, {
+          id: response.data.id,
+          ...newUser,
+          avatar: { url: userPhoto ? URL.createObjectURL(userPhoto) : '/c-logo.png' }
+        }]);
+      } catch (error) {
+        console.error('Error creating user:', error);
+      }
     }
-    setNewUser({ name: '', email: '', password: '', role: 'Staff' });
+    setNewUser({ name: '', email: '', password: '', role: 'Dashboard' });
     setUserPhoto(null);
     setShowAddUserModal(false);
   };
@@ -182,14 +201,29 @@ export default function UserManagement() {
   };
 
   // Handle delete
-  const handleDelete = (id, type) => {
+  const handleDelete = async (id, type) => {
     if (window.confirm(`Are you sure you want to delete this ${type}?`)) {
       if (type === 'school') {
-        setSchools(schools.filter(school => school.id !== id));
+        try {
+          await axiosInstance.delete(API_PATHS.ADMIN.DELETE_SCHOOL(id));
+          setSchools(schools.filter(school => school.id !== id));
+        } catch (error) {
+          console.error('Error deleting school:', error);
+        }
       } else if (type === 'judge') {
-        setJudges(judges.filter(judge => judge.id !== id));
+        try {
+          await axiosInstance.delete(API_PATHS.ADMIN.DELETE_USER(id));
+          setJudges(judges.filter(judge => judge.id !== id));
+        } catch (error) {
+          console.error('Error deleting judge:', error);
+        }
       } else if (type === 'user') {
-        setUsers(users.filter(user => user.id !== id));
+        try {
+          await axiosInstance.delete(API_PATHS.ADMIN.DELETE_USER(id));
+          setUsers(users.filter(user => user.id !== id));
+        } catch (error) {
+          console.error('Error deleting user:', error);
+        }
       }
     }
   };
@@ -231,7 +265,7 @@ export default function UserManagement() {
           onAdd={() => {
             setEditingId(null);
             setEditingType(null);
-            setNewUser({ name: '', email: '', password: '', role: 'Staff' });
+            setNewUser({ name: '', email: '', password: '', role: 'Dashboard' });
             setUserPhoto(null);
             setShowAddUserModal(true);
           }}
