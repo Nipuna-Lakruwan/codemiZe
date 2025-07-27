@@ -1,5 +1,6 @@
 import QuizHuntersQuestion from "../../models/questions/QuizHuntersQuestion.js";
 import QuizHuntersAnswer from "../../models/markings/QuizHuntersAnswer.js";
+import School from "../../models/School.js";
 import { parseCSVFile } from "../../utils/csvParser.js";
 
 export const getAllQuestions = async (req, res) => {
@@ -168,11 +169,28 @@ export const submitQuiz = async (req, res) => {
     await QuizHuntersAnswer.insertMany(answerDocs);
 
     const correctCount = answerDocs.filter(a => a.status === "Correct").length;
+    const finalScore = (correctCount / answers.length) * 100;
+
+    const school = await School.findById(userId);
+    if (!school) {
+      return res.status(404).json({message: "School not found"});
+    }
+
+    // Prevent overwriting if a score already exists
+    if (school.score.QuizHunters > 0) {
+      return res.status(200).json({
+        message: "Score for QuizHunters already exists and cannot be overwritten."
+      });
+    }
+
+    school.score.QuizHunters = finalScore;
+    await school.save();
 
     res.status(200).json({
       score: correctCount,
       total: answers.length,
-      details: answerDocs
+      details: answerDocs,
+      finalScore
     });
   } catch (err) {
     console.error("Quiz submission failed:", err);

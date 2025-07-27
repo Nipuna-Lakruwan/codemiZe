@@ -64,6 +64,50 @@ export default function Dashboard() {
   const [timeRemaining, setTimeRemaining] = useState(45); // in minutes
   const [games, setGames] = useState([]);
   const [activeGame, setActiveGame] = useState();
+  const [teamScores, setTeamScores] = useState({
+    'overall': [
+      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 450 },
+      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 420 },
+      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 380 },
+      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 350 },
+      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 330 }
+    ],
+    'quiz-hunters': [
+      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 95 },
+      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 90 },
+      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 85 },
+      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 80 },
+      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 75 }
+    ],
+    'code-crushers': [
+      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 98 },
+      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 90 },
+      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 88 },
+      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 85 },
+      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 80 }
+    ],
+    'circuit-smashers': [
+      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 95 },
+      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 90 },
+      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 85 },
+      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 82 },
+      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 78 }
+    ],
+    'route-seekers': [
+      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 92 },
+      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 90 },
+      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 85 },
+      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 80 },
+      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 75 }
+    ],
+    'battle-breakers': [
+      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 95 },
+      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 90 },
+      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 85 },
+      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 80 },
+      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 75 }
+    ]
+  });
 
   /**
    * BACKEND INTEGRATION POINT:
@@ -114,7 +158,7 @@ export default function Dashboard() {
     }
   }
 
-  // Mock data is now managed in state  // Score tabs - This should match the game types from your backend
+  // Score tabs - This should match the game types from your backend
   const scoreTabs = [
     { id: 'overall', name: 'Overall Scores' },
     { id: 'quiz-hunters', name: 'Quiz Hunters' },
@@ -138,51 +182,19 @@ export default function Dashboard() {
    * Suggested endpoint: GET /api/scores?game=game_id
    */
 
-  // Mock Teams data with scores
-  const teamScores = {
-    'overall': [
-      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 450 },
-      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 420 },
-      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 380 },
-      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 350 },
-      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 330 }
-    ],
-    'quiz-hunters': [
-      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 95 },
-      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 90 },
-      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 85 },
-      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 80 },
-      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 75 }
-    ],
-    'code-crushers': [
-      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 98 },
-      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 90 },
-      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 88 },
-      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 85 },
-      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 80 }
-    ],
-    'circuit-smashers': [
-      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 95 },
-      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 90 },
-      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 85 },
-      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 82 },
-      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 78 }
-    ],
-    'route-seekers': [
-      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 92 },
-      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 90 },
-      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 85 },
-      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 80 },
-      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 75 }
-    ],
-    'battle-breakers': [
-      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 95 },
-      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 90 },
-      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 85 },
-      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 80 },
-      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 75 }
-    ],
-  };
+  useEffect(() => {
+    // Fetch team scores from backend
+    const fetchTeamScores = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.ADMIN.GET_SCHOOL_SCORES);
+        setTeamScores(response.data);
+      } catch (error) {
+        console.error('Error fetching team scores:', error);
+      }
+    };
+
+    fetchTeamScores();
+  }, []);
 
   // Get button style based on game status
   const getButtonStyle = (status) => {
@@ -451,7 +463,7 @@ export default function Dashboard() {
 
           {/* Team rankings */}
           <div className="w-full max-w-[90%] space-y-6 overflow-y-auto h-[420px] px-6 custom-scrollbar">
-            {teamScores[selectedScore].map((team, index) => (
+            {teamScores[selectedScore] && teamScores[selectedScore].map((team, index) => (
               <TeamRankItem key={index} index={index} team={team} />
             ))}
           </div>
