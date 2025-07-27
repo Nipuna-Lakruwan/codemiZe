@@ -10,14 +10,14 @@ import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPaths';
 import { imagePath } from '../../utils/helper';
 
-// Game data with positions and status (status: 'completed', 'active', 'available', 'locked')
+// Game data with positions and status (status: 'completed', 'active', 'inactive')
 const mockGames = [
   {
     id: 1,
     title: 'Quiz Hunters',
     icon: '/quiz_hunters_logo-removebg 1.png',
     pos: { left: '15%', top: '75%' },
-    status: 'completed',
+    status: 'inactive',
   },
   {
     id: 2,
@@ -104,22 +104,13 @@ export default function GamesRoadmap() {
         // Merge with mock data and compute status
         const mergedGames = mockGames.map((mockGame) => {
           const backendGame = backendGames.find(bg => bg.name === mockGame.title);
-          let status = mockGame.status;
-          if (backendGame) {
-            if (backendGame.isCompleted) {
-              status = 'completed';
-            } else if (backendGame.isActive) {
-              status = 'active';
-            } else {
-              status = 'available';
-            }
-          }
+
           return {
             ...mockGame,
             _id: backendGame?._id || null,
             icon: imagePath(backendGame?.icon?.url) || mockGame.icon,
             allocateTime: backendGame?.allocateTime || 0,
-            status,
+            status: backendGame?.status,
           };
         });
 
@@ -214,7 +205,7 @@ export default function GamesRoadmap() {
 
       {/* Winners button - only appears after all animations are complete */}
       {/* NOTE: In production, this button will be conditionally shown based on game completion and admin status */}
-      <motion.div
+      {/* <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: games.length * 0.6 + 1, duration: 0.5 }} // Delay based on number of games + additional time
@@ -227,10 +218,10 @@ export default function GamesRoadmap() {
           <span>🏆</span>
           <span>View Winners</span>
         </a>
-      </motion.div>
+      </motion.div> */}
 
       {/* Admin Dashboard link - For development purposes */}
-      <motion.div
+      {/* <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7, duration: 0.5 }}
@@ -243,7 +234,7 @@ export default function GamesRoadmap() {
           <span>⚙️</span>
           <span>Admin Dashboard</span>
         </a>
-      </motion.div>
+      </motion.div> */}
 
       {/* SVG paths with color-coded availability */}
       <PathMap

@@ -19,14 +19,11 @@ const gameSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  isCompleted: {
-    type: Boolean,
-    default: false
-  },
-  isActive: {
-    type: Boolean,
-    default: false
-  },
+  status: {
+    type: String,
+    enum: ['inactive', 'active', 'completed'],
+    default: 'inactive'
+  }
 });
 
 export default mongoose.model("Game", gameSchema);
