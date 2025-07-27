@@ -12,7 +12,7 @@ export const getGames = async (req, res) => {
 
 export const getActiveGame = async (req, res) => {
   try {
-    const activeGame = await Game.findOne({ isActive: true });
+    const activeGame = await Game.findOne({ status: 'active' });
     res.status(200).json(activeGame);
   } catch (error) {
     console.error('Error fetching active game:', error);
@@ -28,7 +28,9 @@ export const activateGame = async (req, res) => {
 
     // Update each game's isActive flag
     for (const g of games) {
-      g.isActive = g._id.equals(gameId);
+      if(g._id.equals(gameId)) {
+        g.status = 'active';
+      }
       await g.save(); // Save each update
     }
 
@@ -53,7 +55,7 @@ export const deactivateGame = async (req, res) => {
       return res.status(404).json({ error: 'Game not found' });
     }
 
-    game.isActive = false;
+    game.status = 'inactive';
     await game.save();
 
     res.status(200).json({ message: 'Game deactivated successfully' });

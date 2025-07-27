@@ -16,7 +16,7 @@ export default function BattleBreakers() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [isPressedBuzzer, setIsPressedBuzzer] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
-  const [totalQuestionsCount, setTotalQuestionsCount] = useState(10);
+  const [questionStartTime, setQuestionStartTime] = useState(null);
   const [questions, setQuestions] = useState([    {
       _id: "",
       question: "",
@@ -24,7 +24,7 @@ export default function BattleBreakers() {
     },]);
 
   // Timer state
-  const [timeRemaining, setTimeRemaining] = useState(30); // 30 seconds per question
+  const [timeRemaining, setTimeRemaining] = useState(30);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
   useEffect(() => {
@@ -37,6 +37,11 @@ export default function BattleBreakers() {
             question: data.question,
           },
         ]);
+
+        const remaining = (data.startTime + data.allocatedTime) - Date.now();
+        setQuestionStartTime(data.startTime);
+        setTimeRemaining(remaining);
+        setIsTimerRunning(true);
       });
       
       // Clean up the event listener when component unmounts
@@ -85,15 +90,7 @@ export default function BattleBreakers() {
     let timer;
     if (isGameStarted && isTimerRunning && timeRemaining > 0) {
       timer = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            // Move to next question if time runs out
-            handleNextQuestion();
-            return 30; // Reset timer for next question
-          }
-          return prev - 1;
-        });
+        setTimeRemaining(prev =>  prev - 1);
       }, 1000);
     }
 
@@ -108,7 +105,7 @@ export default function BattleBreakers() {
     setTimeout(() => {
       setIsGameStarted(true);
       setIsLoading(false);
-      setIsTimerRunning(true);
+      //setIsTimerRunning(true);
     }, 1500);
   };
 
@@ -116,8 +113,8 @@ export default function BattleBreakers() {
   const handleBuzzerPress = async () => {
     setIsPressedBuzzer(true);
     setIsTimerRunning(false);
-
-    await axiosInstance.post(API_PATHS.BATTLE_BREAKERS.BUZZER_PRESS, { questionId: questions[currentQuestion]._id });
+    const responseTime = Date.now() - questionStartTime;
+    await axiosInstance.post(API_PATHS.BATTLE_BREAKERS.BUZZER_PRESS, { questionId: questions[currentQuestion]._id, responseTime: responseTime });
 
     playBuzzerSound();
 
@@ -125,19 +122,6 @@ export default function BattleBreakers() {
     setTimeout(() => {
       setIsPressedBuzzer(false);
     }, 300);
-  };
-
-  // Move to next question
-  const handleNextQuestion = () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-      setTimeRemaining(30); // Reset timer for next question
-      setIsTimerRunning(true);
-    } else {
-      // Game completed - handle end of game
-      setIsTimerRunning(false);
-      setGameCompleted(true);
-    }
   };
 
   return (
@@ -371,7 +355,7 @@ export default function BattleBreakers() {
                 In the future, this area could show "Buzz registered!" or similar messages
                 when the buzzer dashboard responds to the user's buzz
             */}
-            <AnimatePresence>
+            {/* <AnimatePresence>
               {isPressedBuzzer && (
                 <motion.div
                   className="w-[973px] mb-4 bg-green-700/30 rounded-md flex items-center justify-center border border-green-500/30 p-3"
@@ -390,7 +374,7 @@ export default function BattleBreakers() {
                   </div>
                 </motion.div>
               )}
-            </AnimatePresence>
+            </AnimatePresence> */}
 
             {/* Buzzer button container */}
             <div className="flex flex-col items-center mb-8">
