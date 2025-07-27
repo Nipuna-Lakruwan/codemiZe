@@ -272,7 +272,7 @@ export default function AdminQuizHunters() {
     const deleteAllQuestions = async () => {
       try {
         // Uncomment when ready for API integration
-        // await axiosInstance.delete(API_PATHS.QUIZ_HUNTERS.DELETE_ALL_QUESTIONS);
+        await axiosInstance.delete(API_PATHS.QUIZ_HUNTERS.DELETE_ALL_QUESTIONS);
 
         setQuestions([]);
         showAlert('All questions have been deleted', 'Delete Successful', 'success');
@@ -286,7 +286,8 @@ export default function AdminQuizHunters() {
     setShowDeleteAllModal(false);
   };
 
-  const handleDeleteQuestion = (id) => {
+  const handleDeleteQuestion = async (id) => {
+    await axiosInstance.delete(API_PATHS.QUIZ_HUNTERS.DELETE_QUESTION(id));
     setQuestionToDelete(id);
     setShowDeleteModal(true);
   };

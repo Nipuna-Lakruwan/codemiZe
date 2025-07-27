@@ -185,9 +185,9 @@ export default function Dashboard() {
   };
 
   // Get button style based on game status
-  const getButtonStyle = (game) => {
-    if (game.isCompleted) return "bg-green-600";
-    if (game.isActive) return "bg-sky-600";
+  const getButtonStyle = (status) => {
+    if (status === 'completed') return "bg-green-600";
+    if (status === 'active') return "bg-sky-600";
     return "bg-purple-800";
   };
   /**
@@ -219,7 +219,7 @@ export default function Dashboard() {
             if (activeGameIndex !== -1) {
               updatedGames[activeGameIndex] = {
                 ...updatedGames[activeGameIndex],
-                status: 'not-active'
+                status: 'inactive'
               };
             }
 
@@ -240,7 +240,7 @@ export default function Dashboard() {
           case 'deactivate':
             updatedGames[gameIndex] = {
               ...updatedGames[gameIndex],
-              status: 'not-active'
+              status: 'inactive'
             };
 
             // Clear active game if we're deactivating it
@@ -252,7 +252,7 @@ export default function Dashboard() {
           case 'reset':
             updatedGames[gameIndex] = {
               ...updatedGames[gameIndex],
-              status: 'not-active'
+              status: 'inactive'
             };
 
             // Clear active game if we're resetting it

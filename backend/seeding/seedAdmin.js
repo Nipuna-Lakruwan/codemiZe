@@ -11,7 +11,7 @@ export const seedDefaultUsers = async () => {
       usersToCreate.push({
         name: "System Admin",
         email: "admin@test.com",
-        password: "test@123",
+        password: "$2b$10$qNTR1sciGE6cw2gG6pt7zuk7pW0Io53ysdmYBSWo1QEoZUkWDi7wi",
         role: "Admin",
         avatar: {
           url: "",
@@ -24,7 +24,7 @@ export const seedDefaultUsers = async () => {
       usersToCreate.push({
         name: "Dashboard User",
         email: "dashboard@test.com",
-        password: "test@123",
+        password: "$2b$10$qNTR1sciGE6cw2gG6pt7zuk7pW0Io53ysdmYBSWo1QEoZUkWDi7wi",
         role: "Dashboard",
         avatar: {
           url: "",

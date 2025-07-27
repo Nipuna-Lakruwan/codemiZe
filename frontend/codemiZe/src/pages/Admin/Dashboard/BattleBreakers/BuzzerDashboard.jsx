@@ -121,15 +121,16 @@ const TeamRankItem = ({ index, team, responseTime, isNew = false }) => {
 
       {/* Response time */}
       <div className="justify-start text-sky-900 text-2xl font-medium font-['Oxanium']">
-        {responseTime ? responseTime.replace('s', '') : '--'} s
+        {typeof responseTime === 'number' ? (responseTime / 1000).toFixed(2) : '--'} s
       </div>
 
+
       {/* New indicator */}
-      {isNew && (
+      {/* {isNew && (
         <div className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs px-2 py-1 rounded-full font-bold">
           NEW!
         </div>
-      )}
+      )} */}
     </motion.div>
   );
 };
@@ -188,21 +189,13 @@ export default function BuzzerDashboard() {
   const socket = useContext(SocketContext);
 
   // Using fixed values for display-only frontend dashboard
-  const [timeRemaining] = useState(25);
+  const [timeRemaining, setTimeRemaining] = useState(30);
   const currentQuestionIndex = 0;
   
   // State for real-time buzzer presses
   const [buzzerPresses, setBuzzerPresses] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [questions, setQuestions] = useState([{_id: "", question: ""}])
-
-  // Function to calculate response time (mock implementation)
-  const calculateResponseTime = (timestamp) => {
-    // In a real implementation, you'd calculate based on when the question was shown
-    // For now, return a mock response time
-    const times = ['1.2s', '2.4s', '3.1s', '4.5s', '5.2s'];
-    return times[Math.floor(Math.random() * times.length)];
-  };
 
   useEffect(() => {
     // Listen for buzzer press events from the server
@@ -217,7 +210,7 @@ export default function BuzzerDashboard() {
               city: data.city,
               logo: imagePath(data.logo),
             },
-            responseTime: calculateResponseTime(data.timestamp),
+            responseTime: data.responseTime,
             timestamp: data.timestamp
           },
         ]);
@@ -231,7 +224,9 @@ export default function BuzzerDashboard() {
             question: data.question,
           },
         ]);
-        setCurrentQuestion(prev => prev + 1);
+        const remaining = (data.startTime + data.allocatedTime) - Date.now();
+        setTimeRemaining(remaining);
+        setCurrentQuestion(data.questionNo);
       });
       
       // Clean up the event listener when component unmounts
@@ -246,12 +241,6 @@ export default function BuzzerDashboard() {
   // Function to clear buzzer presses for new question
   const clearBuzzerPresses = () => {
     setBuzzerPresses([]);
-  };
-
-  // Function to move to next question
-  const nextQuestion = () => {
-    setCurrentQuestion(prev => prev + 1);
-    clearBuzzerPresses();
   };
 
   return (

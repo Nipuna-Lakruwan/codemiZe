@@ -14,7 +14,8 @@ export const seedGames = async () => {
       icon: {
         url: "uploads/gameIcons/QuizHunters.png",
         publicId: "QuizHunters.png"
-      }
+      },
+      status: 'inactive'
     },
     {
       name: "Code Crushers",
@@ -22,7 +23,8 @@ export const seedGames = async () => {
       icon: {
         url: "uploads/gameIcons/CodeCrushers.png",
         publicId: "CodeCrushers.png"
-      }
+      },
+      status: 'inactive'
     },
     {
       name: "Circuit Smashers",
@@ -30,7 +32,8 @@ export const seedGames = async () => {
       icon: {
         url: "uploads/gameIcons/CircuitSmashers.png",
         publicId: "CircuitSmashers.png"
-      }
+      },
+      status: 'inactive'
     },
     {
       name: "Route Seekers",
@@ -38,7 +41,8 @@ export const seedGames = async () => {
       icon: {
         url: "uploads/gameIcons/RouteSeekers.png",
         publicId: "RouteSeekers.png"
-      }
+      },
+      status: 'inactive'
     },
     {
       name: "Battle Breakers",
@@ -46,7 +50,8 @@ export const seedGames = async () => {
       icon: {
         url: "uploads/gameIcons/BattleBreakers.png",
         publicId: "BattleBreakers.png"
-      }
+      },
+      status: 'inactive'
     }
   ];
 

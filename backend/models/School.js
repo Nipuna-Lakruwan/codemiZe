@@ -32,8 +32,26 @@ const schoolSchema = new mongoose.Schema(
       match: [/\S+@\S+\.\S+/, 'Please fill a valid email address'],
     },
     score: {
-      type: Number,
-      default: 0,
+      QuizHunters: {
+        type: Number,
+        default: 0,
+      },
+      CodeCrushers: {
+        type: Number,
+        default: 0,
+      },
+      CircuitSmashers: {
+        type: Number,
+        default: 0,
+      },
+      RouteSeekers: {
+        type: Number,
+        default: 0,
+      },
+      BattleBreakers: {
+        type: Number,
+        default: 0,
+      },
     },
     password: {
       type: String,
