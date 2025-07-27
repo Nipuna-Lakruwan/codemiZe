@@ -6,8 +6,11 @@ const battleBreakersAnswerSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "BattleBreakersQuestion",
     },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    answer: String,
+    responses: [{
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      attempt: { type: String, required: true },
+      status: { type: String, enum: ["Correct", "Incorrect"], required: true }
+    }],
   },
   { timestamps: true }
 );

@@ -27,10 +27,13 @@ const setupSocket = (io, app) => {
     }
 
     socket.on("battleBreakers-startQuestion", (data) => {
-      const { _id, question } = data;
+      const { _id, question, startTime, allocatedTime, questionNo } = data;
       io.to("battleBreakers").emit("battleBreakers-startQuestionclient", {
         _id,
         question,
+        startTime,
+        allocatedTime,
+        questionNo,
       });
     });
 
