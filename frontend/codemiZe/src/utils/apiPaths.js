@@ -23,6 +23,7 @@ export const API_PATHS = {
     DELETE_USER: (id) => `/api/v1/admin/users/${id}`,
     DELETE_SCHOOL: (id) => `/api/v1/admin/schools/${id}`,
     GET_SCHOOL_SCORES: "/api/v1/admin/dashboard",
+    SHOW_WINNERS: "/api/v1/admin/winners",
   },
   CRITERIA: {
     GET_ALL: "/api/v1/criteria",

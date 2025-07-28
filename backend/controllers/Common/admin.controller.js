@@ -166,11 +166,11 @@ export const showWinners = async (req, res) => {
         $addFields: {
           totalScore: {
             $add: [
-              "$score.QuizHunters",
-              "$score.CodeCrushers",
-              "$score.CircuitSmashers",
-              "$score.RouteSeekers",
-              "$score.BattleBreakers"
+              { $ifNull: ["$score.QuizHunters", 0] },
+              { $ifNull: ["$score.CodeCrushers", 0] },
+              { $ifNull: ["$score.CircuitSmashers", 0] },
+              { $ifNull: ["$score.RouteSeekers", 0] },
+              { $ifNull: ["$score.BattleBreakers", 0] }
             ]
           }
         }
