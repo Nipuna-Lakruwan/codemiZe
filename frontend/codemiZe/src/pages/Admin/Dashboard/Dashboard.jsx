@@ -61,7 +61,7 @@ export default function Dashboard() {
   const [selectedScore, setSelectedScore] = useState('overall');
   const [selectedGame, setSelectedGame] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(45); // in minutes
+  const [timeRemaining, setTimeRemaining] = useState(0); // in seconds, default 0
   const [games, setGames] = useState([]);
   const [activeGame, setActiveGame] = useState();
 
@@ -88,22 +88,22 @@ export default function Dashboard() {
   }, []);
 
   const fetchData = async () => {
-      try {
-        const response = await axiosInstance.get(API_PATHS.GAMES.GET_ALL_GAMES);
-        setGames(response.data);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
+    try {
+      const response = await axiosInstance.get(API_PATHS.GAMES.GET_ALL_GAMES);
+      setGames(response.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
 
-      // Fetch active game if any
-      try {
-        const activeResponse = await axiosInstance.get(API_PATHS.GAMES.GET_ACTIVE_GAME);
-        setActiveGame(activeResponse.data);
-      } catch (error) {
-        console.error('Error fetching active game:', error);
-      }
-    };
-  
+    // Fetch active game if any
+    try {
+      const activeResponse = await axiosInstance.get(API_PATHS.GAMES.GET_ACTIVE_GAME);
+      setActiveGame(activeResponse.data);
+    } catch (error) {
+      console.error('Error fetching active game:', error);
+    }
+  };
+
   const activateGame = async () => {
     try {
       const response = await axiosInstance.patch(API_PATHS.GAMES.ACTIVATE_GAME(selectedGame._id));
@@ -335,6 +335,19 @@ export default function Dashboard() {
     //   .catch(error => console.error('Error stopping game:', error));
   };
 
+  // Helper: get total time for progress bar (set to 15 seconds for testing)
+  const totalGameTime = 15; // 15 seconds for testing
+
+  // Helper: convert timeRemaining to seconds (always seconds now)
+  const getTimeRemainingSeconds = () => timeRemaining;
+
+  // Helper: format time as MM:SS
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   // Timer effect - simulates countdown for active game
   useEffect(() => {
     let timerId;
@@ -343,21 +356,26 @@ export default function Dashboard() {
     if (activeGame && activeGame.status === 'active' && timeRemaining > 0) {
       timerId = setInterval(() => {
         setTimeRemaining(prev => {
-          // Stop timer when we reach 0
           if (prev <= 1) {
             clearInterval(timerId);
             return 0;
           }
           return prev - 1;
         });
-      }, 60000); // Update every minute (or use 1000 to update every second for testing)
+      }, 1000); // Update every second
     }
 
-    // Cleanup timer when component unmounts or dependencies change
     return () => {
       if (timerId) clearInterval(timerId);
     };
   }, [activeGame, timeRemaining]);
+
+  // When a game is activated, set timer to 15 seconds for testing
+  useEffect(() => {
+    if (activeGame && activeGame.status === 'active') {
+      setTimeRemaining(totalGameTime);
+    }
+  }, [activeGame]);
 
   return (
     <AdminLayout>
@@ -388,7 +406,7 @@ export default function Dashboard() {
           <div className="justify-start text-black/80 text-2xl font-semibold font-['Inter']">Ongoing Game</div>
           <div className="w-full h-0 outline outline-offset-[-0.50px] outline-black/20 my-5"></div>
 
-          {activeGame && activeGame.isActive ? (
+          {activeGame && activeGame.status === 'active' ? (
             <div className="flex flex-col md:flex-row items-start md:items-center mt-8 bg-gray-50 p-6 rounded-xl">
               <div className="justify-start text-sky-600 text-3xl font-bold font-['Oxanium'] mb-6 md:mb-0 md:mr-8">
                 {activeGame.name}
@@ -399,13 +417,15 @@ export default function Dashboard() {
                 <div className="flex-1 bg-gray-200 h-5 rounded-full mb-3 mt-3">
                   <div
                     className="bg-purple-800 h-5 rounded-full transition-all duration-300 ease-in-out"
-                    style={{ width: `${(timeRemaining / 60) * 100}%` }}
+                    style={{
+                      width: `${(getTimeRemainingSeconds() / totalGameTime) * 100}%`
+                    }}
                   ></div>
                 </div>
 
                 {/* Time remaining display */}
                 <div className="text-gray-700 text-lg mt-2 mb-4 md:mb-0 text-center font-medium">
-                  Time remaining: {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')} minutes
+                  Time remaining: {formatTime(getTimeRemainingSeconds())}
                 </div>
               </div>
 
