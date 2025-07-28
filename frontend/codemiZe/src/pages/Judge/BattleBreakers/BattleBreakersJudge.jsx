@@ -1,11 +1,7 @@
-
-import React, { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
 import JudgeLayout from '../JudgeLayout';
-import AdminBox from '../../../components/Admin/QuizComponents/AdminBox';
-import { FaCheck, FaTimes } from 'react-icons/fa';
+import BattleBreakersTable from '../../../components/Judge/BattleBreakers/BattleBreakersTable';
 
-// Mock data (should be replaced with real API data in production)
 const mockQuestions = [
   { _id: '1', question: 'What is a firewall in network security?', answer: 'A network security device that monitors and filters incoming and outgoing network traffic.' },
   { _id: '2', question: 'What is the purpose of DNS?', answer: 'Domain Name System translates human-readable domain names to IP addresses.' },
@@ -22,8 +18,11 @@ const mockSchools = [
 ];
 
 const BattleBreakersJudge = () => {
+  // State for questions and schools (mocked for demo)
   const [questions] = useState(mockQuestions);
   const [schools] = useState(mockSchools);
+
+  // State for marking logic and UI
   const [answerHistory, setAnswerHistory] = useState({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [schoolAnswers, setSchoolAnswers] = useState({});
@@ -32,9 +31,8 @@ const BattleBreakersJudge = () => {
   const [wrongAttempts, setWrongAttempts] = useState({});
   const [isQuestionActive, setIsQuestionActive] = useState(false);
   const [showQuestionText, setShowQuestionText] = useState(true);
-  const tableRef = useRef(null);
 
-  // Mark answer for a school
+  // Mark answer for a school (correct/wrong)
   const handleMarkAnswer = (schoolId, isCorrect) => {
     if (correctSchool !== null) return;
     if (totalAttempts >= 3 && !isCorrect) return;
@@ -71,7 +69,7 @@ const BattleBreakersJudge = () => {
     }
   };
 
-  // Navigation
+  // Move to next question
   const goToNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
@@ -81,6 +79,8 @@ const BattleBreakersJudge = () => {
       setWrongAttempts({});
     }
   };
+
+  // Move to previous question
   const goToPrevQuestion = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
@@ -93,165 +93,33 @@ const BattleBreakersJudge = () => {
 
   return (
     <JudgeLayout gameName="Battle Breakers">
-      <div className="text-gray-800">
-        <h2 className="text-xl font-semibold mb-4">Battle Breakers Judging Panel</h2>
-        <p>Review and score battle submissions for each school and question below.</p>
-        <AdminBox title="Teams">
-          <div className="flex flex-col space-y-4 mt-2">
-            <img src="/under-line.png" alt="underline" className="w-full h-1" />
-            <div className="flex justify-between items-center">
-              <div className="text-sm text-gray-600">Table showing all school teams</div>
-              <div className="flex gap-2 items-center">
-                <button
-                  onClick={() => setShowQuestionText(!showQuestionText)}
-                  className="px-3 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
-                >
-                  {showQuestionText ? 'Hide Question Text' : 'Show Question Text'}
-                </button>
-              </div>
-            </div>
-            <div className="overflow-x-auto mt-2 max-w-full">
-              <table ref={tableRef} className="w-full bg-white border border-gray-300 rounded-lg" style={{ tableLayout: 'auto', minWidth: '100%' }}>
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="py-1 px-2 border-b text-left font-medium text-purple-800 relative" style={{ minWidth: '100px' }}>
-                      {showQuestionText ? '#  Question' : '#'}
-                    </th>
-                    {schools.map((school) => (
-                      <th key={school._id} className="py-1 px-1 border-b text-center font-medium text-purple-800 text-xs relative" style={{ minWidth: '50px' }}>
-                        {school.nameInShort}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {questions.map((question, qIndex) => (
-                    <tr key={question._id} className={qIndex === currentQuestionIndex ? "bg-purple-50" : qIndex % 2 === 0 ? "bg-gray-50" : ""}>
-                      <td className="py-2 px-2 border-b border-r" style={{ maxWidth: '220px' }}>
-                        {showQuestionText ? (
-                          <div className="truncate">
-                            <span className="font-bold mr-2">{qIndex + 1}.</span>
-                            {question.question}
-                          </div>
-                        ) : (
-                          <div className="truncate text-xs font-bold">Q{qIndex + 1}</div>
-                        )}
-                      </td>
-                      {schools.map((school) => (
-                        <td key={`${question._id}-${school._id}`} className="py-2 px-2 border-b text-center" style={{ minWidth: '50px' }}>
-                          {qIndex === currentQuestionIndex ? (
-                            <div className="flex justify-center gap-1">
-                              {isQuestionActive ? (
-                                <>
-                                  {correctSchool === null ? (
-                                    totalAttempts >= 3 ? (
-                                      <span className="text-red-500 font-medium text-xs">X</span>
-                                    ) : (
-                                      <>
-                                        <button
-                                          className={`p-1 rounded ${schoolAnswers[school._id] === true ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
-                                          onClick={() => handleMarkAnswer(school._id, true)}
-                                        >
-                                          <FaCheck size={12} />
-                                        </button>
-                                        <button
-                                          className={`p-1 rounded ${schoolAnswers[school._id] === false ? 'bg-red-500 text-white' : 'bg-gray-200'}`}
-                                          onClick={() => handleMarkAnswer(school._id, false)}
-                                        >
-                                          <FaTimes size={12} />
-                                        </button>
-                                        {schoolAnswers[school._id] === false && (wrongAttempts[school._id] || 0) > 0 && (
-                                          <span className="text-xs text-red-500 font-medium">
-                                            {wrongAttempts[school._id]}
-                                          </span>
-                                        )}
-                                      </>
-                                    )
-                                  ) : correctSchool === school._id ? (
-                                    <span className="text-green-500 font-bold text-lg">✓</span>
-                                  ) : schoolAnswers[school._id] === false ? (
-                                    <span className="text-red-500 font-bold text-lg">✗</span>
-                                  ) : (
-                                    <span className="text-gray-500">-</span>
-                                  )}
-                                </>
-                              ) : (
-                                <>
-                                  {schoolAnswers[school._id] === true ? (
-                                    <span className="text-green-500 font-bold">✓</span>
-                                  ) : schoolAnswers[school._id] === false ? (
-                                    <span className="text-red-500 font-bold">✗</span>
-                                  ) : (
-                                    <span>-</span>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          ) : (
-                            <>
-                              {answerHistory[question._id] && answerHistory[question._id][school._id] === true ? (
-                                <span className="text-green-500 font-bold">✓</span>
-                              ) : answerHistory[question._id] && answerHistory[question._id][school._id] === false ? (
-                                <div>
-                                  <span className="text-red-500 font-bold">✗</span>
-                                  {answerHistory[question._id][`${school._id}_attempts`] > 0 && (
-                                    <span className="text-xs text-red-500">
-                                      {answerHistory[question._id][`${school._id}_attempts`]}
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span>-</span>
-                              )}
-                            </>
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="flex justify-between mt-4">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-medium"
-                onClick={goToPrevQuestion}
-                disabled={currentQuestionIndex === 0}
-              >
-                Previous
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-4 py-2 bg-sky-600 text-white rounded-md text-sm font-medium"
-                onClick={goToNextQuestion}
-                disabled={currentQuestionIndex === questions.length - 1}
-              >
-                Next
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`px-4 py-2 ${isQuestionActive ? 'bg-red-600 text-white' : 'bg-green-600 text-white'} rounded-md text-sm font-medium`}
-                onClick={() => setIsQuestionActive((prev) => !prev)}
-              >
-                {isQuestionActive ? 'Stop Marking' : 'Start Marking'}
-              </motion.button>
-            </div>
-            <div className="flex justify-end mt-6">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-6 py-2 bg-sky-600 text-white rounded-md text-base font-semibold"
-                onClick={() => alert('Marks submitted!')}
-              >
-                Submit
-              </motion.button>
-            </div>
+      <div className="w-full h-full flex flex-col relative">
+        {/* Heading styled like Circuit Smashers */}
+        <div className="absolute left-8 top-8">
+          <div className="justify-start text-purple-900 text-4xl font-normal font-['Jersey_25']" style={{ fontFamily: 'Jersey_25' }}>
+            Battle Breakers
           </div>
-        </AdminBox>
+        </div>
+        <div className="h-24" />
+        <div className="flex flex-col items-center w-full h-[calc(100%-6rem)] justify-center">
+          <BattleBreakersTable
+            questions={questions}
+            schools={schools}
+            answerHistory={answerHistory}
+            currentQuestionIndex={currentQuestionIndex}
+            schoolAnswers={schoolAnswers}
+            correctSchool={correctSchool}
+            totalAttempts={totalAttempts}
+            wrongAttempts={wrongAttempts}
+            isQuestionActive={isQuestionActive}
+            showQuestionText={showQuestionText}
+            setShowQuestionText={setShowQuestionText}
+            handleMarkAnswer={handleMarkAnswer}
+            goToNextQuestion={goToNextQuestion}
+            goToPrevQuestion={goToPrevQuestion}
+            setIsQuestionActive={setIsQuestionActive}
+          />
+        </div>
       </div>
     </JudgeLayout>
   );
