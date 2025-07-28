@@ -54,29 +54,30 @@ const QuestionModal = ({
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Answer Options
+            <span className="block text-xs text-gray-500 mt-1">
+              Format: <b>CorrectAnswer</b>, Option1, Option2, Option3
+            </span>
           </label>
           <div className="w-full h-0 outline-1 outline-offset-[-0.50px] outline-black/30 mb-4"></div>
 
           {currentQuestion.options.map((option, index) => (
             <div key={index} className="flex items-center mb-4">
-              <input
-                type="radio"
-                name="correctAnswer"
-                checked={currentQuestion.correct === option}
-                onChange={() => handleCorrectAnswerChange(option)}
-                className="mr-3 h-4 w-4 accent-purple-800"
-              />
+              {/* Removed radio button */}
               <input
                 type="text"
                 value={option}
                 onChange={(e) => handleOptionChange(index, e.target.value)}
-                placeholder={`Option ${index + 1}`}
+                placeholder={
+                  index === 0
+                    ? "Correct Answer"
+                    : `Option ${index + 1}`
+                }
                 className="flex-1 p-3 bg-zinc-100 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-purple-800"
               />
             </div>
           ))}
           <p className="text-xs text-gray-500 mt-1 ml-7">
-            Select the radio button for the correct answer
+            The first field is always the correct answer.
           </p>
         </div>
 
