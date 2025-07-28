@@ -265,6 +265,31 @@ export default function QuizHunters() {
     }
   };
 
+  // --- FIX: If only QuestionId is loaded, fetch full question details here ---
+  // This simulates fetching the full question data if only IDs are present.
+  // In real app, replace this with an API call to fetch questions by ID.
+  useEffect(() => {
+    // If quizQuestions only contains IDs, fetch full data (simulate)
+    if (
+      quizQuestions.length > 0 &&
+      typeof quizQuestions[0] === 'object' &&
+      quizQuestions[0].question === undefined &&
+      quizQuestions[0].questionId
+    ) {
+      // Simulate fetching questions by ID
+      // Replace this with actual API call if needed
+      // For now, just log and show a loading state
+      // setIsLoading(true);
+      // fetchQuestionsByIds(quizQuestions.map(q => q.questionId)).then(fetchedQuestions => {
+      //   setQuizQuestions(fetchedQuestions);
+      //   setIsLoading(false);
+      // });
+      // For demo, show a warning
+      alert('Quiz data incomplete: Only QuestionId loaded. Please contact admin or check backend API.');
+    }
+  }, [quizQuestions]);
+  // --- END FIX ---
+
   return (
     <GameLayout gameName={isGameStarted && !quizEnded ? "Quiz Hunters" : ""}>
       {/* Game navigation node - only show on game screens, not on results */}
