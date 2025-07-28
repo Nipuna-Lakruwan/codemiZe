@@ -11,22 +11,22 @@ import ScrollbarStyles from '../../../components/Admin/UserManagement/ScrollbarS
 export default function UserManagement() {
   // Mock data for Schools, Judges, and Users
   const [schools, setSchools] = useState([
-    { id: 1, name: 'Royal College', city: 'Colombo', nameInShort: 'RC', username: 'royal_college', avatar: { url: '/c-logo.png' } },
-    { id: 2, name: 'Ananda College', city: 'Colombo', nameInShort: 'AC', username: 'ananda_college', avatar: { url: '/c-logo.png' } },
-    { id: 3, name: 'St. Joseph\'s College', city: 'Colombo', nameInShort: 'SJC', username: 'stjosephs_college', avatar: { url: '/c-logo.png' } },
-    { id: 4, name: 'D.S. Senanayake College', city: 'Colombo', nameInShort: 'DSC', username: 'dssenanayake_college', avatar: { url: '/c-logo.png' } }
+    { id: 1, name: 'Royal College', city: 'Colombo', nameInShort: 'RC', username: 'royal_college', email: 'royal@school.com', avatar: { url: '/c-logo.png' } },
+    { id: 2, name: 'Ananda College', city: 'Colombo', nameInShort: 'AC', username: 'ananda_college', email: 'ananda@school.com', avatar: { url: '/c-logo.png' } },
+    { id: 3, name: 'St. Joseph\'s College', city: 'Colombo', nameInShort: 'SJC', username: 'stjosephs_college', email: 'sjc@school.com', avatar: { url: '/c-logo.png' } },
+    { id: 4, name: 'D.S. Senanayake College', city: 'Colombo', nameInShort: 'DSC', username: 'dssenanayake_college', email: 'dsc@school.com', avatar: { url: '/c-logo.png' } }
   ]);
 
   const [judges, setJudges] = useState([
-    { id: 1, name: 'John Smith', username: 'john_smith', avatar: { url: '/c-logo.png' } },
-    { id: 2, name: 'Sarah Johnson', username: 'sarah_johnson', avatar: { url: '/c-logo.png' } },
-    { id: 3, name: 'Michael Brown', username: 'michael_brown', avatar: { url: '/c-logo.png' } }
+    { id: 1, name: 'John Smith', username: 'john_smith', email: 'john@example.com', password: '', avatar: { url: '/c-logo.png' } },
+    { id: 2, name: 'Sarah Johnson', username: 'sarah_johnson', email: 'sarah@example.com', password: '', avatar: { url: '/c-logo.png' } },
+    { id: 3, name: 'Michael Brown', username: 'michael_brown', email: 'michael@example.com', password: '', avatar: { url: '/c-logo.png' } }
   ]);
 
   const [users, setUsers] = useState([
-    { id: 1, name: 'Admin User', username: 'admin_user', role: 'Admin', avatar: { url: '/c-logo.png' } },
-    { id: 2, name: 'Support Staff', username: 'support_staff', role: 'Staff', avatar: { url: '/c-logo.png' } },
-    { id: 3, name: 'Content Manager', username: 'content_manager', role: 'Staff', avatar: { url: '/c-logo.png' } }
+    { id: 1, name: 'Admin User', username: 'admin_user', email: 'admin@example.com', password: '', role: 'Admin', avatar: { url: '/c-logo.png' } },
+    { id: 2, name: 'Support Staff', username: 'support_staff', email: 'support@example.com', password: '', role: 'Staff', avatar: { url: '/c-logo.png' } },
+    { id: 3, name: 'Content Manager', username: 'content_manager', email: 'content@example.com', password: '', role: 'Staff', avatar: { url: '/c-logo.png' } }
   ]);
 
   // State for modals
@@ -35,9 +35,9 @@ export default function UserManagement() {
   const [showAddUserModal, setShowAddUserModal] = useState(false);
 
   // State for form inputs
-  const [newSchool, setNewSchool] = useState({ name: '', city: '', nameInShort: '', username: '', password: '' });
-  const [newJudge, setNewJudge] = useState({ name: '', username: '', password: '' });
-  const [newUser, setNewUser] = useState({ name: '', username: '', password: '', role: 'Staff' });
+  const [newSchool, setNewSchool] = useState({ name: '', city: '', nameInShort: '', username: '', email: '', password: '' });
+  const [newJudge, setNewJudge] = useState({ name: '', username: '', email: '', password: '' });
+  const [newUser, setNewUser] = useState({ name: '', username: '', email: '', password: '', role: 'Staff' });
 
   // State for file uploads
   const [schoolLogo, setSchoolLogo] = useState(null);
@@ -86,7 +86,7 @@ export default function UserManagement() {
         avatar: { url: schoolLogo ? URL.createObjectURL(schoolLogo) : '/c-logo.png' }
       }]);
     }
-    setNewSchool({ name: '', city: '', nameInShort: '', username: '', password: '' });
+    setNewSchool({ name: '', city: '', nameInShort: '', username: '', email: '', password: '' });
     setSchoolLogo(null);
     setShowAddSchoolModal(false);
   };
@@ -109,7 +109,7 @@ export default function UserManagement() {
         avatar: { url: judgePhoto ? URL.createObjectURL(judgePhoto) : '/c-logo.png' }
       }]);
     }
-    setNewJudge({ name: '', username: '', password: '' });
+    setNewJudge({ name: '', username: '', email: '', password: '' });
     setJudgePhoto(null);
     setShowAddJudgeModal(false);
   };
@@ -132,7 +132,7 @@ export default function UserManagement() {
         avatar: { url: userPhoto ? URL.createObjectURL(userPhoto) : '/c-logo.png' }
       }]);
     }
-    setNewUser({ name: '', username: '', password: '', role: 'Staff' });
+    setNewUser({ name: '', username: '', email: '', password: '', role: 'Staff' });
     setUserPhoto(null);
     setShowAddUserModal(false);
   };
@@ -149,7 +149,8 @@ export default function UserManagement() {
         city: school.city,
         nameInShort: school.nameInShort,
         username: school.username,
-        password: '' // We don't populate password for security reasons
+        email: school.email || '',
+        password: ''
       });
       setShowAddSchoolModal(true);
     } else if (type === 'judge') {
@@ -157,7 +158,8 @@ export default function UserManagement() {
       setNewJudge({
         name: judge.name,
         username: judge.username,
-        password: '' // We don't populate password for security reasons
+        email: judge.email || '',
+        password: ''
       });
       setShowAddJudgeModal(true);
     } else if (type === 'user') {
@@ -165,7 +167,8 @@ export default function UserManagement() {
       setNewUser({
         name: user.name,
         username: user.username,
-        password: '', // We don't populate password for security reasons
+        email: user.email || '',
+        password: '',
         role: user.role
       });
       setShowAddUserModal(true);
@@ -194,7 +197,7 @@ export default function UserManagement() {
           onAdd={() => {
             setEditingId(null);
             setEditingType(null);
-            setNewSchool({ name: '', city: '', nameInShort: '', username: '', password: '' });
+            setNewSchool({ name: '', city: '', nameInShort: '', username: '', email: '', password: '' });
             setSchoolLogo(null);
             setShowAddSchoolModal(true);
           }}
@@ -208,7 +211,7 @@ export default function UserManagement() {
           onAdd={() => {
             setEditingId(null);
             setEditingType(null);
-            setNewJudge({ name: '', username: '', password: '' });
+            setNewJudge({ name: '', username: '', email: '', password: '' });
             setJudgePhoto(null);
             setShowAddJudgeModal(true);
           }}
@@ -222,7 +225,7 @@ export default function UserManagement() {
           onAdd={() => {
             setEditingId(null);
             setEditingType(null);
-            setNewUser({ name: '', username: '', password: '', role: 'Staff' });
+            setNewUser({ name: '', username: '', email: '', password: '', role: 'Staff' });
             setUserPhoto(null);
             setShowAddUserModal(true);
           }}
@@ -245,6 +248,8 @@ export default function UserManagement() {
         onFileChange={(e) => handleFileChange(e, setSchoolLogo)}
         file={schoolLogo}
         isEditing={editingId !== null && editingType === 'school'}
+        // Add email field to modal
+        showEmailField={true}
       />
 
       <JudgeModal
@@ -260,6 +265,8 @@ export default function UserManagement() {
         onFileChange={(e) => handleFileChange(e, setJudgePhoto)}
         file={judgePhoto}
         isEditing={editingId !== null && editingType === 'judge'}
+        // Add email field to modal
+        showEmailField={true}
       />
 
       <UserModal
@@ -275,9 +282,10 @@ export default function UserManagement() {
         onFileChange={(e) => handleFileChange(e, setUserPhoto)}
         file={userPhoto}
         isEditing={editingId !== null && editingType === 'user'}
+        // Add email field to modal
+        showEmailField={true}
       />
 
-      {/* Custom scrollbar styles */}
       <ScrollbarStyles />
     </AdminLayout>
   );
