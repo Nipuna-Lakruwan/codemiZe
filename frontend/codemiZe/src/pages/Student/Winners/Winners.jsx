@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import GameLayout from '../GameLayout/GameLayout';
+import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
 
 const Confetti = () => {
   const [particles, setParticles] = useState([]);
@@ -73,23 +75,29 @@ export default function Winners() {
     navigate('/student/games-roadmap');
   };
 
+  useEffect(() => {
+    const getWinners = async () => {
+      // Fetch winners from API or some data source
+      const response = await axiosInstance.get(API_PATHS.ADMIN.SHOW_WINNERS);
+      setWinners(response.data.winners);
+    };
+
+    getWinners();
+  }, []);
+
   // Sample data for winners - in a real app this would come from an API or props
-  const winners = [
+  const [winners, setWinners] = useState([
     {
-      teamName: "Nipuna ge team eka",
-      logoPath1: "/scl1.png",
-      marks: 450,
-      position: 1,
-      members: ["John D.", "Jane S.", "Alex K."]
+      name: "Nipuna ge team eka",
+      avatar: "/scl1.png",
+      totalScore: 450,
     },
     {
-      teamName: "Nipuna ge team eka 2",
-      logoPath2: "/scl2.png",
-      marks: 420,
-      position: 2,
-      members: ["Michael T.", "Sarah L.", "David R."]
+      name: "Nipuna ge team eka 2",
+      avatar: "/scl2.png",
+      totalScore: 420,
     }
-  ];
+  ]);
 
   return (
     <GameLayout>
@@ -189,13 +197,13 @@ export default function Winners() {
                       delay: 0.5 + (index * 0.2)
                     }}
                   >
-                    {winner.marks}
+                    {winner.totalScore}
                   </motion.div>
                 </div>
 
                 {/* Team name below the stage */}
                 <h3 className="text-white text-2xl font-bold bg-purple-900 bg-opacity-50 px-6 py-2 rounded-lg">
-                  {winner.teamName}
+                  {winner.name}
                 </h3>
               </div>
             </motion.div>
