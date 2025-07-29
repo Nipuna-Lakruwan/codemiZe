@@ -1,0 +1,108 @@
+##--------------------------------------------------Janith--------------------------------------------------##
+
+1. Quiz Hunter controller and route --------done--------ToTest
+2. Code Crusher controller and route --------done--------ToTest
+3. Circuit Smashers controller and route --------done--------ToTest
+4. Route Seekers controller and route --------done--------ToTest
+5. Battle Breakers controller and route --------done--------ToTest
+
+##--------------------------------------------------Notes--------------------------------------------------##
+
+## All models in models/markings
+
+##--------------------------------------------------MockDataForTesting--------------------------------------------------##
+
+Battle Breakers
+
+Endpoint: POST /api/v1/judge/battle-breakers
+
+Body (raw, JSON):
+
+    1 {
+    2   "questionId": "60d5f1b3e7b3c1b6a8f0b1e2",
+    3   "responses": [
+    4     {
+    5       "userId": "60d5f1b3e7b3c1b6a8f0b1e3",
+    6       "attempt": "This is the user's attempt.",
+    7       "status": "Correct"
+    8     }
+    9   ]
+
+10 }
+
+---
+
+Circuit Smashers
+
+Endpoint: POST /api/v1/judge/circuit-smashers
+
+Body (raw, JSON):
+
+    1 {
+    2   "schoolId": "60d5f1b3e7b3c1b6a8f0b1e4",
+    3   "judgeId": "60d5f1b3e7b3c1b6a8f0b1e5",
+    4   "marks": [
+    5     {
+    6       "criteriaId": "60d5f1b3e7b3c1b6a8f0b1e6",
+    7       "mark": 10
+    8     }
+    9   ],
+
+10 "totalMarks": 10
+11 }
+
+---
+
+Code Crushers
+
+Endpoint: POST /api/v1/judge/code-crushers
+
+Body (raw, JSON):
+
+    1 {
+    2   "schoolId": "60d5f1b3e7b3c1b6a8f0b1e7",
+    3   "judgeId": "60d5f1b3e7b3c1b6a8f0b1e8",
+    4   "marks": [
+    5     {
+    6       "criteriaId": "60d5f1b3e7b3c1b6a8f0b1e9",
+    7       "mark": 10
+    8     }
+    9   ]
+
+10 }
+
+---
+
+Quiz Hunters
+
+Endpoint: POST /api/v1/judge/quiz-hunters
+
+Body (raw, JSON):
+
+1 {
+2 "questionId": "60d5f1b3e7b3c1b6a8f0b1f0",
+3 "userId": "60d5f1b3e7b3c1b6a8f0b1f1",
+4 "selectedAnswer": "A",
+5 "correctAnswer": "A",
+6 "status": "Correct"
+7 }
+
+---
+
+Route Seekers
+
+Endpoint: POST /api/v1/judge/route-seekers
+
+Body (raw, JSON):
+
+    1 {
+    2   "schoolId": "60d5f1b3e7b3c1b6a8f0b1f2",
+    3   "judgeId": "60d5f1b3e7b3c1b6a8f0b1f3",
+    4   "marks": [
+    5     {
+    6       "criteriaId": "60d5f1b3e7b3c1b6a8f0b1f4",
+    7       "mark": 10
+    8     }
+    9   ]
+
+10 }
