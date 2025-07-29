@@ -406,32 +406,25 @@ export default function AdminBattleBreakers() {
   };
 
   const handleMarkAnswer = (schoolId, isCorrect) => {
-    // If a correct answer has already been given, don't allow more marking
-    if (correctSchool !== null) {
-      return;
-    }
-
-    // For wrong answers, check if attempts limit is reached
-    if (totalAttempts >= 3 && !isCorrect) {
-      // No need for an alert here since the button will be visually disabled
-      return;
-    }
+    // Only allow marking if no correct answer yet and less than 2 wrongs
+    if (correctSchool !== null) return;
 
     const currentQuestionId = questions[currentQuestionIndex]?._id;
     if (!currentQuestionId) return;
 
-    // Calculate the current attempt number for this school
-    const currentAttemptNum = (wrongAttempts[schoolId] || 0) + 1;
+    // Count current wrong attempts for this question
+    const wrongCount = Object.values(schoolAnswers).filter(v => v === false).length;
 
     if (isCorrect) {
-      // Mark this answer as correct
+      // Only allow marking as correct if no correct answer yet and not after two wrongs
+      if (wrongCount >= 2) return;
       setSchoolAnswers(prev => ({
         ...prev,
         [schoolId]: true
       }));
       setCorrectSchool(schoolId);
 
-      // Add to answer history with attempt tracking
+      // Save to answer history
       setAnswerHistory(prev => {
         const questionAnswers = prev[currentQuestionId] || {};
         return {
@@ -445,32 +438,15 @@ export default function AdminBattleBreakers() {
           }
         };
       });
-
-      // Optional: Auto-move to next question after a delay
-      // setTimeout(goToNextQuestion, 2000);
     } else {
-      // Handle wrong answer
-      setSchoolAnswers(prev => {
-        // Only mark this specific school as wrong, leave others unchanged
-        return {
-          ...prev,
-          [schoolId]: false
-        };
-      });
+      // Only allow up to 2 wrongs for a question
+      if (wrongCount >= 2) return;
+      setSchoolAnswers(prev => ({
+        ...prev,
+        [schoolId]: false
+      }));
 
-      // Increment total attempts counter
-      setTotalAttempts(prev => prev + 1);
-
-      // Increment wrong attempts counter for this school
-      setWrongAttempts(prev => {
-        const newCount = (prev[schoolId] || 0) + 1;
-        return {
-          ...prev,
-          [schoolId]: newCount
-        };
-      });
-
-      // Add to answer history with attempt tracking
+      // Save to answer history
       setAnswerHistory(prev => {
         const questionAnswers = prev[currentQuestionId] || {};
         return {
@@ -886,18 +862,9 @@ export default function AdminBattleBreakers() {
                       {formatTime(timeRemaining)}
                     </span>
                   </div>
-
-                  {isQuestionActive && (
-                    <div className={`px-4 py-2 rounded ${totalAttempts >= 3 ? 'bg-red-100' : 'bg-yellow-100'}`}>
-                      <span className="font-semibold">Attempts Remaining: </span>
-                      <span className={totalAttempts >= 3 ? "text-red-600 font-bold" : ""}>
-                        {Math.max(0, 3 - totalAttempts)}/3
-                      </span>
-                    </div>
-                  )}
+                  {/* Removed Attempt Remaining yellow section */}
                 </div>
               </div>
-
               {/* Progress Bar */}
               <div className="w-full bg-gray-300 h-4 rounded-full overflow-hidden">
                 <div
@@ -934,7 +901,8 @@ export default function AdminBattleBreakers() {
                     {showQuestionText ? 'Hide Question Text' : 'Show Question Text'}
                   </button>
                 </div>
-              </div>              <div className="overflow-x-auto mt-2 max-w-full">
+              </div>
+              <div className="overflow-x-auto mt-2 max-w-full">
                 <table ref={tableRef} className="w-full bg-white border border-gray-300 rounded-lg"
                   style={{ tableLayout: 'auto', minWidth: '100%' }}>
                   <thead>
@@ -1007,42 +975,39 @@ export default function AdminBattleBreakers() {
                               <div className="flex justify-center gap-1">
                                 {isQuestionActive ? (
                                   /* Active Question - Show buttons */
-                                  <>
-                                    {correctSchool === null ? (
-                                      totalAttempts >= 3 ? (
-                                        /* When all 3 attempts are used */
-                                        <span className="text-red-500 font-medium text-xs">X</span>
-                                      ) : (
-                                        /* Normal state with both buttons available */
-                                        <>
-                                          <button
-                                            className={`p-1 rounded ${schoolAnswers[school._id] === true ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
-                                            onClick={() => handleMarkAnswer(school._id, true)}
-                                          >
-                                            <FaCheck size={12} />
-                                          </button>
-                                          <button
-                                            className={`p-1 rounded ${schoolAnswers[school._id] === false ? 'bg-red-500 text-white' : 'bg-gray-200'}`}
-                                            onClick={() => handleMarkAnswer(school._id, false)}
-                                          >
-                                            <FaTimes size={12} />
-                                          </button>
-                                          {/* Show wrong attempt indicator */}
-                                          {schoolAnswers[school._id] === false && (wrongAttempts[school._id] || 0) > 0 && (
-                                            <span className="text-xs text-red-500 font-medium">
-                                              {wrongAttempts[school._id]}
-                                            </span>
-                                          )}
-                                        </>
-                                      )
-                                    ) : correctSchool === school._id ? (
-                                      <span className="text-green-500 font-bold text-lg">✓</span>
-                                    ) : schoolAnswers[school._id] === false ? (
-                                      <span className="text-red-500 font-bold text-lg">✗</span>
-                                    ) : (
-                                      <span className="text-gray-500">-</span>
-                                    )}
-                                  </>
+                                  (() => {
+                                    // Count wrongs for this row
+                                    const wrongCount = Object.values(schoolAnswers).filter(v => v === false).length;
+                                    // If correctSchool is selected or two wrongs, lock the row
+                                    if (correctSchool !== null || wrongCount >= 2) {
+                                      // Show result icons only
+                                      if (correctSchool === school._id) {
+                                        return <span className="text-green-500 font-bold text-lg">✓</span>;
+                                      }
+                                      if (schoolAnswers[school._id] === false) {
+                                        return <span className="text-red-500 font-bold text-lg">✗</span>;
+                                      }
+                                      return <span className="text-gray-500">-</span>;
+                                    }
+                                    // Normal state with both buttons available
+                                    return (
+                                      <>
+                                        <button
+                                          className={`p-1 rounded ${schoolAnswers[school._id] === true ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
+                                          onClick={() => handleMarkAnswer(school._id, true)}
+                                        >
+                                          <FaCheck size={12} />
+                                        </button>
+                                        <button
+                                          className={`p-1 rounded ${schoolAnswers[school._id] === false ? 'bg-red-500 text-white' : 'bg-gray-200'}`}
+                                          onClick={() => handleMarkAnswer(school._id, false)}
+                                        >
+                                          <FaTimes size={12} />
+                                        </button>
+                                        {/* Removed wrong attempt indicator number */}
+                                      </>
+                                    );
+                                  })()
                                 ) : (
                                   /* Non-active current question - Show result icons */
                                   <>
@@ -1062,14 +1027,7 @@ export default function AdminBattleBreakers() {
                                 {answerHistory[question._id] && answerHistory[question._id][school._id] === true ? (
                                   <span className="text-green-500 font-bold">✓</span>
                                 ) : answerHistory[question._id] && answerHistory[question._id][school._id] === false ? (
-                                  <div>
-                                    <span className="text-red-500 font-bold">✗</span>
-                                    {answerHistory[question._id][`${school._id}_attempts`] > 0 && (
-                                      <span className="text-xs text-red-500">
-                                        {answerHistory[question._id][`${school._id}_attempts`]}
-                                      </span>
-                                    )}
-                                  </div>
+                                  <span className="text-red-500 font-bold">✗</span>
                                 ) : (
                                   <span>-</span>
                                 )}

@@ -389,21 +389,27 @@ export default function BattleBreakers() {
                     stiffness: 500,
                     damping: 25
                   }}
-                  onClick={handleBuzzerPress}
+                  onClick={() => {
+                    // Disable buzzer if time is up
+                    if (timeRemaining <= 0) return;
+                    handleBuzzerPress();
+                  }}
                   style={{
                     marginBottom: "-140px", // Negative margin to move closer to base
-                    zIndex: 10
+                    zIndex: 10,
+                    pointerEvents: timeRemaining <= 0 ? "none" : "auto",
+                    opacity: timeRemaining <= 0 ? 0.5 : 1
                   }}
                 >
                   <motion.div
                     className="w-72 h-40 rounded-full flex items-center justify-center cursor-pointer"
                     whileHover={{
-                      scale: 1.03,
-                      filter: "brightness(1.1) drop-shadow(0 0 10px rgba(255, 0, 0, 0.5))"
+                      scale: timeRemaining > 0 ? 1.03 : 1,
+                      filter: timeRemaining > 0 ? "brightness(1.1) drop-shadow(0 0 10px rgba(255, 0, 0, 0.5))" : "none"
                     }}
                     whileTap={{
-                      scale: 0.97,
-                      y: 5
+                      scale: timeRemaining > 0 ? 0.97 : 1,
+                      y: timeRemaining > 0 ? 5 : 0
                     }}
                     style={{
                       backgroundImage: 'url("/red-button.png")',

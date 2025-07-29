@@ -111,11 +111,6 @@ function App() {
           } />
 
           {/* Judge routes - only accessible by Judge role */}
-          <Route path="/judge/dashboard" element={
-            <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.JUDGE_DASHBOARD}>
-              <JudgeDashboard />
-            </RoleProtectedRoute>
-          } />
           <Route path="/judge/quiz-hunters" element={
             <RoleProtectedRoute allowedRoles={ROUTE_PERMISSIONS.JUDGE_MARKING}>
               <QuizHuntersJudge />

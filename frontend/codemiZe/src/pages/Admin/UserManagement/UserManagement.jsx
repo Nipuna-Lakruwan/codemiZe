@@ -39,9 +39,9 @@ export default function UserManagement() {
   const [showAddUserModal, setShowAddUserModal] = useState(false);
 
   // State for form inputs
-  const [newSchool, setNewSchool] = useState({ name: '', city: '', nameInShort: '', email: '', password: '' });
-  const [newJudge, setNewJudge] = useState({ name: '', email: '', password: '' });
-  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'Dashboard' });
+  const [newSchool, setNewSchool] = useState({ name: '', city: '', nameInShort: '', username: '', email: '', password: '' });
+  const [newJudge, setNewJudge] = useState({ name: '', username: '', email: '', password: '' });
+  const [newUser, setNewUser] = useState({ name: '', username: '', email: '', password: '', role: 'Staff' });
 
   // State for file uploads
   const [schoolLogo, setSchoolLogo] = useState(null);
@@ -95,8 +95,8 @@ export default function UserManagement() {
         console.error('Error creating school:', error);
       }
     }
-    setNewSchool({ name: '', city: '', nameInShort: '', email: '', password: '' });
 
+    setNewSchool({ name: '', city: '', nameInShort: '', username: '', email: '', password: '' });
     setSchoolLogo(null);
     setShowAddSchoolModal(false);
   };
@@ -128,7 +128,8 @@ export default function UserManagement() {
         console.error("Error updating user", error)
       }
     }
-    setNewJudge({ name: '', email: '', password: '' });
+
+    setNewJudge({ name: '', username: '', email: '', password: '' });
     setJudgePhoto(null);
     setShowAddJudgeModal(false);
   };
@@ -160,7 +161,9 @@ export default function UserManagement() {
         console.error('Error creating user:', error);
       }
     }
-    setNewUser({ name: '', email: '', password: '', role: 'Dashboard' });
+
+    setNewUser({ name: '', username: '', email: '', password: '', role: 'Staff' });
+
     setUserPhoto(null);
     setShowAddUserModal(false);
   };
@@ -176,24 +179,28 @@ export default function UserManagement() {
         name: school.name,
         city: school.city,
         nameInShort: school.nameInShort,
-        email: school.email,
-        password: '' // We don't populate password for security reasons
+        username: school.username,
+        email: school.email || '',
+        password: ''
+
       });
       setShowAddSchoolModal(true);
     } else if (type === 'judge') {
       const judge = judges.find(j => j.id === id);
       setNewJudge({
         name: judge.name,
-        email: judge.email,
-        password: '' // We don't populate password for security reasons
+        username: judge.username,
+        email: judge.email || '',
+        password: ''
       });
       setShowAddJudgeModal(true);
     } else if (type === 'user') {
       const user = users.find(u => u.id === id);
       setNewUser({
         name: user.name,
-        email: user.email,
-        password: '', // We don't populate password for security reasons
+        username: user.username,
+        email: user.email || '',
+        password: '',
         role: user.role
       });
       setShowAddUserModal(true);
@@ -237,7 +244,7 @@ export default function UserManagement() {
           onAdd={() => {
             setEditingId(null);
             setEditingType(null);
-            setNewSchool({ name: '', city: '', nameInShort: '', email: '', password: '' });
+            setNewSchool({ name: '', city: '', nameInShort: '', username: '', email: '', password: '' });
             setSchoolLogo(null);
             setShowAddSchoolModal(true);
           }}
@@ -251,7 +258,7 @@ export default function UserManagement() {
           onAdd={() => {
             setEditingId(null);
             setEditingType(null);
-            setNewJudge({ name: '', email: '', password: '' });
+            setNewJudge({ name: '', username: '', email: '', password: '' });
             setJudgePhoto(null);
             setShowAddJudgeModal(true);
           }}
@@ -265,7 +272,7 @@ export default function UserManagement() {
           onAdd={() => {
             setEditingId(null);
             setEditingType(null);
-            setNewUser({ name: '', email: '', password: '', role: 'Dashboard' });
+            setNewUser({ name: '', username: '', email: '', password: '', role: 'Staff' });
             setUserPhoto(null);
             setShowAddUserModal(true);
           }}
@@ -288,6 +295,8 @@ export default function UserManagement() {
         onFileChange={(e) => handleFileChange(e, setSchoolLogo)}
         file={schoolLogo}
         isEditing={editingId !== null && editingType === 'school'}
+        // Add email field to modal
+        showEmailField={true}
       />
 
       <JudgeModal
@@ -303,6 +312,8 @@ export default function UserManagement() {
         onFileChange={(e) => handleFileChange(e, setJudgePhoto)}
         file={judgePhoto}
         isEditing={editingId !== null && editingType === 'judge'}
+        // Add email field to modal
+        showEmailField={true}
       />
 
       <UserModal
@@ -318,9 +329,10 @@ export default function UserManagement() {
         onFileChange={(e) => handleFileChange(e, setUserPhoto)}
         file={userPhoto}
         isEditing={editingId !== null && editingType === 'user'}
+        // Add email field to modal
+        showEmailField={true}
       />
 
-      {/* Custom scrollbar styles */}
       <ScrollbarStyles />
     </AdminLayout>
   );
