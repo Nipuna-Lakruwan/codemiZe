@@ -6,7 +6,7 @@ import {
   getMarkingById,
   updateMarking,
   deleteMarking,
-} from "../../controllers/Judges/RouteSeekersMarking.controller.js";
+} from "../../controllers/Judges/routeSeekersMarking.controller.js";
 
 const router = express.Router();
 
