@@ -6,7 +6,7 @@ import {
   getAnswerById,
   updateAnswer,
   deleteAnswer,
-} from "../../controllers/Judges/BattleBreakersAnswer.controller.js";
+} from "../../controllers/Judges/battleBreakersAnswer.controller.js";
 
 const router = express.Router();
 
