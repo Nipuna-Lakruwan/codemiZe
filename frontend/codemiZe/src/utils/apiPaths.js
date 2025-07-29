@@ -40,7 +40,7 @@ export const API_PATHS = {
     DELETE_ALL_QUESTIONS: "/api/v1/battle-breakers/deleteAllQuestions",
     BUZZER_PRESS: "/api/v1/battle-breakers/press",
     GET_DASHBOARD: (questionId) => `/api/v1/battle-breakers/school/${questionId}`,
-    HANDLE_COMPLETION: "/api/v1/battle-breakers/finish",
+    HANDLE_COMPLETION: "/api/v1/battle-breakers/submit",
   },
   QUIZ_HUNTERS: {
     GET_ALL_QUESTIONS: "/api/v1/quiz-hunters/",

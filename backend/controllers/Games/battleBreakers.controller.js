@@ -163,71 +163,103 @@ export const addQuestionsCSV = async (req, res) => {
     }
 }
 
-export const handleCompletion = async (req, res) => {
-    const data = req.body; // expecting an array of objects
+export const submitAnswers = async (req, res) => {
+    const { questionId, submissions } = req.body;
 
-    if (!Array.isArray(data) || data.length === 0) {
-        return res.status(400).json({ message: "Input must be a non-empty array" });
+    // Validate required fields
+    if (!questionId || !submissions || !Array.isArray(submissions) || submissions.length === 0 || submissions.length > 2) {
+        return res.status(400).json({ 
+            message: "questionId and submissions array (containing 1 or 2 schools) are required" 
+        });
+    }
+
+    // Validate each submission has the required fields
+    for (const submission of submissions) {
+        if (!submission.userId || submission.attempt === undefined || !submission.status) {
+            return res.status(400).json({
+                message: "Each submission must contain userId, attempt, and status"
+            });
+        }
+        
+        // Ensure attempt is a number
+        if (typeof submission.attempt !== 'number') {
+            return res.status(400).json({
+                message: "The attempt field must be a numerical value"
+            });
+        }
     }
 
     try {
-        for (const item of data) {
-            const { questionId, responses } = item;
+        // Find or create an answer document for this question
+        let answerDoc = await BattleBreakersAnswer.findOne({ questionId });
 
-            if (!questionId || !Array.isArray(responses) || responses.length === 0) {
-                return res.status(400).json({ message: "Each item must include questionId and a non-empty responses array" });
-            }
-
-            let answerDoc = await BattleBreakersAnswer.findOne({ questionId });
-
-            if (!answerDoc) {
-                answerDoc = new BattleBreakersAnswer({ questionId, responses });
-                await answerDoc.save();
-            } else {
-                // Add new responses without replacing previous ones
-                for (const newRes of responses) {
-                    const { userId, attempt, status } = newRes;
-
-                    if (!userId || !attempt || !status) {
-                        return res.status(400).json({ message: "Each response must include userId, attempt, and status" });
-                    }
-
-                    answerDoc.responses.push({ userId, attempt, status });
-                }
-                await answerDoc.save();
-            }
-
-            // For each unique school (userId) in this response set
-            const uniqueUserIds = [...new Set(responses.map(r => r.userId.toString()))];
-
-            for (const userId of uniqueUserIds) {
-                const allResponses = (
-                    await BattleBreakersAnswer.findOne({ questionId })
-                ).responses.filter(r => r.userId.toString() === userId);
-
-                // Calculate score
-                let score = 0;
-                if (allResponses.length >= 1) {
-                    if (allResponses[0].status === "Correct") {
-                        score = 10;
-                    } else {
-                        score = -5;
-                        if (allResponses.length > 1 && allResponses[1].status === "Correct") {
-                            score += 5;
-                        }
-                    }
-                }
-
-                // Update the BattleBreakers score of the corresponding school
-                await School.findByIdAndUpdate(userId, {
-                    $inc: { "score.BattleBreakers": score }
+        if (!answerDoc) {
+            // Create a new answer document if none exists
+            const responses = submissions.map(sub => ({
+                userId: sub.userId,
+                attempt: sub.attempt,
+                status: sub.status
+            }));
+            
+            answerDoc = new BattleBreakersAnswer({ 
+                questionId, 
+                responses
+            });
+        } else {
+            // Add the new responses to existing document
+            for (const submission of submissions) {
+                answerDoc.responses.push({
+                    userId: submission.userId,
+                    attempt: submission.attempt,
+                    status: submission.status
                 });
             }
         }
+        
+        await answerDoc.save();
+        
+        // Process and update scores for all submitted schools
+        const scoreUpdates = [];
+        
+        for (const submission of submissions) {
+            const userId = submission.userId;
+            
+            // Get all responses for this user and question
+            const userResponses = answerDoc.responses.filter(
+                r => r.userId.toString() === userId.toString()
+            );
 
-        res.status(200).json({ message: "Completion(s) and score(s) recorded successfully" });
+            // Calculate score based on response pattern
+            let score = 0;
+            if (userResponses.length >= 1) {
+                if (userResponses[0].status === "Correct") {
+                    score = 10;
+                } else {
+                    score = -5;
+                    if (userResponses.length > 1 && userResponses[1].status === "Correct") {
+                        score += 5;
+                    }
+                }
+            }
+
+            // Update the BattleBreakers score for the school
+            await School.findByIdAndUpdate(userId, {
+                $inc: { "score.BattleBreakers": score }
+            });
+            
+            scoreUpdates.push({
+                userId,
+                scoreUpdated: score
+            });
+        }
+        
+        res.status(200).json({ 
+            message: "Answers submitted and scores updated successfully",
+            data: answerDoc,
+            scoreUpdates
+        });
     } catch (error) {
-        console.error("Error recording completions or updating scores:", error);
+        console.error("Error submitting answer:", error);
         res.status(500).json({ message: "Internal Server Error" });
     }
 };

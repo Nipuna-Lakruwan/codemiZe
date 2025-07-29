@@ -5,7 +5,7 @@ import { parseCSVFile } from "../../utils/csvParser.js";
 
 export const getAllQuestions = async (req, res) => {
     try {
-        const questions = await QuizHuntersQuestion.find({});
+        const questions = await QuizHuntersQuestion.find({}).sort({ createdAt: 1 });
 
         const formattedQuestions = questions.map(q => {
             const options = [q.answer, q.option1, q.option2, q.option3];
@@ -138,62 +138,150 @@ export const setTime = async (req, res) => {};
 
 export const submitQuiz = async (req, res) => {
   try {
-    const { answers } = req.body;
+    const { questionId, selectedAnswer } = req.body;
     const userId = req.user.id;
 
-    const answerDocs = [];
-
-    for (const { questionId, selectedAnswer } of answers) {
-      // Check if this user already submitted an answer for this question
-      const alreadyAnswered = await QuizHuntersAnswer.findOne({ questionId, userId });
-      if (alreadyAnswered) continue;
-
-      const question = await QuizHuntersQuestion.findById(questionId);
-      if (!question) continue;
-
-      const isCorrect = selectedAnswer === question.answer;
-
-      answerDocs.push({
-        questionId,
-        userId,
-        selectedAnswer,
-        correctAnswer: question.answer,
-        status: isCorrect ? "Correct" : "Incorrect"
-      });
+    // Validate required fields
+    if (!questionId || !selectedAnswer) {
+      return res.status(400).json({ message: "Question ID and selected answer are required" });
     }
 
-    if (answerDocs.length === 0) {
-      return res.status(400).json({ message: "All selected questions were already submitted." });
+    // Check if this user already submitted an answer for this question
+    const alreadyAnswered = await QuizHuntersAnswer.findOne({ questionId, userId });
+    if (alreadyAnswered) {
+      return res.status(400).json({ message: "Answer for this question has already been submitted" });
     }
 
-    await QuizHuntersAnswer.insertMany(answerDocs);
+    // Find the question to validate and get correct answer
+    const question = await QuizHuntersQuestion.findById(questionId);
+    if (!question) {
+      return res.status(404).json({ message: "Question not found" });
+    }
 
-    const correctCount = answerDocs.filter(a => a.status === "Correct").length;
-    const finalScore = (correctCount / answers.length) * 100;
+    // Check if answer is correct
+    const isCorrect = selectedAnswer === question.answer;
 
+    // Create the answer document
+    const answerDoc = {
+      questionId,
+      userId,
+      selectedAnswer,
+      correctAnswer: question.answer,
+      status: isCorrect ? "Correct" : "Incorrect"
+    };
+
+    // Save the answer
+    await QuizHuntersAnswer.create(answerDoc);
+
+    res.status(200).json({ message: "Answer submitted successfully" });
+  } catch (err) {
+    console.error("Quiz submission failed:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const calculateAndUpdateScore = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Find the school
     const school = await School.findById(userId);
     if (!school) {
-      return res.status(404).json({message: "School not found"});
+      return res.status(404).json({ message: "School not found" });
     }
+
+    // Get all answers for this user
+    const userAnswers = await QuizHuntersAnswer.find({ userId });
+    
+    if (userAnswers.length === 0) {
+      return res.status(400).json({ message: "No answers found for this user" });
+    }
+
+    // Calculate score
+    const correctAnswers = userAnswers.filter(answer => answer.status === "Correct").length;
+    const totalAnswers = userAnswers.length;
+    const finalScore = (correctAnswers / totalAnswers) * 100;
 
     // Prevent overwriting if a score already exists
     if (school.score.QuizHunters > 0) {
       return res.status(200).json({
-        message: "Score for QuizHunters already exists and cannot be overwritten."
+        message: "Score for QuizHunters already exists and cannot be overwritten.",
+        currentScore: school.score.QuizHunters
       });
     }
 
+    // Update school score
     school.score.QuizHunters = finalScore;
     await school.save();
 
     res.status(200).json({
-      score: correctCount,
-      total: answers.length,
-      details: answerDocs,
-      finalScore
+      message: "Score calculated and updated successfully",
+      score: finalScore,
+      percentage: `${finalScore.toFixed(2)}%`
     });
   } catch (err) {
-    console.error("Quiz submission failed:", err);
+    console.error("Score calculation failed:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const checkCurrentQuestion = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get all questions in order (by creation time)
+    const allQuestions = await QuizHuntersQuestion.find({}).sort({ createdAt: 1 });
+    
+    if (allQuestions.length === 0) {
+      return res.status(404).json({ message: "No questions available" });
+    }
+
+    // Find the last recorded answer for this user
+    const lastAnswer = await QuizHuntersAnswer.findOne({ userId }).sort({ createdAt: -1 });
+
+    let nextQuestion;
+
+    if (!lastAnswer) {
+      // No answers recorded yet, return the first question
+      nextQuestion = allQuestions[0];
+    } else {
+      // Find the index of the last answered question
+      const lastQuestionIndex = allQuestions.findIndex(q => q._id.toString() === lastAnswer.questionId.toString());
+      
+      if (lastQuestionIndex === -1) {
+        // Last answered question not found in current questions, return first question
+        nextQuestion = allQuestions[0];
+      } else if (lastQuestionIndex + 1 >= allQuestions.length) {
+        // All questions have been answered
+        return res.status(200).json({ 
+          message: "All questions have been completed",
+          completed: true,
+          totalQuestions: allQuestions.length
+        });
+      } else {
+        // Return the next question
+        nextQuestion = allQuestions[lastQuestionIndex + 1];
+      }
+    }
+
+    // Format the question (shuffle options)
+    const options = [nextQuestion.answer, nextQuestion.option1, nextQuestion.option2, nextQuestion.option3];
+    const shuffledOptions = options.sort(() => Math.random() - 0.5);
+
+    const formattedQuestion = {
+      _id: nextQuestion._id,
+      question: nextQuestion.question,
+      options: shuffledOptions,
+    };
+
+    res.status(200).json({ 
+      message: "Next question retrieved successfully", 
+      question: formattedQuestion,
+      questionNumber: allQuestions.findIndex(q => q._id.toString() === nextQuestion._id.toString()) + 1,
+      totalQuestions: allQuestions.length
+    });
+  } catch (err) {
+    console.error("Error checking current question:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
