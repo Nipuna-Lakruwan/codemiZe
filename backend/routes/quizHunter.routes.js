@@ -6,7 +6,7 @@ import {
   requireSchool 
 } from "../middleware/roleMiddleware.js";
 import { CSVUpload } from "../middleware/uploadMiddleware.js";
-import { addQuestion, addQuestionsCSV, deleteAllQuestions, deleteQuestion, editQuestion, getAllQuestions, getQuestionsWithAnswers, setTime, submitQuiz } from "../controllers/Games/quizHunters.controller.js";
+import { addQuestion, addQuestionsCSV, calculateAndUpdateScore, checkCurrentQuestion, deleteAllQuestions, deleteQuestion, editQuestion, getAllQuestions, getQuestionsWithAnswers, setTime, submitQuiz } from "../controllers/Games/quizHunters.controller.js";
 
 const router = express.Router();
 
@@ -20,5 +20,8 @@ router.delete("/deleteAllQuestions", protect, requireAdmin, deleteAllQuestions);
 router.post("/uploadCSV", protect, requireAdmin, CSVUpload.single('csv'), addQuestionsCSV);
 router.post("/setTime", protect, requireAdmin, setTime);
 router.post("/submit", protect, requireSchool, submitQuiz);
+router.post("/finish", protect, requireSchool, calculateAndUpdateScore);
+router.get("/currentQuestion", protect, requireSchool, checkCurrentQuestion);
+
 
 export default router;
