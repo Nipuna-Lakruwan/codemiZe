@@ -42,7 +42,7 @@ const UserModal = ({
             <input
               type="text"
               name="username"
-              value={userData.username}
+              value={userData.email}
               onChange={onChange}
               placeholder="Username"
               className="border rounded px-3 py-2 w-full focus:ring-2 focus:ring-sky-500"
@@ -86,7 +86,7 @@ const UserModal = ({
               required
             >
               <option value="Admin">Admin</option>
-              <option value="Staff">Staff</option>
+              <option value="Dashboard">Dashboard</option>
             </select>
           </div>
           <div>

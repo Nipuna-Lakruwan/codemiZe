@@ -4,5 +4,6 @@ export const getCookie = (name) => {
 };
 
 export const imagePath = (image) => {
+  if (!image) return '/c-logo.png';
   return `${import.meta.env.VITE_BACKEND_URL}${image}`;
 };

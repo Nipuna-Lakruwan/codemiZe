@@ -17,6 +17,8 @@ import battleBreakerRoutes from "./routes/battleBreaker.routes.js";
 import quizHunterRoutes from "./routes/quizHunter.routes.js";
 import codeCrusherRoutes from "./routes/codeCrusher.routes.js";
 import circuitSmashersRoutes from "./routes/circuitSmashers.routes.js";
+import criteriaRoutes from "./routes/criteria.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 const app = express();
 
@@ -60,6 +62,8 @@ app.use("/api/v1/battle-breakers", battleBreakerRoutes);
 app.use("/api/v1/quiz-hunters", quizHunterRoutes);
 app.use("/api/v1/code-crushers", codeCrusherRoutes);
 app.use("/api/v1/circuit-smashers", circuitSmashersRoutes);
+app.use("/api/v1/criteria", criteriaRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 // Connect to DB
 connectToDB();

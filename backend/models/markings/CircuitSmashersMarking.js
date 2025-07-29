@@ -9,7 +9,8 @@ const circuitSmashersMarkingSchema = new mongoose.Schema(
         criteriaId: mongoose.Schema.Types.ObjectId,
         mark: Number
       }
-    ]
+    ],
+    totalMarks: Number,
   },
   { timestamps: true }
 );

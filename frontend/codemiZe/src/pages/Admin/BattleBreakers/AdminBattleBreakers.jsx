@@ -1,44 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { motion } from 'framer-motion';
-import { FaUpload, FaPlus, FaEye, FaClock, FaPlayCircle, FaStopCircle, FaChevronLeft, FaChevronRight, FaCheck, FaTimes, FaEdit, FaTrash, FaSearch, FaFilter } from 'react-icons/fa';
+import { FaUpload, FaPlus, FaEye, FaClock, FaPlayCircle, FaStopCircle, FaChevronLeft, FaChevronRight, FaCheck, FaTimes, FaEdit, FaTrash, FaSearch, FaFilter, FaSave } from 'react-icons/fa';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import AdminBox from '../../../components/Admin/QuizComponents/AdminBox';
-
-// Mock data for demonstration
-const mockQuestions = [
-  { _id: '1', question: 'What is a firewall in network security?', answer: 'A network security device that monitors and filters incoming and outgoing network traffic.' },
-  { _id: '2', question: 'What is the purpose of DNS?', answer: 'Domain Name System translates human-readable domain names to IP addresses.' },
-  { _id: '3', question: 'What is a subnet mask used for?', answer: 'It divides an IP address into network and host portions.' },
-  { _id: '4', question: 'What is DHCP?', answer: 'Dynamic Host Configuration Protocol automatically assigns IP addresses to devices on a network.' },
-  { _id: '5', question: 'What is the difference between TCP and UDP?', answer: 'TCP is connection-oriented and guarantees delivery, while UDP is connectionless and doesn\'t guarantee delivery.' },
-  { _id: '6', question: 'What is an IP address?', answer: 'A numerical label assigned to each device connected to a computer network that uses the Internet Protocol for communication.' },
-  { _id: '7', question: 'What is a router?', answer: 'A device that forwards data packets between computer networks.' },
-  { _id: '8', question: 'What is a VPN?', answer: 'Virtual Private Network extends a private network across a public network, enabling users to send and receive data as if their devices were directly connected to the private network.' }
-];
-
-const mockSchools = [
-  { _id: '1', nameInShort: 'SMC', name: 'St. Mary\'s College', avatar: { url: '/c-logo.png' } },
-  { _id: '2', nameInShort: 'RCG', name: 'Royal College Gampaha', avatar: { url: '/c-logo.png' } },
-  { _id: '3', nameInShort: 'STC', name: 'St. Thomas\' College', avatar: { url: '/c-logo.png' } },
-  { _id: '4', nameInShort: 'ANC', name: 'Ananda College', avatar: { url: '/c-logo.png' } },
-  { _id: '5', nameInShort: 'DSC', name: 'D.S. Senanayake College', avatar: { url: '/c-logo.png' } },
-  { _id: '6', nameInShort: 'VIS', name: 'Vishaka Vidyalaya', avatar: { url: '/c-logo.png' } },
-  { _id: '7', nameInShort: 'DMS', name: 'Devi Balika Vidyalaya', avatar: { url: '/c-logo.png' } },
-  { _id: '8', nameInShort: 'ISC', name: 'Isipathana College', avatar: { url: '/c-logo.png' } },
-  { _id: '9', nameInShort: 'MUS', name: 'Muslim Ladies College', avatar: { url: '/c-logo.png' } },
-  { _id: '10', nameInShort: 'NAL', name: 'Nalanda College', avatar: { url: '/c-logo.png' } },
-  { _id: '11', nameInShort: 'THR', name: 'Thurstan College', avatar: { url: '/c-logo.png' } },
-  { _id: '12', nameInShort: 'MAH', name: 'Mahanama College', avatar: { url: '/c-logo.png' } },
-];
+import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
+import { SocketContext } from '../../../context/SocketContext';
 
 export default function AdminBattleBreakers() {
+  const socket = useContext(SocketContext)
   const [activeTab, setActiveTab] = useState('Upload');
-  const [questions, setQuestions] = useState(mockQuestions);
-  const [filteredQuestions, setFilteredQuestions] = useState(mockQuestions);
+  const [questions, setQuestions] = useState([]);
+  const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isQuestionActive, setIsQuestionActive] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(60);
-  const [schools, setSchools] = useState(mockSchools);
+  const [timeRemaining, setTimeRemaining] = useState(30);
+  const [schools, setSchools] = useState([]);
   const [showAddQuestionModal, setShowAddQuestionModal] = useState(false);
   const [questionText, setQuestionText] = useState('');
   const [answerText, setAnswerText] = useState('');
@@ -46,11 +23,11 @@ export default function AdminBattleBreakers() {
   const [wrongAttempts, setWrongAttempts] = useState({});
   const [totalAttempts, setTotalAttempts] = useState(0);
   const [correctSchool, setCorrectSchool] = useState(null);
-  const [allocatedTime, setAllocatedTime] = useState(60);
+  const [allocatedTime, setAllocatedTime] = useState(30);
   const [editingQuestionId, setEditingQuestionId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [answerHistory, setAnswerHistory] = useState({}); // Store answer history for all questions
-  const [showQuestionText, setShowQuestionText] = useState(true); // Toggle to show/hide question text
+  const [answerHistory, setAnswerHistory] = useState({});
+  const [showQuestionText, setShowQuestionText] = useState(true);
   const [isResizing, setIsResizing] = useState(false);
   const [resizeColumnIndex, setResizeColumnIndex] = useState(null);
   const [columnWidths, setColumnWidths] = useState({});
@@ -59,6 +36,25 @@ export default function AdminBattleBreakers() {
   const timerRef = useRef(null);
   const fileInputRef = useRef(null);
   const tableRef = useRef(null);
+
+  // Fetch Questions
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      const response = await axiosInstance.get(API_PATHS.BATTLE_BREAKERS.GET_QUESTIONS);
+      setQuestions(response.data);
+      setFilteredQuestions(response.data);
+    };
+    fetchQuestions();
+  }, []);
+
+  // Fetch Schools
+  useEffect(() => {
+    const fetchSchools = async () => {
+      const response = await axiosInstance.get(API_PATHS.ADMIN.GET_ALL_SCHOOLS);
+      setSchools(response.data.schools);
+    };
+    fetchSchools();
+  }, []);
 
   // Timer effect for countdown and track attempts
   useEffect(() => {
@@ -129,48 +125,60 @@ export default function AdminBattleBreakers() {
     }
   }, [searchTerm, questions]);
 
-  const handleFileUpload = (event) => {
+  const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+    const formData = new FormData();
+    formData.append("csv", file);
 
-    // Simulate file upload - in a real application, this would parse the CSV
-    setTimeout(() => {
-      // Add some sample questions as if they were loaded from CSV
-      const newQuestions = [
-        { _id: `${Date.now()}-1`, question: 'What is NAT?', answer: 'Network Address Translation is a method of mapping an IP address space into another.' },
-        { _id: `${Date.now()}-2`, question: 'What is a MAC address?', answer: 'Media Access Control address is a unique identifier assigned to a network interface controller.' },
-        { _id: `${Date.now()}-3`, question: 'What is a switch?', answer: 'A network device that connects devices within a network and uses MAC addresses to forward data to the right destination.' },
-      ];
+    const response = await axiosInstance.post(API_PATHS.BATTLE_BREAKERS.UPLOAD_CSV, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    const newQuestions = response.data.data;
 
-      setQuestions(prevQuestions => [...prevQuestions, ...newQuestions]);
-      alert('Questions uploaded successfully!');
-    }, 1000);
+    setQuestions(prevQuestions => [...prevQuestions, ...newQuestions]);
+    alert('Questions uploaded successfully!');
   };
 
-  const handleAddQuestion = () => {
+  const handleAddQuestion = async () => {
     if (!questionText.trim() || !answerText.trim()) {
       alert('Question and answer are required!');
       return;
     }
 
     if (editingQuestionId) {
-      // Update existing question
-      setQuestions(prevQuestions =>
-        prevQuestions.map(q =>
-          q._id === editingQuestionId
-            ? { ...q, question: questionText, answer: answerText }
-            : q
-        )
-      );
+      try {
+        await axiosInstance.put(API_PATHS.BATTLE_BREAKERS.EDIT_QUESTION(editingQuestionId), {
+          question: questionText,
+          answer: answerText
+        });
+        setQuestions(prevQuestions =>
+          prevQuestions.map(q =>
+            q._id === editingQuestionId
+              ? { ...q, question: questionText, answer: answerText }
+              : q
+          )
+        );
+      } catch (error) {
+        console.error("Error editing question:", error);
+      }
+
       setEditingQuestionId(null);
     } else {
       // Add new question
       const newQuestion = {
-        _id: `${Date.now()}`,
         question: questionText,
         answer: answerText
       };
-      setQuestions(prevQuestions => [...prevQuestions, newQuestion]);
+      
+      try {
+        const response = await axiosInstance.post(API_PATHS.BATTLE_BREAKERS.ADD_QUESTION, newQuestion);
+        setQuestions(prevQuestions => [...prevQuestions, response.data]);
+      } catch (error) {
+        console.error("Error adding question:", error);
+      }
     }
 
     setQuestionText('');
@@ -187,6 +195,7 @@ export default function AdminBattleBreakers() {
 
   const handleDeleteQuestion = (questionId) => {
     if (window.confirm('Are you sure you want to delete this question?')) {
+      axiosInstance.delete(API_PATHS.BATTLE_BREAKERS.DELETE_QUESTION(questionId));
       setQuestions(prevQuestions => prevQuestions.filter(q => q._id !== questionId));
 
       // If we're deleting the current question, adjust currentQuestionIndex
@@ -200,6 +209,18 @@ export default function AdminBattleBreakers() {
 
   const startQuestion = () => {
     if (questions.length === 0) return;
+    // Emit the active question via socket
+    const currentQuestion = questions[currentQuestionIndex];
+    const time = Date.now();
+    if (currentQuestion) {
+      socket.emit('battleBreakers-startQuestion', {
+        _id: currentQuestion._id,
+        questionNo: currentQuestionIndex + 1,
+        question: currentQuestion.question,
+        startTime: time,
+        allocatedTime: allocatedTime
+      });
+    }
 
     setTimeRemaining(allocatedTime);
     setIsQuestionActive(true);
@@ -219,20 +240,35 @@ export default function AdminBattleBreakers() {
     const currentQuestionId = questions[currentQuestionIndex]?._id;
     if (!currentQuestionId) return;
 
-    // Save all current answers and the correct school to history
-    setAnswerHistory(prev => {
-      const questionAnswers = prev[currentQuestionId] || {};
-      return {
-        ...prev,
-        [currentQuestionId]: {
-          ...questionAnswers,
-          ...schoolAnswers,
-          correctSchool,
-          totalAttempts,
-          timeUsed: allocatedTime - timeRemaining
-        }
-      };
+    // Prepare updated answer history with attempt tracking
+    const updatedAnswerHistory = { ...answerHistory };
+    if (!updatedAnswerHistory[currentQuestionId]) {
+      updatedAnswerHistory[currentQuestionId] = {};
+    }
+    
+    // Add general answers and metadata
+    updatedAnswerHistory[currentQuestionId] = {
+      ...updatedAnswerHistory[currentQuestionId],
+      ...schoolAnswers,
+      correctSchool,
+      totalAttempts,
+      timeUsed: allocatedTime - timeRemaining
+    };
+    
+    // Make sure all tracked attempts are saved
+    Object.entries(wrongAttempts).forEach(([schoolId, attempts]) => {
+      for (let i = 1; i <= attempts; i++) {
+        updatedAnswerHistory[currentQuestionId][`${schoolId}_attempt_${i}`] = false;
+      }
     });
+    
+    // If there's a correct answer, add it as a correct attempt
+    if (correctSchool) {
+      const attemptNum = (wrongAttempts[correctSchool] || 0) + 1;
+      updatedAnswerHistory[currentQuestionId][`${correctSchool}_attempt_${attemptNum}`] = true;
+    }
+    
+    setAnswerHistory(updatedAnswerHistory);
   };
 
   const goToNextQuestion = () => {
@@ -240,16 +276,35 @@ export default function AdminBattleBreakers() {
       // Save current question state to history before moving
       const currentQuestionId = questions[currentQuestionIndex]?._id;
       if (currentQuestionId && Object.keys(schoolAnswers).length > 0) {
-        setAnswerHistory(prev => ({
-          ...prev,
-          [currentQuestionId]: {
-            ...prev[currentQuestionId],
-            ...schoolAnswers,
-            correctSchool,
-            totalAttempts,
-            timeUsed: allocatedTime - timeRemaining
+        // Prepare updated answer history with attempt tracking
+        const updatedAnswerHistory = { ...answerHistory };
+        if (!updatedAnswerHistory[currentQuestionId]) {
+          updatedAnswerHistory[currentQuestionId] = {};
+        }
+        
+        // Add general answers and metadata
+        updatedAnswerHistory[currentQuestionId] = {
+          ...updatedAnswerHistory[currentQuestionId],
+          ...schoolAnswers,
+          correctSchool,
+          totalAttempts,
+          timeUsed: allocatedTime - timeRemaining
+        };
+        
+        // Make sure all tracked attempts are saved
+        Object.entries(wrongAttempts).forEach(([schoolId, attempts]) => {
+          for (let i = 1; i <= attempts; i++) {
+            updatedAnswerHistory[currentQuestionId][`${schoolId}_attempt_${i}`] = false;
           }
-        }));
+        });
+        
+        // If there's a correct answer, add it as a correct attempt
+        if (correctSchool) {
+          const attemptNum = (wrongAttempts[correctSchool] || 0) + 1;
+          updatedAnswerHistory[currentQuestionId][`${correctSchool}_attempt_${attemptNum}`] = true;
+        }
+        
+        setAnswerHistory(updatedAnswerHistory);
       }
 
       setCurrentQuestionIndex(prev => prev + 1);
@@ -285,16 +340,35 @@ export default function AdminBattleBreakers() {
       // Save current question state to history before moving
       const currentQuestionId = questions[currentQuestionIndex]?._id;
       if (currentQuestionId && Object.keys(schoolAnswers).length > 0) {
-        setAnswerHistory(prev => ({
-          ...prev,
-          [currentQuestionId]: {
-            ...prev[currentQuestionId],
-            ...schoolAnswers,
-            correctSchool,
-            totalAttempts,
-            timeUsed: allocatedTime - timeRemaining
+        // Prepare updated answer history with attempt tracking
+        const updatedAnswerHistory = { ...answerHistory };
+        if (!updatedAnswerHistory[currentQuestionId]) {
+          updatedAnswerHistory[currentQuestionId] = {};
+        }
+        
+        // Add general answers and metadata
+        updatedAnswerHistory[currentQuestionId] = {
+          ...updatedAnswerHistory[currentQuestionId],
+          ...schoolAnswers,
+          correctSchool,
+          totalAttempts,
+          timeUsed: allocatedTime - timeRemaining
+        };
+        
+        // Make sure all tracked attempts are saved
+        Object.entries(wrongAttempts).forEach(([schoolId, attempts]) => {
+          for (let i = 1; i <= attempts; i++) {
+            updatedAnswerHistory[currentQuestionId][`${schoolId}_attempt_${i}`] = false;
           }
-        }));
+        });
+        
+        // If there's a correct answer, add it as a correct attempt
+        if (correctSchool) {
+          const attemptNum = (wrongAttempts[correctSchool] || 0) + 1;
+          updatedAnswerHistory[currentQuestionId][`${correctSchool}_attempt_${attemptNum}`] = true;
+        }
+        
+        setAnswerHistory(updatedAnswerHistory);
       }
 
       setCurrentQuestionIndex(prev => prev - 1);
@@ -358,7 +432,9 @@ export default function AdminBattleBreakers() {
           [currentQuestionId]: {
             ...questionAnswers,
             [schoolId]: true,
-            correctSchool: schoolId
+            correctSchool: schoolId,
+            [`${schoolId}_attempt_${currentAttemptNum}`]: true, // Track specific attempt
+            timeUsed: allocatedTime - timeRemaining
           }
         };
       });
@@ -373,13 +449,13 @@ export default function AdminBattleBreakers() {
       // Save to answer history
       setAnswerHistory(prev => {
         const questionAnswers = prev[currentQuestionId] || {};
-        const schoolAttempts = questionAnswers[`${schoolId}_attempts`] || 0;
         return {
           ...prev,
           [currentQuestionId]: {
             ...questionAnswers,
-            [schoolId]: false,
-            [`${schoolId}_attempts`]: schoolAttempts + 1
+            [schoolId]: false, // Keep the general status for backward compatibility
+            [`${schoolId}_attempt_${currentAttemptNum}`]: false, // Track specific attempt
+            [`${schoolId}_attempts`]: (questionAnswers[`${schoolId}_attempts`] || 0) + 1
           }
         };
       });
@@ -409,6 +485,13 @@ export default function AdminBattleBreakers() {
     document.body.style.userSelect = 'none';
   };
 
+  const handleDeleteAll = async () => {
+    if (window.confirm('Are you sure you want to delete all questions?')) {
+      await axiosInstance.delete(API_PATHS.BATTLE_BREAKERS.DELETE_ALL_QUESTIONS);
+      setQuestions([]);
+    }
+  }
+
   const handleResizeMove = (e) => {
     if (!isResizing) return;
 
@@ -427,6 +510,53 @@ export default function AdminBattleBreakers() {
     document.removeEventListener('mousemove', handleResizeMove);
     document.removeEventListener('mouseup', handleResizeEnd);
     document.body.style.userSelect = '';
+  };
+
+  const handleCompletion = async () => {
+    const completionData = Object.entries(answerHistory).map(([questionId, data]) => {
+      // Extract schools responses from answer history
+      const responses = [];
+      schools.forEach(school => {
+        // Check if school has any attempts for this question
+        const attempts = [];
+        for (let i = 1; i <= 3; i++) {
+          const attemptKey = `${school._id}_attempt_${i}`;
+          if (data[attemptKey] !== undefined) {
+            attempts.push({
+              userId: school._id,
+              attempt: i.toString(),
+              status: data[attemptKey] ? "Correct" : "Incorrect"
+            });
+          }
+        }
+        // If no specific attempts found but has general result, add a single response
+        if (attempts.length === 0 && data[school._id] !== undefined) {
+          responses.push({
+            userId: school._id,
+            attempt: "1", // Default to attempt 1 for backward compatibility
+            status: data[school._id] === true ? "Correct" : "Incorrect"
+          });
+        } else {
+          // Add all tracked attempts
+          responses.push(...attempts);
+        }
+      });
+
+      return {
+        questionId,
+        responses
+      };
+    });
+
+    try {
+      // Send completion data to the server
+      await axiosInstance.post(API_PATHS.BATTLE_BREAKERS.HANDLE_COMPLETION, completionData);
+      console.log("Completions recorded:");
+      alert("Game results have been successfully submitted!");
+    } catch (error) {
+      console.error("Error in handleCompletion:", error);
+      alert("Failed to submit game results. Please try again.");
+    }
   };
 
   // Cleanup resize listeners on component unmount
@@ -571,11 +701,7 @@ export default function AdminBattleBreakers() {
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        if (window.confirm('Are you sure you want to delete all questions?')) {
-                          setQuestions([]);
-                        }
-                      }}
+                      onClick={handleDeleteAll}
                       className="w-32 h-8 bg-sky-600 rounded-[3px] text-white text-xs flex items-center justify-center"
                       disabled={questions.length === 0}
                     >
@@ -699,6 +825,15 @@ export default function AdminBattleBreakers() {
                       Skip Question
                     </button>
                   )}
+                  <button
+                    onClick={handleCompletion}
+                    className="px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-1"
+                    disabled={questions.length === 0 || Object.keys(answerHistory).length === 0}
+                    title="Submit final results to the server"
+                  >
+                    <FaSave size={14} />
+                    Submit Results
+                  </button>
                 </div>
 
                 {isQuestionActive ? (
@@ -747,7 +882,7 @@ export default function AdminBattleBreakers() {
               <img src="/under-line.png" alt="underline" className="w-full h-1" />
 
               <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-600">Table showing all 12 school teams</div>
+                <div className="text-sm text-gray-600"></div>
                 <div className="flex gap-2 items-center">
                   {isResizing && (
                     <span className="text-xs text-purple-800 italic">Resizing column...</span>

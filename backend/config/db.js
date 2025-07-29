@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { seedGames } from "../seeding/seedGames.js";
+import { seedDefaultUsers } from "../seeding/seedAdmin.js";
 
 // Connect to MongoDB
 const connectToDB = async () => {
@@ -10,6 +11,7 @@ const connectToDB = async () => {
 
   // Seed initial data if needed
   await seedGames();
+  await seedDefaultUsers();
 };
 
 export default connectToDB;

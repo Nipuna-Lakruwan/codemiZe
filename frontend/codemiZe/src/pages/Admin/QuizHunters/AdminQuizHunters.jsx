@@ -18,32 +18,7 @@ export default function AdminQuizHunters() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch questions from API on component mount
-  useEffect(() => {
-    // Uncomment this code when API integration is ready
-    // const fetchQuestions = async () => {
-    //   setIsLoading(true);
-    //   try {
-    //     const response = await axiosInstance.get('/api/quizhunters/QnA');
-    //     if (response.data && response.data.questions) {
-    //       // Transform backend format to frontend format
-    //       const formattedQuestions = response.data.questions.map(q => ({
-    //         id: q._id,
-    //         question: q.question,
-    //         options: [q.answer, q.option1, q.option2, q.option3],
-    //         correct: q.answer
-    //       }));
-    //       setQuestions(formattedQuestions);
-    //     }
-    //   } catch (error) {
-    //     console.error('Error fetching questions:', error);
-    //     showAlert('Failed to load questions', 'Error', 'error');
-    //   } finally {
-    //     setIsLoading(false);
-    //   }
-    // };
-    // fetchQuestions();
-  }, []);
+
   // Mock questions that match the backend structure
   const [questions, setQuestions] = useState([
     { _id: '61f8b1e5c7d1f52e4c8b4567', question: 'What is the capital of Sri Lanka?', answer: 'Colombo', option1: 'Kandy', option2: 'Galle', option3: 'Jaffna' },
@@ -69,7 +44,7 @@ export default function AdminQuizHunters() {
       }
     }
     // Uncomment this line to fetch data from API when ready
-    // getQnA();
+    getQnA();
   }, []);
 
   // Modal states
@@ -110,39 +85,20 @@ export default function AdminQuizHunters() {
     if (selectedFile) {
       const uploadCSV = async () => {
         try {
-          // Here you would handle the CSV upload to the backend using formData
-          console.log('Uploading file:', selectedFile);
-
           // In a real implementation, you would use:
-          // const formData = new FormData();
-          // formData.append('csv', selectedFile);
-          // await axiosInstance.post(API_PATHS.QUIZ_HUNTERS.UPLOAD_CSV, formData);
-          // const response = await axiosInstance.get(API_PATHS.QUIZ_HUNTERS.GET_Q_WITH_A);
-          // if (response.data && response.data.questions) {
-          //   setQuestions(response.data.questions);
-          // }
+          const formData = new FormData();
+          formData.append('csv', selectedFile);
 
-          // For now, simulate adding questions from CSV
-          const newQuestions = Array.from({ length: 5 }, (_, i) => {
-            // Generate MongoDB-style ObjectId
-            const timestamp = Math.floor(new Date().getTime() / 1000).toString(16);
-            const machineId = Math.floor(Math.random() * 16777216).toString(16).padStart(6, '0');
-            const processId = Math.floor(Math.random() * 65536).toString(16).padStart(4, '0');
-            const counter = Math.floor(Math.random() * 16777216).toString(16).padStart(6, '0');
-            const id = timestamp + machineId + processId + counter;
-
-            // Create questions in backend format
-            return {
-              _id: id,
-              question: `Sample Question ${questions.length + i + 1} from CSV`,
-              answer: `Correct Answer for Q${questions.length + i + 1}`,
-              option1: `Wrong Option 1 for Q${questions.length + i + 1}`,
-              option2: `Wrong Option 2 for Q${questions.length + i + 1}`,
-              option3: `Wrong Option 3 for Q${questions.length + i + 1}`
-            };
+          await axiosInstance.post(API_PATHS.QUIZ_HUNTERS.UPLOAD_CSV, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
           });
+          const response = await axiosInstance.get(API_PATHS.QUIZ_HUNTERS.GET_Q_WITH_A);
+          if (response.data && response.data.questions) {
+            setQuestions(response.data.questions);
+          }
 
-          setQuestions([...questions, ...newQuestions]);
           showAlert('CSV file uploaded: ' + selectedFile.name, 'Upload Successful', 'success');
         } catch (error) {
           console.error('Error uploading CSV:', error);
@@ -157,18 +113,26 @@ export default function AdminQuizHunters() {
     }
   };
 
-  const handleAddQuestionClick = () => {
+  const handleAddQuestionClick = async () => {
     setModalMode('add');
 
-    // Generate a temporary MongoDB-style ObjectId for new questions
-    const timestamp = Math.floor(new Date().getTime() / 1000).toString(16);
-    const machineId = Math.floor(Math.random() * 16777216).toString(16).padStart(6, '0');
-    const processId = Math.floor(Math.random() * 65536).toString(16).padStart(4, '0');
-    const counter = Math.floor(Math.random() * 16777216).toString(16).padStart(6, '0');
-    const id = timestamp + machineId + processId + counter;
+    try {
+      console.log("Adding question:", currentQuestion);
+      const response = await axiosInstance.post(API_PATHS.QUIZ_HUNTERS.ADD_QUESTION, {
+        questionText: currentQuestion.question,
+        correctAnswer: currentQuestion.correct,
+        option1: currentQuestion.options[0],
+        option2: currentQuestion.options[1],
+        option3: currentQuestion.options[2],
+      });
+      if (response.data && response.data.question) {
+        setQuestions([...questions, response.data.question]);
+      }
+    } catch (error) {
+      console.error("Error adding question", error);
+    }
 
     setCurrentQuestion({
-      _id: id,
       question: '',
       answer: '',
       option1: '',
@@ -308,7 +272,7 @@ export default function AdminQuizHunters() {
     const deleteAllQuestions = async () => {
       try {
         // Uncomment when ready for API integration
-        // await axiosInstance.delete(API_PATHS.QUIZ_HUNTERS.DELETE_ALL_QUESTIONS);
+        await axiosInstance.delete(API_PATHS.QUIZ_HUNTERS.DELETE_ALL_QUESTIONS);
 
         setQuestions([]);
         showAlert('All questions have been deleted', 'Delete Successful', 'success');
@@ -322,7 +286,8 @@ export default function AdminQuizHunters() {
     setShowDeleteAllModal(false);
   };
 
-  const handleDeleteQuestion = (id) => {
+  const handleDeleteQuestion = async (id) => {
+    await axiosInstance.delete(API_PATHS.QUIZ_HUNTERS.DELETE_QUESTION(id));
     setQuestionToDelete(id);
     setShowDeleteModal(true);
   };

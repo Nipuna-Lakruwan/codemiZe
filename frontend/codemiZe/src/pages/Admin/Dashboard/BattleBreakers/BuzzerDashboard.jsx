@@ -4,7 +4,7 @@ import { SocketContext } from '../../../../context/SocketContext';
 import { imagePath } from '../../../../utils/helper';
 
 // QuestionDisplay Component
-const QuestionDisplay = ({ question, questionNumber, totalQuestions, timeRemaining }) => {
+const QuestionDisplay = ({ question, questionNumber, timeRemaining }) => {
   return (
     <motion.div
       className="w-[568px] h-[709px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-purple-500/20 backdrop-blur-[8px] p-6 flex flex-col items-center justify-center"
@@ -43,7 +43,7 @@ const QuestionDisplay = ({ question, questionNumber, totalQuestions, timeRemaini
 
         {/* Question text */}
         <div className="text-center text-black text-xl font-semibold font-['Inter'] w-full mx-auto">
-          {question?.text || "What is HTML Stands for?"}
+          {question?.question}
         </div>
       </div>
     </motion.div>
@@ -121,15 +121,16 @@ const TeamRankItem = ({ index, team, responseTime, isNew = false }) => {
 
       {/* Response time */}
       <div className="justify-start text-sky-900 text-2xl font-medium font-['Oxanium']">
-        {responseTime ? responseTime.replace('s', '') : '--'} s
+        {typeof responseTime === 'number' ? (responseTime / 1000).toFixed(2) : '--'} s
       </div>
 
+
       {/* New indicator */}
-      {isNew && (
+      {/* {isNew && (
         <div className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs px-2 py-1 rounded-full font-bold">
           NEW!
         </div>
-      )}
+      )} */}
     </motion.div>
   );
 };
@@ -188,49 +189,13 @@ export default function BuzzerDashboard() {
   const socket = useContext(SocketContext);
 
   // Using fixed values for display-only frontend dashboard
-  const [timeRemaining] = useState(25);
+  const [timeRemaining, setTimeRemaining] = useState(30);
   const currentQuestionIndex = 0;
   
   // State for real-time buzzer presses
   const [buzzerPresses, setBuzzerPresses] = useState([]);
-  const [currentQuestion, setCurrentQuestion] = useState(1);
-
-  // Sample questions data - static for display purposes
-  const questions = [
-    {
-      id: 1,
-      text: "What programming language is used to build React applications?",
-      answer: "JavaScript"
-    },
-    {
-      id: 2,
-      text: "What does HTML stand for?",
-      answer: "Hypertext Markup Language"
-    },
-    {
-      id: 3,
-      text: "What does CSS stand for?",
-      answer: "Cascading Style Sheets"
-    },
-    {
-      id: 4,
-      text: "What data structure follows the LIFO principle?",
-      answer: "Stack"
-    },
-    {
-      id: 5,
-      text: "Which SQL command is used to retrieve data from a database?",
-      answer: "SELECT"
-    }
-  ];
-
-  // Function to calculate response time (mock implementation)
-  const calculateResponseTime = (timestamp) => {
-    // In a real implementation, you'd calculate based on when the question was shown
-    // For now, return a mock response time
-    const times = ['1.2s', '2.4s', '3.1s', '4.5s', '5.2s'];
-    return times[Math.floor(Math.random() * times.length)];
-  };
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [questions, setQuestions] = useState([{_id: "", question: ""}])
 
   useEffect(() => {
     // Listen for buzzer press events from the server
@@ -239,21 +204,35 @@ export default function BuzzerDashboard() {
         setBuzzerPresses((prevPresses) => [
           ...prevPresses,
           {
-            _id: data._id || Date.now(), // Fallback ID if not provided
+            _id: data._id,
             team: {
               name: data.name,
               city: data.city,
               logo: imagePath(data.logo),
             },
-            responseTime: calculateResponseTime(data.timestamp),
+            responseTime: data.responseTime,
             timestamp: data.timestamp
           },
         ]);
+      });
+
+      socket.on("battleBreakers-startQuestionclient", (data) => {
+        clearBuzzerPresses();
+        setQuestions(() => [
+          {
+            _id: data._id,
+            question: data.question,
+          },
+        ]);
+        const remaining = (data.startTime + data.allocatedTime) - Date.now();
+        setTimeRemaining(remaining);
+        setCurrentQuestion(data.questionNo);
       });
       
       // Clean up the event listener when component unmounts
       return () => {
         socket.off("buzzerPress");
+        socket.off("battleBreakers-startQuestionclient");
       };
     }
   }, [socket]);
@@ -262,12 +241,6 @@ export default function BuzzerDashboard() {
   // Function to clear buzzer presses for new question
   const clearBuzzerPresses = () => {
     setBuzzerPresses([]);
-  };
-
-  // Function to move to next question
-  const nextQuestion = () => {
-    setCurrentQuestion(prev => prev + 1);
-    clearBuzzerPresses();
   };
 
   return (
@@ -313,7 +286,7 @@ export default function BuzzerDashboard() {
         </motion.div>
 
         {/* Admin Controls - positioned at bottom */}
-        <div className="absolute bottom-8 right-8 z-30 flex gap-4">
+        {/* <div className="absolute bottom-8 right-8 z-30 flex gap-4">
           <button
             onClick={clearBuzzerPresses}
             className="px-4 py-2 bg-red-600/80 text-white rounded-md hover:bg-red-600 transition-colors"
@@ -326,7 +299,7 @@ export default function BuzzerDashboard() {
           >
             Next Question
           </button>
-        </div>
+        </div> */}
 
         {/* Connection Status Indicator */}
         {/* <div className="absolute top-20 right-8 z-30">
