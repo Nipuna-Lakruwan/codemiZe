@@ -52,6 +52,8 @@ export const API_PATHS = {
     UPLOAD_CSV: "/api/v1/quiz-hunters/uploadCSV",
     SET_TIME: "/api/v1/quiz-hunters/setTime",
     SUBMIT: "/api/v1/quiz-hunters/submit",
+    FINISH: "/api/v1/quiz-hunters/finish",
+    CURRENT_QUESTION: "/api/v1/quiz-hunters/currentQuestion",
   },
   CODE_CRUSHERS: {
     GET_SLIDES: "/api/v1/code-crushers/",
