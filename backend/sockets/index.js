@@ -18,7 +18,7 @@ const setupSocket = (io, app) => {
     currentQuestionData = { ...questionData, startTime };
     let timeRemaining = questionData.allocatedTime;
 
-    console.log(`Starting Battle Breakers timer for ${timeRemaining} seconds`);
+    //console.log(`Starting Battle Breakers timer for ${timeRemaining} seconds`);
 
     // Start the server-side timer
     battleBreakersTimer = setInterval(() => {
@@ -31,11 +31,11 @@ const setupSocket = (io, app) => {
         totalTime: questionData.allocatedTime
       });
 
-      console.log(`Timer update: ${timeRemaining}s remaining`);
+      //console.log(`Timer update: ${timeRemaining}s remaining`);
 
       // If time is up, stop the timer and notify clients
       if (timeRemaining <= 0) {
-        console.log('Timer finished - notifying clients');
+        //console.log('Timer finished - notifying clients');
         clearInterval(battleBreakersTimer);
         battleBreakersTimer = null;
         io.to("battleBreakers").emit("battleBreakers-timeUp", {
@@ -46,7 +46,7 @@ const setupSocket = (io, app) => {
   };
 
   const stopBattleBreakersTimer = () => {
-    console.log('Stopping Battle Breakers timer');
+    //console.log('Stopping Battle Breakers timer');
     if (battleBreakersTimer) {
       clearInterval(battleBreakersTimer);
       battleBreakersTimer = null;
@@ -79,14 +79,14 @@ const setupSocket = (io, app) => {
 
     if (socket.user.role === "School" || socket.user.role === "Dashboard" || socket.user.role === "Admin") {
       socket.join("battleBreakers");
-      console.log(`BattleBreakers client joined - Role: ${socket.user.role}`);
+      //console.log(`BattleBreakers client joined - Role: ${socket.user.role}`);
       
       // Send current question and timer state to newly connected client if a question is active
       if (currentQuestionData && battleBreakersTimer) {
         const elapsedTime = Math.floor((Date.now() - currentQuestionData.startTime) / 1000);
         const timeRemaining = Math.max(0, currentQuestionData.allocatedTime - elapsedTime);
         
-        console.log(`Syncing question and timer for new client (${socket.user.role}): ${timeRemaining}s remaining`);
+        //console.log(`Syncing question and timer for new client (${socket.user.role}): ${timeRemaining}s remaining`);
         
         // Send both the question start event and timer sync for reconnecting clients
         socket.emit("battleBreakers-startQuestionclient", {
@@ -110,7 +110,7 @@ const setupSocket = (io, app) => {
 
     socket.on("battleBreakers-startQuestion", (data) => {
       const { _id, question, allocatedTime, questionNo } = data;
-      console.log(`Received start question event for question ${questionNo}: ${question}`);
+      //console.log(`Received start question event for question ${questionNo}: ${question}`);
       
       const questionData = {
         _id,
@@ -133,14 +133,14 @@ const setupSocket = (io, app) => {
     });
 
     socket.on("battleBreakers-stopQuestion", (data) => {
-      console.log(`Received stop question event for question ${data.questionNo}`);
+      //console.log(`Received stop question event for question ${data.questionNo}`);
       // Stop the synchronized timer
       stopBattleBreakersTimer();
     });
 
     // Handle request for current state (for reconnection)
     socket.on("battleBreakers-requestCurrentState", () => {
-      console.log(`User ${userId} requested current battle breakers state`);
+      // console.log(`User ${userId} requested current battle breakers state`);
       
       // Send current timer state
       socket.emit("battleBreakers-currentState", {
@@ -151,7 +151,7 @@ const setupSocket = (io, app) => {
 
       // If there's an active question, send the question data
       if (currentQuestionData) {
-        console.log(`Sending current question data to reconnecting user: ${currentQuestionData.questionNo}`);
+        //console.log(`Sending current question data to reconnecting user: ${currentQuestionData.questionNo}`);
         socket.emit("battleBreakers-startQuestionclient", {
           _id: currentQuestionData._id,
           question: currentQuestionData.question,
