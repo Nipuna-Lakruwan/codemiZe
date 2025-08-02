@@ -224,15 +224,46 @@ export default function BuzzerDashboard() {
             question: data.question,
           },
         ]);
-        const remaining = (data.startTime + data.allocatedTime) - Date.now();
-        setTimeRemaining(remaining);
+        // Set initial timer state - will be updated by server timer
+        setTimeRemaining(data.allocatedTime);
         setCurrentQuestion(data.questionNo);
       });
+
+      // Listen for synchronized timer updates from server
+      socket.on("battleBreakers-timerUpdate", (data) => {
+        setTimeRemaining(data.timeRemaining);
+      });
+
+      // Listen for timer synchronization (for newly connected clients)
+      socket.on("battleBreakers-syncTimer", (data) => {
+        setQuestions(() => [
+          {
+            _id: data.questionData._id,
+            question: data.questionData.question,
+          },
+        ]);
+        setTimeRemaining(data.timeRemaining);
+        setCurrentQuestion(data.questionData.questionNo);
+      });
+
+      // Listen for time up event from server
+      socket.on("battleBreakers-timeUp", (data) => {
+        setTimeRemaining(0);
+      });
+
+      // Listen for timer stopped event from server
+      socket.on("battleBreakers-timerStopped", (data) => {
+        // Timer has been stopped by admin
+      });
       
-      // Clean up the event listener when component unmounts
+      // Clean up the event listeners when component unmounts
       return () => {
         socket.off("buzzerPress");
         socket.off("battleBreakers-startQuestionclient");
+        socket.off("battleBreakers-timerUpdate");
+        socket.off("battleBreakers-syncTimer");
+        socket.off("battleBreakers-timeUp");
+        socket.off("battleBreakers-timerStopped");
       };
     }
   }, [socket]);

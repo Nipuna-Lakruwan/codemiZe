@@ -144,26 +144,54 @@ export default function AdminBattleBreakers() {
     fetchSchools();
   }, []);
 
-  // Timer effect for countdown and track attempts
+  // Timer effect for countdown and track attempts - now synchronized with server
   useEffect(() => {
-    if (isQuestionActive && timeRemaining > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeRemaining(prev => prev - 1);
-      }, 1000);
-    } else if (timeRemaining === 0) {
-      // Don't stop the question when time is up, just clear the timer
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    }
+    if (socket) {
+      // Listen for server timer updates
+      socket.on("battleBreakers-timerUpdate", (data) => {
+        console.log('Admin: Timer update', data.timeRemaining, 'Active:', isQuestionActive);
+        // Always update timer regardless of isQuestionActive state to prevent desync
+        setTimeRemaining(data.timeRemaining);
+      });
 
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [isQuestionActive, timeRemaining]);
+      // Listen for timer synchronization (for when admin reconnects during active question)
+      socket.on("battleBreakers-syncTimer", (data) => {
+        console.log('Admin: Timer sync received', data);
+        // Sync timer state and activate question
+        setTimeRemaining(data.timeRemaining);
+        setIsQuestionActive(true);
+      });
+
+      // Listen for time up event from server
+      socket.on("battleBreakers-timeUp", (data) => {
+        console.log('Admin: Time up event');
+        setTimeRemaining(0);
+        // Clear local timer if it exists
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+      });
+
+      // Listen for timer stopped event from server
+      socket.on("battleBreakers-timerStopped", (data) => {
+        console.log('Admin: Timer stopped event');
+        // Clear local timer if it exists
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+      });
+
+      // Cleanup listeners
+      return () => {
+        socket.off("battleBreakers-timerUpdate");
+        socket.off("battleBreakers-syncTimer");
+        socket.off("battleBreakers-timeUp");
+        socket.off("battleBreakers-timerStopped");
+      };
+    }
+  }, [socket, isQuestionActive, questions, currentQuestionIndex]);
 
   // Effect to track total attempts
   useEffect(() => {
@@ -358,18 +386,24 @@ export default function AdminBattleBreakers() {
       return;
     }
 
-    // Emit the active question via socket
-    const time = Date.now();
+    // Emit the active question via socket - server will handle timer synchronization
     if (currentQuestion) {
+      console.log('Admin: Starting question', {
+        _id: currentQuestion._id,
+        questionNo: currentQuestionIndex + 1,
+        question: currentQuestion.question,
+        allocatedTime: allocatedTime
+      });
+      
       socket.emit('battleBreakers-startQuestion', {
         _id: currentQuestion._id,
         questionNo: currentQuestionIndex + 1,
         question: currentQuestion.question,
-        startTime: time,
         allocatedTime: allocatedTime
       });
     }
 
+    // Set initial timer state - will be synchronized by server updates
     setTimeRemaining(allocatedTime);
     setIsQuestionActive(true);
     setSchoolAnswers({});
@@ -380,8 +414,20 @@ export default function AdminBattleBreakers() {
 
   const stopQuestion = () => {
     setIsQuestionActive(false);
+    
+    // Emit stop signal to server to stop synchronized timer
+    const currentQuestion = questions[currentQuestionIndex];
+    if (currentQuestion) {
+      socket.emit('battleBreakers-stopQuestion', {
+        _id: currentQuestion._id,
+        questionNo: currentQuestionIndex + 1
+      });
+    }
+
+    // Clear local timer as backup
     if (timerRef.current) {
       clearInterval(timerRef.current);
+      timerRef.current = null;
     }
 
     // Only save to answer history if there are actual submissions

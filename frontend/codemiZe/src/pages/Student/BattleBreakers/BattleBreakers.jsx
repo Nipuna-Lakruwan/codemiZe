@@ -27,9 +27,11 @@ export default function BattleBreakers() {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
   useEffect(() => {
-    // Listen for buzzer press events from the server
+    // Listen for battle breakers events from the server
     if (socket) {
+      // Listen for question start events
       socket.on("battleBreakers-startQuestionclient", (data) => {
+        console.log('Student: Received question start event', data);
         setQuestions(() => [
           {
             _id: data._id,
@@ -37,15 +39,52 @@ export default function BattleBreakers() {
           },
         ]);
 
-        const remaining = (data.startTime + data.allocatedTime) - Date.now();
+        // Set initial timer state - will be updated by server timer
         setQuestionStartTime(data.startTime);
-        setTimeRemaining(remaining);
+        setTimeRemaining(data.allocatedTime);
         setIsTimerRunning(true);
       });
+
+      // Listen for synchronized timer updates from server
+      socket.on("battleBreakers-timerUpdate", (data) => {
+        console.log('Student: Timer update', data.timeRemaining);
+        setTimeRemaining(data.timeRemaining);
+      });
+
+      // Listen for timer synchronization (for newly connected clients)
+      socket.on("battleBreakers-syncTimer", (data) => {
+        console.log('Student: Timer sync', data);
+        setQuestions(() => [
+          {
+            _id: data.questionData._id,
+            question: data.questionData.question,
+          },
+        ]);
+        setQuestionStartTime(Date.now() - (data.totalTime - data.timeRemaining) * 1000);
+        setTimeRemaining(data.timeRemaining);
+        setIsTimerRunning(true);
+      });
+
+      // Listen for time up event from server
+      socket.on("battleBreakers-timeUp", (data) => {
+        console.log('Student: Time up event');
+        setTimeRemaining(0);
+        setIsTimerRunning(false);
+      });
+
+      // Listen for timer stopped event from server
+      socket.on("battleBreakers-timerStopped", (data) => {
+        console.log('Student: Timer stopped event');
+        setIsTimerRunning(false);
+      });
       
-      // Clean up the event listener when component unmounts
+      // Clean up the event listeners when component unmounts
       return () => {
         socket.off("battleBreakers-startQuestionclient");
+        socket.off("battleBreakers-timerUpdate");
+        socket.off("battleBreakers-syncTimer");
+        socket.off("battleBreakers-timeUp");
+        socket.off("battleBreakers-timerStopped");
       };
     }
   }, [socket]);
@@ -84,17 +123,12 @@ export default function BattleBreakers() {
     }
   };
 
-  // Timer effect
+  // Timer effect - now only for display, actual timing controlled by server
   useEffect(() => {
-    let timer;
-    if (isGameStarted && isTimerRunning && timeRemaining > 0) {
-      timer = setInterval(() => {
-        setTimeRemaining(prev =>  prev - 1);
-      }, 1000);
-    }
-
+    // No local timer needed - server controls the timing
+    // This effect is kept for any local timer cleanup if needed
     return () => {
-      if (timer) clearInterval(timer);
+      // Cleanup any remaining local timers (shouldn't be any)
     };
   }, [isGameStarted, isTimerRunning, timeRemaining]);
 
