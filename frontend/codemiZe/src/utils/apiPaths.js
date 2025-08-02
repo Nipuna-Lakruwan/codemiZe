@@ -33,6 +33,7 @@ export const API_PATHS = {
   },
   BATTLE_BREAKERS: {
     GET_QUESTIONS: "/api/v1/battle-breakers",
+    GET_ANSWERS: "/api/v1/battle-breakers/answers",
     ADD_QUESTION: "/api/v1/battle-breakers/addQuestion",
     UPLOAD_CSV: "/api/v1/battle-breakers/uploadCSV",
     EDIT_QUESTION: (questionId) => `/api/v1/battle-breakers/editQuestion/${questionId}`,
@@ -40,7 +41,7 @@ export const API_PATHS = {
     DELETE_ALL_QUESTIONS: "/api/v1/battle-breakers/deleteAllQuestions",
     BUZZER_PRESS: "/api/v1/battle-breakers/press",
     GET_DASHBOARD: (questionId) => `/api/v1/battle-breakers/school/${questionId}`,
-    HANDLE_COMPLETION: "/api/v1/battle-breakers/submit",
+    SUBMIT_ANSWERS: "/api/v1/battle-breakers/submit",
   },
   QUIZ_HUNTERS: {
     GET_ALL_QUESTIONS: "/api/v1/quiz-hunters/",

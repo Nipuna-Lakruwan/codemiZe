@@ -8,7 +8,7 @@ const battleBreakersAnswerSchema = new mongoose.Schema(
     },
     responses: [{
       userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      attempt: { type: String, required: true },
+      attempt: { type: Number, required: true, min: 1 },
       status: { type: String, enum: ["Correct", "Incorrect"], required: true }
     }],
   },

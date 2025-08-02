@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
 import GameNodeMini from '../../../components/Games/GameNodeMini';
-import { useAuth } from '../../../context/AuthContext';
 import axiosInstance from '../../../utils/axiosInstance';
 import { API_PATHS } from '../../../utils/apiPaths';
 import { SocketContext } from '../../../context/SocketContext';
@@ -17,20 +16,22 @@ export default function BattleBreakers() {
   const [isPressedBuzzer, setIsPressedBuzzer] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
   const [questionStartTime, setQuestionStartTime] = useState(null);
-  const [questions, setQuestions] = useState([    {
+  const [questions, setQuestions] = useState([{
       _id: "",
       question: "",
       answer: ""
-    },]);
+    }]);
 
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState(30);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
   useEffect(() => {
-    // Listen for buzzer press events from the server
+    // Listen for battle breakers events from the server
     if (socket) {
+      // Listen for question start events (both new questions and reconnections)
       socket.on("battleBreakers-startQuestionclient", (data) => {
+        console.log('Student: Received question start event', data);
         setQuestions(() => [
           {
             _id: data._id,
@@ -38,15 +39,54 @@ export default function BattleBreakers() {
           },
         ]);
 
-        const remaining = (data.startTime + data.allocatedTime) - Date.now();
+        // Set timer state
         setQuestionStartTime(data.startTime);
-        setTimeRemaining(remaining);
+        setTimeRemaining(data.allocatedTime);
         setIsTimerRunning(true);
+        
+        // If this is a reconnection, we might get a timer sync afterward
+        if (data.isReconnect) {
+          console.log('Student: This is a reconnection, waiting for timer sync...');
+        }
+      });
+
+      // Listen for synchronized timer updates from server
+      socket.on("battleBreakers-timerUpdate", (data) => {
+        console.log('Student: Timer update', data.timeRemaining);
+        setTimeRemaining(data.timeRemaining);
+      });
+
+      // Listen for timer synchronization (for newly connected clients)
+      socket.on("battleBreakers-syncTimer", (data) => {
+        console.log('Student: Timer sync received', data);
+        // Update timer with accurate remaining time
+        setTimeRemaining(data.timeRemaining);
+        setIsTimerRunning(true);
+        
+        // Update question start time for accurate timing calculations
+        setQuestionStartTime(Date.now() - (data.totalTime - data.timeRemaining) * 1000);
+      });
+
+      // Listen for time up event from server
+      socket.on("battleBreakers-timeUp", (data) => {
+        console.log('Student: Time up event');
+        setTimeRemaining(0);
+        setIsTimerRunning(false);
+      });
+
+      // Listen for timer stopped event from server
+      socket.on("battleBreakers-timerStopped", (data) => {
+        console.log('Student: Timer stopped event');
+        setIsTimerRunning(false);
       });
       
-      // Clean up the event listener when component unmounts
+      // Clean up the event listeners when component unmounts
       return () => {
         socket.off("battleBreakers-startQuestionclient");
+        socket.off("battleBreakers-timerUpdate");
+        socket.off("battleBreakers-syncTimer");
+        socket.off("battleBreakers-timeUp");
+        socket.off("battleBreakers-timerStopped");
       };
     }
   }, [socket]);
@@ -85,17 +125,12 @@ export default function BattleBreakers() {
     }
   };
 
-  // Timer effect
+  // Timer effect - now only for display, actual timing controlled by server
   useEffect(() => {
-    let timer;
-    if (isGameStarted && isTimerRunning && timeRemaining > 0) {
-      timer = setInterval(() => {
-        setTimeRemaining(prev =>  prev - 1);
-      }, 1000);
-    }
-
+    // No local timer needed - server controls the timing
+    // This effect is kept for any local timer cleanup if needed
     return () => {
-      if (timer) clearInterval(timer);
+      // Cleanup any remaining local timers (shouldn't be any)
     };
   }, [isGameStarted, isTimerRunning, timeRemaining]);
 

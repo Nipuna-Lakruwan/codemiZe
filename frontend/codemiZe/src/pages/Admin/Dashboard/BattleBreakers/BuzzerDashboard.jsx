@@ -217,22 +217,54 @@ export default function BuzzerDashboard() {
       });
 
       socket.on("battleBreakers-startQuestionclient", (data) => {
-        clearBuzzerPresses();
+        // Only clear buzzer presses if this is a new question (not a reconnection)
+        if (!data.isReconnect) {
+          clearBuzzerPresses();
+        }
         setQuestions(() => [
           {
             _id: data._id,
             question: data.question,
           },
         ]);
-        const remaining = (data.startTime + data.allocatedTime) - Date.now();
-        setTimeRemaining(remaining);
+        // Set initial timer state - will be updated by server timer
+        setTimeRemaining(data.allocatedTime);
         setCurrentQuestion(data.questionNo);
+        
+        if (data.isReconnect) {
+          console.log('BuzzerDashboard: Reconnected to active question');
+        }
+      });
+
+      // Listen for synchronized timer updates from server
+      socket.on("battleBreakers-timerUpdate", (data) => {
+        setTimeRemaining(data.timeRemaining);
+      });
+
+      // Listen for timer synchronization (for newly connected clients)
+      socket.on("battleBreakers-syncTimer", (data) => {
+        // Update timer with accurate remaining time
+        setTimeRemaining(data.timeRemaining);
+      });
+
+      // Listen for time up event from server
+      socket.on("battleBreakers-timeUp", (data) => {
+        setTimeRemaining(0);
+      });
+
+      // Listen for timer stopped event from server
+      socket.on("battleBreakers-timerStopped", (data) => {
+        // Timer has been stopped by admin
       });
       
-      // Clean up the event listener when component unmounts
+      // Clean up the event listeners when component unmounts
       return () => {
         socket.off("buzzerPress");
         socket.off("battleBreakers-startQuestionclient");
+        socket.off("battleBreakers-timerUpdate");
+        socket.off("battleBreakers-syncTimer");
+        socket.off("battleBreakers-timeUp");
+        socket.off("battleBreakers-timerStopped");
       };
     }
   }, [socket]);

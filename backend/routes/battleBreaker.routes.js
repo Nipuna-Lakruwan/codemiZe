@@ -5,13 +5,14 @@ import {
   requireJudge, 
   requireSchool 
 } from "../middleware/roleMiddleware.js";
-import { addQuestion, addQuestionsCSV, buzzerPress, deleteAllQuestions, deleteQuestion, editQuestion, getDashboard, getQuestions, submitAnswers } from "../controllers/Games/battleBreakers.controller.js";
+import { addQuestion, addQuestionsCSV, buzzerPress, deleteAllQuestions, deleteQuestion, editQuestion, getAnswers, getDashboard, getQuestions, submitAnswers } from "../controllers/Games/battleBreakers.controller.js";
 import { CSVUpload } from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
 // Public routes
 router.get("/", protect, requireAdmin, getQuestions);
+router.get("/answers", protect, requireAdmin, getAnswers);
 router.post("/press", protect, requireSchool, buzzerPress);
 router.get("/school/:questionId", protect, requireAdmin, getDashboard);
 router.post("/addQuestion", protect, requireAdmin, addQuestion);
