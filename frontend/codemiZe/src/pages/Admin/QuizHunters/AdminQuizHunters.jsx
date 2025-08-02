@@ -107,32 +107,18 @@ export default function AdminQuizHunters() {
       };
 
       uploadCSV();
-      setSelectedFile(null); // Reset file input after upload
+      setSelectedFile(null);
     } else {
       showAlert('Please select a file first', 'Upload Error', 'error');
     }
   };
 
-  const handleAddQuestionClick = async () => {
+  const handleAddQuestionClick = () => {
     setModalMode('add');
-
-    try {
-      console.log("Adding question:", currentQuestion);
-      const response = await axiosInstance.post(API_PATHS.QUIZ_HUNTERS.ADD_QUESTION, {
-        questionText: currentQuestion.question,
-        correctAnswer: currentQuestion.correct,
-        option1: currentQuestion.options[0],
-        option2: currentQuestion.options[1],
-        option3: currentQuestion.options[2],
-      });
-      if (response.data && response.data.question) {
-        setQuestions([...questions, response.data.question]);
-      }
-    } catch (error) {
-      console.error("Error adding question", error);
-    }
-
+    
+    // Reset the current question for adding a new one
     setCurrentQuestion({
+      _id: null,
       question: '',
       answer: '',
       option1: '',
@@ -176,45 +162,39 @@ export default function AdminQuizHunters() {
       return;
     }
 
-    if (!currentQuestion.correct) {
-      showAlert('Please select a correct answer', 'Validation Error', 'error');
-      return;
-    }
-
-    // Make sure the correct answer is included in the options
-    if (!currentQuestion.options.includes(currentQuestion.correct)) {
-      showAlert('The correct answer must be one of the options', 'Validation Error', 'error');
+    // The correct answer is always the first option in this UI design
+    const correctAnswer = currentQuestion.options[0];
+    
+    if (!correctAnswer.trim()) {
+      showAlert('Please provide a correct answer', 'Validation Error', 'error');
       return;
     }
 
     // Prepare the data for backend format
     const questionData = {
       question: currentQuestion.question,
-      answer: currentQuestion.correct,
-      option1: currentQuestion.options.filter(o => o !== currentQuestion.correct)[0],
-      option2: currentQuestion.options.filter(o => o !== currentQuestion.correct)[1],
-      option3: currentQuestion.options.filter(o => o !== currentQuestion.correct)[2]
-    };
-
-    // Create a backend-formatted question for state
-    const stateQuestion = {
-      ...questionData,
-      _id: currentQuestion._id
+      answer: correctAnswer,
+      option1: currentQuestion.options[1] || '',
+      option2: currentQuestion.options[2] || '',
+      option3: currentQuestion.options[3] || ''
     };
 
     if (modalMode === 'add') {
       // Add new question
-      // In a real implementation, you would:
       const addQuestion = async () => {
         try {
           // Uncomment when ready for API integration
-          // const response = await axiosInstance.post(API_PATHS.QUIZ_HUNTERS.ADD_QUESTION, questionData);
-          // if (response.data && response.data.question) {
-          //   setQuestions([...questions, response.data.question]);
-          // }
+          const response = await axiosInstance.post(API_PATHS.QUIZ_HUNTERS.ADD_QUESTION, questionData);
+          if (response.data && response.data.question) {
+            setQuestions([...questions, response.data.question]);
+          }
 
-          // For now, just update the state
-          setQuestions([...questions, stateQuestion]);
+          // For now, just update the state - generate a temporary ID for new questions
+          // const newQuestion = {
+          //   ...questionData,
+          //   _id: Date.now().toString() // Generate a temporary ID
+          // };
+          // setQuestions([...questions, newQuestion]);
           showAlert('Question added successfully', 'Success', 'success');
         } catch (error) {
           console.error('Error adding question:', error);
@@ -228,14 +208,18 @@ export default function AdminQuizHunters() {
       const updateQuestion = async () => {
         try {
           // Uncomment when ready for API integration
-          // const response = await axiosInstance.put(
-          //   API_PATHS.QUIZ_HUNTERS.EDIT_QUESTION(currentQuestion._id), 
-          //   questionData
-          // );
+          const response = await axiosInstance.put(
+            API_PATHS.QUIZ_HUNTERS.EDIT_QUESTION(currentQuestion._id), 
+            questionData
+          );
 
           // For now, just update the state
+          // const updatedQuestion = {
+          //   ...questionData,
+          //   _id: currentQuestion._id
+          // };
           const updatedQuestions = questions.map(q =>
-            q._id === currentQuestion._id ? stateQuestion : q
+            q._id === currentQuestion._id ? response.data.question : q
           );
           setQuestions(updatedQuestions);
           showAlert('Question updated successfully', 'Success', 'success');
@@ -271,7 +255,6 @@ export default function AdminQuizHunters() {
   const confirmDeleteAllQuestions = () => {
     const deleteAllQuestions = async () => {
       try {
-        // Uncomment when ready for API integration
         await axiosInstance.delete(API_PATHS.QUIZ_HUNTERS.DELETE_ALL_QUESTIONS);
 
         setQuestions([]);
@@ -287,7 +270,6 @@ export default function AdminQuizHunters() {
   };
 
   const handleDeleteQuestion = async (id) => {
-    await axiosInstance.delete(API_PATHS.QUIZ_HUNTERS.DELETE_QUESTION(id));
     setQuestionToDelete(id);
     setShowDeleteModal(true);
   };
@@ -297,8 +279,7 @@ export default function AdminQuizHunters() {
       // Delete the question
       const deleteQuestion = async () => {
         try {
-          // Uncomment when ready for API integration
-          // await axiosInstance.delete(API_PATHS.QUIZ_HUNTERS.DELETE_QUESTION(questionToDelete));
+          await axiosInstance.delete(API_PATHS.QUIZ_HUNTERS.DELETE_QUESTION(questionToDelete));
 
           const updatedQuestions = questions.filter(q => q._id !== questionToDelete);
           setQuestions(updatedQuestions);
@@ -416,14 +397,6 @@ export default function AdminQuizHunters() {
 
   return (
     <AdminLayout>
-      {/* Top row with three rectangles */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mb-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-3">Quiz Management Dashboard</h2>
-        <p className="text-gray-600 mb-0">
-          Manage Quiz Hunters questions, import from CSV, allocate time, and configure game settings.
-        </p>
-      </div>
-
       <div className="flex flex-wrap gap-6 mb-8">
         {/* First rectangle - Upload Questions */}
         <AdminBox title="Upload Questions" width="flex-1 min-w-[300px]" minHeight="200px">
@@ -451,18 +424,6 @@ export default function AdminQuizHunters() {
               {selectedFile && (
                 <div className="w-full text-sm text-gray-600 mb-2">
                   Selected: {selectedFile.name}
-                </div>
-              )}
-
-              {!selectedFile && (
-                <div className="w-full text-xs text-gray-500 mb-1">
-                  CSV format: question, correctAnswer, wrong1, wrong2, wrong3
-                  <button
-                    onClick={() => downloadTemplateCSV()}
-                    className="ml-2 text-sky-600 hover:text-sky-800 underline"
-                  >
-                    Download template
-                  </button>
                 </div>
               )}
 

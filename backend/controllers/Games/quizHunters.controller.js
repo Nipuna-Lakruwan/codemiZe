@@ -38,19 +38,19 @@ export const getQuestionsWithAnswers = async (req, res) => {
 };
 
 export const addQuestion = async (req, res) => {
-    const { questionText, option1, option2, option3, correctAnswer } = req.body;
+    const { question, option1, option2, option3, answer } = req.body;
 
-    if (!questionText || !option1 || !option2 || !option3 || !correctAnswer) {
+    if (!question || !option1 || !option2 || !option3 || !answer) {
         return res.status(400).json({ message: "All fields are required" });
     }
 
     try {
         const newQuestion = new QuizHuntersQuestion({
-            questionText,
+            question,
             option1,
             option2,
             option3,
-            correctAnswer
+            answer
         });
         await newQuestion.save();
         res.status(201).json({ message: "Question added successfully", question: newQuestion });
@@ -62,16 +62,16 @@ export const addQuestion = async (req, res) => {
 
 export const editQuestion = async (req, res) => {
     const { questionId } = req.params;
-    const { questionText, options, correctAnswer } = req.body;
+    const { question, option1, option2, option3, answer } = req.body;
 
-    if (!questionId || !questionText || !options || !correctAnswer) {
+    if (!questionId || !question || !option1 || !option2 || !option3 || !answer) {
         return res.status(400).json({ message: "All fields are required" });
     }
 
     try {
         const updatedQuestion = await QuizHuntersQuestion.findByIdAndUpdate(
             questionId,
-            { questionText, options, correctAnswer },
+            { question, option1, option2, option3, answer },
             { new: true }
         );
 

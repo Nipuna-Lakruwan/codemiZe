@@ -20,7 +20,7 @@ router.delete("/deleteAllQuestions", protect, requireAdmin, deleteAllQuestions);
 router.post("/uploadCSV", protect, requireAdmin, CSVUpload.single('csv'), addQuestionsCSV);
 router.post("/setTime", protect, requireAdmin, setTime);
 router.post("/submit", protect, requireSchool, submitQuiz);
-router.post("/finish", protect, requireSchool, calculateAndUpdateScore);
+router.get("/finish", protect, requireSchool, calculateAndUpdateScore);
 router.get("/currentQuestion", protect, requireSchool, checkCurrentQuestion);
 
 
