@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { motion } from 'framer-motion';
-import { FaUpload, FaPlus, FaEye, FaClock, FaPlayCircle, FaStopCircle, FaChevronLeft, FaChevronRight, FaCheck, FaTimes, FaEdit, FaTrash, FaSearch, FaFilter, FaSave } from 'react-icons/fa';
+import { FaUpload, FaPlus, FaEye, FaClock, FaPlayCircle, FaStopCircle, FaChevronLeft, FaChevronRight, FaCheck, FaTimes, FaEdit, FaTrash, FaSearch, FaFilter, FaSave, FaSync } from 'react-icons/fa';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import AdminBox from '../../../components/Admin/QuizComponents/AdminBox';
 import axiosInstance from '../../../utils/axiosInstance';
@@ -46,6 +46,94 @@ export default function AdminBattleBreakers() {
     };
     fetchQuestions();
   }, []);
+
+  const loadExistingAttempts = async () => {
+    try {
+      const response = await axiosInstance.get(API_PATHS.BATTLE_BREAKERS.GET_ANSWERS);
+      const existingAnswers = response.data;
+      
+      // Transform the backend data into the frontend answerHistory format
+      const transformedAnswerHistory = {};
+      
+      existingAnswers.forEach(answerDoc => {
+        // Skip if questionId is null or undefined
+        if (!answerDoc.questionId || !answerDoc.questionId._id) {
+          console.warn('Skipping answer document with null/undefined questionId:', answerDoc);
+          return;
+        }
+        
+        const questionId = answerDoc.questionId._id;
+        transformedAnswerHistory[questionId] = {};
+        
+        let correctSchoolId = null;
+        let totalAttempts = 0;
+        
+        // Process each response
+        answerDoc.responses.forEach(response => {
+          // Skip if userId is null or undefined
+          if (!response.userId || !response.userId._id) {
+            console.warn('Skipping response with null/undefined userId:', response);
+            return;
+          }
+          
+          const schoolId = response.userId._id;
+          const attempt = response.attempt;
+          const isCorrect = response.status === "Correct";
+          
+          // Track the specific attempt
+          transformedAnswerHistory[questionId][`${schoolId}_attempt_${attempt}`] = isCorrect;
+          
+          // Set general school status (for backward compatibility)
+          transformedAnswerHistory[questionId][schoolId] = isCorrect;
+          
+          // Track correct school
+          if (isCorrect) {
+            correctSchoolId = schoolId;
+          }
+          
+          // Track total attempts
+          totalAttempts = Math.max(totalAttempts, attempt);
+        });
+        
+        // Set metadata
+        if (correctSchoolId) {
+          transformedAnswerHistory[questionId].correctSchool = correctSchoolId;
+        }
+        transformedAnswerHistory[questionId].totalAttempts = totalAttempts;
+      });
+      
+      setAnswerHistory(transformedAnswerHistory);
+      
+      // If we're on a question that has existing answers, load them
+      const currentQuestionId = questions[currentQuestionIndex]?._id;
+      if (currentQuestionId && transformedAnswerHistory[currentQuestionId]) {
+        const savedAnswers = transformedAnswerHistory[currentQuestionId];
+        
+        // Extract only school answers
+        const schoolAnswersFromHistory = {};
+        schools.forEach(school => {
+          if (savedAnswers[school._id] !== undefined) {
+            schoolAnswersFromHistory[school._id] = savedAnswers[school._id];
+          }
+        });
+        
+        setSchoolAnswers(schoolAnswersFromHistory);
+        setCorrectSchool(savedAnswers.correctSchool || null);
+        setTotalAttempts(savedAnswers.totalAttempts || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching existing attempts:", error);
+      // Don't show alert for this error as it's not critical
+    }
+  };
+
+  // Fetch existing answers/attempts
+  useEffect(() => {
+    // Only fetch if we have questions and schools loaded
+    if (questions.length > 0 && schools.length > 0) {
+      loadExistingAttempts();
+    }
+  }, [questions, schools, currentQuestionIndex]);
 
   // Fetch Schools
   useEffect(() => {
@@ -105,9 +193,15 @@ export default function AdminBattleBreakers() {
           }
         });
 
-        setSchoolAnswers(schoolAnswersFromHistory);
+        // Don't load historical answers into current state - only load them when question becomes active
+        // setSchoolAnswers(schoolAnswersFromHistory);
         setCorrectSchool(savedAnswers.correctSchool || null);
         setTotalAttempts(savedAnswers.totalAttempts || 0);
+      } else {
+        // Clear current state when switching to a question without history
+        setSchoolAnswers({});
+        setCorrectSchool(null);
+        setTotalAttempts(0);
       }
     }
   }, [currentQuestionIndex, questions, answerHistory, schools, isQuestionActive]);
@@ -207,10 +301,64 @@ export default function AdminBattleBreakers() {
     }
   };
 
+  // Helper function to find the first incomplete question
+  const findFirstIncompleteQuestion = () => {
+    for (let i = 0; i < questions.length; i++) {
+      const questionId = questions[i]._id;
+      if (!isQuestionCompleted(questionId)) {
+        return i;
+      }
+    }
+    return 0; // If all questions are completed, return the first one
+  };
+
+  // Effect to set current question to first incomplete question when questions or answer history changes
+  // This is now commented out to allow free navigation between all questions
+  // useEffect(() => {
+  //   if (questions.length > 0 && Object.keys(answerHistory).length > 0 && !isQuestionActive) {
+  //     const firstIncompleteIndex = findFirstIncompleteQuestion();
+  //     if (firstIncompleteIndex !== currentQuestionIndex) {
+  //       setCurrentQuestionIndex(firstIncompleteIndex);
+  //     }
+  //   }
+  // }, [questions, answerHistory, isQuestionActive]);
+
+  // Helper function to check if a question is completed
+  const isQuestionCompleted = (questionId) => {
+    const history = answerHistory[questionId];
+    if (!history) return false;
+
+    // Check if there's a correct answer
+    if (history.correctSchool) return true;
+
+    // Count incorrect answers (only count actual school responses, not metadata)
+    const incorrectCount = Object.entries(history)
+      .filter(([key, value]) => 
+        !key.includes('_attempt_') && 
+        key !== 'correctSchool' && 
+        key !== 'totalAttempts' && 
+        key !== 'timeUsed' && 
+        value === false &&
+        schools.some(school => school._id === key) // Only count if it's actually a school ID
+      ).length;
+
+    // Question is completed if there are 2 incorrect answers
+    return incorrectCount >= 2;
+  };
+
   const startQuestion = () => {
     if (questions.length === 0) return;
-    // Emit the active question via socket
+    
     const currentQuestion = questions[currentQuestionIndex];
+    const currentQuestionId = currentQuestion?._id;
+    
+    // Check if current question is already completed
+    if (currentQuestionId && isQuestionCompleted(currentQuestionId)) {
+      alert('This question is already completed. Please select an incomplete question.');
+      return;
+    }
+
+    // Emit the active question via socket
     const time = Date.now();
     if (currentQuestion) {
       socket.emit('battleBreakers-startQuestion', {
@@ -236,9 +384,9 @@ export default function AdminBattleBreakers() {
       clearInterval(timerRef.current);
     }
 
-    // Save the current state to answer history when question is stopped
+    // Only save to answer history if there are actual submissions
     const currentQuestionId = questions[currentQuestionIndex]?._id;
-    if (!currentQuestionId) return;
+    if (!currentQuestionId || Object.keys(schoolAnswers).length === 0) return;
 
     // Prepare updated answer history with attempt tracking
     const updatedAnswerHistory = { ...answerHistory };
@@ -271,9 +419,27 @@ export default function AdminBattleBreakers() {
     setAnswerHistory(updatedAnswerHistory);
   };
 
+  const goToNextIncompleteQuestion = () => {
+    for (let i = currentQuestionIndex + 1; i < questions.length; i++) {
+      if (!isQuestionCompleted(questions[i]._id)) {
+        setCurrentQuestionIndex(i);
+        return;
+      }
+    }
+    // If no incomplete question found after current, check from beginning
+    for (let i = 0; i < currentQuestionIndex; i++) {
+      if (!isQuestionCompleted(questions[i]._id)) {
+        setCurrentQuestionIndex(i);
+        return;
+      }
+    }
+    // If all questions are completed, stay on current
+    alert('All questions have been completed!');
+  };
+
   const goToNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      // Save current question state to history before moving
+      // Save current question state to history before moving (only if there are submissions)
       const currentQuestionId = questions[currentQuestionIndex]?._id;
       if (currentQuestionId && Object.keys(schoolAnswers).length > 0) {
         // Prepare updated answer history with attempt tracking
@@ -337,7 +503,7 @@ export default function AdminBattleBreakers() {
 
   const goToPrevQuestion = () => {
     if (currentQuestionIndex > 0) {
-      // Save current question state to history before moving
+      // Save current question state to history before moving (only if there are submissions)
       const currentQuestionId = questions[currentQuestionIndex]?._id;
       if (currentQuestionId && Object.keys(schoolAnswers).length > 0) {
         // Prepare updated answer history with attempt tracking
@@ -405,60 +571,85 @@ export default function AdminBattleBreakers() {
     }
   };
 
-  const handleMarkAnswer = (schoolId, isCorrect) => {
+  const handleMarkAnswer = async (schoolId, isCorrect) => {
     // Only allow marking if no correct answer yet and less than 2 wrongs
     if (correctSchool !== null) return;
 
     const currentQuestionId = questions[currentQuestionIndex]?._id;
     if (!currentQuestionId) return;
 
-    // Count current wrong attempts for this question
+    // Count current wrong attempts for this question (total across all schools)
     const wrongCount = Object.values(schoolAnswers).filter(v => v === false).length;
 
-    if (isCorrect) {
-      // Only allow marking as correct if no correct answer yet and not after two wrongs
-      if (wrongCount >= 2) return;
-      setSchoolAnswers(prev => ({
-        ...prev,
-        [schoolId]: true
-      }));
-      setCorrectSchool(schoolId);
+    // Don't allow if this school has already answered or if we have 2 wrong answers already
+    if (schoolAnswers[schoolId] !== undefined || (!isCorrect && wrongCount >= 2)) {
+      return;
+    }
 
-      // Save to answer history
-      setAnswerHistory(prev => {
-        const questionAnswers = prev[currentQuestionId] || {};
-        return {
-          ...prev,
-          [currentQuestionId]: {
-            ...questionAnswers,
-            [schoolId]: true,
-            correctSchool: schoolId,
-            [`${schoolId}_attempt_${currentAttemptNum}`]: true, // Track specific attempt
-            timeUsed: allocatedTime - timeRemaining
-          }
-        };
-      });
-    } else {
-      // Only allow up to 2 wrongs for a question
-      if (wrongCount >= 2) return;
-      setSchoolAnswers(prev => ({
-        ...prev,
-        [schoolId]: false
-      }));
+    // Calculate the global attempt number for this question
+    // Count how many schools have already answered
+    const totalAnswers = Object.keys(schoolAnswers).length;
+    const currentAttemptNum = totalAnswers + 1;
 
-      // Save to answer history
-      setAnswerHistory(prev => {
-        const questionAnswers = prev[currentQuestionId] || {};
-        return {
+    // Prepare submission data for the API
+    const submissionData = {
+      questionId: currentQuestionId,
+      submissions: [{
+        userId: schoolId,
+        attempt: currentAttemptNum,
+        status: isCorrect ? "Correct" : "Incorrect"
+      }]
+    };
+
+    try {
+      // Call the submitAnswers API endpoint
+      await axiosInstance.post(API_PATHS.BATTLE_BREAKERS.SUBMIT_ANSWERS, submissionData);
+      
+      if (isCorrect) {
+        setSchoolAnswers(prev => ({
           ...prev,
-          [currentQuestionId]: {
-            ...questionAnswers,
-            [schoolId]: false, // Keep the general status for backward compatibility
-            [`${schoolId}_attempt_${currentAttemptNum}`]: false, // Track specific attempt
-            [`${schoolId}_attempts`]: (questionAnswers[`${schoolId}_attempts`] || 0) + 1
-          }
-        };
-      });
+          [schoolId]: true
+        }));
+        setCorrectSchool(schoolId);
+
+        // Save to answer history
+        setAnswerHistory(prev => {
+          const questionAnswers = prev[currentQuestionId] || {};
+          return {
+            ...prev,
+            [currentQuestionId]: {
+              ...questionAnswers,
+              [schoolId]: true,
+              correctSchool: schoolId,
+              [`${schoolId}_attempt_${currentAttemptNum}`]: true, // Track specific attempt
+              totalAttempts: currentAttemptNum, // Track total attempts for this question
+              timeUsed: allocatedTime - timeRemaining
+            }
+          };
+        });
+      } else {
+        setSchoolAnswers(prev => ({
+          ...prev,
+          [schoolId]: false
+        }));
+
+        // Save to answer history
+        setAnswerHistory(prev => {
+          const questionAnswers = prev[currentQuestionId] || {};
+          return {
+            ...prev,
+            [currentQuestionId]: {
+              ...questionAnswers,
+              [schoolId]: false, // Keep the general status for backward compatibility
+              [`${schoolId}_attempt_${currentAttemptNum}`]: false, // Track specific attempt
+              totalAttempts: currentAttemptNum // Track total attempts for this question
+            }
+          };
+        });
+      }
+    } catch (error) {
+      console.error("Error submitting answer:", error);
+      alert("Failed to submit answer. Please try again.");
     }
   };
 
@@ -510,53 +701,6 @@ export default function AdminBattleBreakers() {
     document.removeEventListener('mousemove', handleResizeMove);
     document.removeEventListener('mouseup', handleResizeEnd);
     document.body.style.userSelect = '';
-  };
-
-  const handleCompletion = async () => {
-    const completionData = Object.entries(answerHistory).map(([questionId, data]) => {
-      // Extract schools responses from answer history
-      const responses = [];
-      schools.forEach(school => {
-        // Check if school has any attempts for this question
-        const attempts = [];
-        for (let i = 1; i <= 3; i++) {
-          const attemptKey = `${school._id}_attempt_${i}`;
-          if (data[attemptKey] !== undefined) {
-            attempts.push({
-              userId: school._id,
-              attempt: i.toString(),
-              status: data[attemptKey] ? "Correct" : "Incorrect"
-            });
-          }
-        }
-        // If no specific attempts found but has general result, add a single response
-        if (attempts.length === 0 && data[school._id] !== undefined) {
-          responses.push({
-            userId: school._id,
-            attempt: "1", // Default to attempt 1 for backward compatibility
-            status: data[school._id] === true ? "Correct" : "Incorrect"
-          });
-        } else {
-          // Add all tracked attempts
-          responses.push(...attempts);
-        }
-      });
-
-      return {
-        questionId,
-        responses
-      };
-    });
-
-    try {
-      // Send completion data to the server
-      await axiosInstance.post(API_PATHS.BATTLE_BREAKERS.HANDLE_COMPLETION, completionData);
-      console.log("Completions recorded:");
-      alert("Game results have been successfully submitted!");
-    } catch (error) {
-      console.error("Error in handleCompletion:", error);
-      alert("Failed to submit game results. Please try again.");
-    }
   };
 
   // Cleanup resize listeners on component unmount
@@ -825,15 +969,6 @@ export default function AdminBattleBreakers() {
                       Skip Question
                     </button>
                   )}
-                  <button
-                    onClick={handleCompletion}
-                    className="px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-1"
-                    disabled={questions.length === 0 || Object.keys(answerHistory).length === 0}
-                    title="Submit final results to the server"
-                  >
-                    <FaSave size={14} />
-                    Submit Results
-                  </button>
                 </div>
 
                 {isQuestionActive ? (
@@ -847,11 +982,16 @@ export default function AdminBattleBreakers() {
                 ) : (
                   <button
                     onClick={startQuestion}
-                    className="px-4 py-2 bg-green-600 text-white rounded flex items-center gap-1"
-                    disabled={questions.length === 0}
+                    className={`px-4 py-2 rounded flex items-center gap-1 ${
+                      questions.length === 0 || (questions[currentQuestionIndex] && isQuestionCompleted(questions[currentQuestionIndex]._id))
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                    }`}
+                    disabled={questions.length === 0 || (questions[currentQuestionIndex] && isQuestionCompleted(questions[currentQuestionIndex]._id))}
+                    title={questions[currentQuestionIndex] && isQuestionCompleted(questions[currentQuestionIndex]._id) ? 'This question is already completed' : ''}
                   >
                     <FaPlayCircle />
-                    Start
+                    {questions[currentQuestionIndex] && isQuestionCompleted(questions[currentQuestionIndex]._id) ? 'Completed' : 'Start'}
                   </button>
                 )}
 
@@ -939,7 +1079,11 @@ export default function AdminBattleBreakers() {
                     {questions.map((question, qIndex) => (
                       <tr
                         key={question._id}
-                        className={qIndex === currentQuestionIndex ? "bg-purple-50" : qIndex % 2 === 0 ? "bg-gray-50" : ""}
+                        className={`${
+                          qIndex === currentQuestionIndex ? "bg-purple-50" : 
+                          isQuestionCompleted(question._id) ? "bg-green-50" :
+                          qIndex % 2 === 0 ? "bg-gray-50" : ""
+                        }`}
                         title={!showQuestionText ? `${question.question}\nAnswer: ${question.answer}` : `Answer: ${question.answer}`}>
                         <td className="py-2 px-2 border-b border-r" style={{ width: columnWidths[0] || '220px', maxWidth: columnWidths[0] || '220px' }}>
                           {showQuestionText ? (
@@ -960,6 +1104,9 @@ export default function AdminBattleBreakers() {
                           {qIndex === currentQuestionIndex && (
                             <div className="text-xs font-semibold text-purple-800">Current</div>
                           )}
+                          {isQuestionCompleted(question._id) && qIndex !== currentQuestionIndex && (
+                            <div className="text-xs font-semibold text-green-600">Completed</div>
+                          )}
                         </td>
 
                         {schools.map((school, index) => (
@@ -978,6 +1125,9 @@ export default function AdminBattleBreakers() {
                                   (() => {
                                     // Count wrongs for this row
                                     const wrongCount = Object.values(schoolAnswers).filter(v => v === false).length;
+                                    // Check if this school has already answered
+                                    const schoolHasAnswered = schoolAnswers[school._id] !== undefined;
+                                    
                                     // If correctSchool is selected or two wrongs, lock the row
                                     if (correctSchool !== null || wrongCount >= 2) {
                                       // Show result icons only
@@ -989,31 +1139,40 @@ export default function AdminBattleBreakers() {
                                       }
                                       return <span className="text-gray-500">-</span>;
                                     }
+                                    
+                                    // If this school has already answered, show result
+                                    if (schoolHasAnswered) {
+                                      if (schoolAnswers[school._id] === true) {
+                                        return <span className="text-green-500 font-bold text-lg">✓</span>;
+                                      } else {
+                                        return <span className="text-red-500 font-bold text-lg">✗</span>;
+                                      }
+                                    }
+                                    
                                     // Normal state with both buttons available
                                     return (
                                       <>
                                         <button
-                                          className={`p-1 rounded ${schoolAnswers[school._id] === true ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
+                                          className="p-1 rounded bg-gray-200 hover:bg-green-200"
                                           onClick={() => handleMarkAnswer(school._id, true)}
                                         >
                                           <FaCheck size={12} />
                                         </button>
                                         <button
-                                          className={`p-1 rounded ${schoolAnswers[school._id] === false ? 'bg-red-500 text-white' : 'bg-gray-200'}`}
+                                          className="p-1 rounded bg-gray-200 hover:bg-red-200"
                                           onClick={() => handleMarkAnswer(school._id, false)}
                                         >
                                           <FaTimes size={12} />
                                         </button>
-                                        {/* Removed wrong attempt indicator number */}
                                       </>
                                     );
                                   })()
                                 ) : (
-                                  /* Non-active current question - Show result icons */
+                                  /* Non-active current question - Show result icons from history */
                                   <>
-                                    {schoolAnswers[school._id] === true ? (
+                                    {answerHistory[question._id] && answerHistory[question._id][school._id] === true ? (
                                       <span className="text-green-500 font-bold">✓</span>
-                                    ) : schoolAnswers[school._id] === false ? (
+                                    ) : answerHistory[question._id] && answerHistory[question._id][school._id] === false ? (
                                       <span className="text-red-500 font-bold">✗</span>
                                     ) : (
                                       <span>-</span>

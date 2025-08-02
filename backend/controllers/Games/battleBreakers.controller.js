@@ -1,6 +1,6 @@
 import BattleBreakersDashboard from "../../models/BattleBreakersDashboard.js";
 import BattleBreakersAnswer from "../../models/markings/BattleBreakersAnswer.js";
-import BattleBreakersQuestion from "../../models/Questions/BattleBreakersQuestion.js";
+import BattleBreakersQuestion from "../../models/questions/BattleBreakersQuestion.js";
 import School from "../../models/School.js";
 import { parseCSVFile } from "../../utils/csvParser.js";
 
@@ -163,6 +163,69 @@ export const addQuestionsCSV = async (req, res) => {
     }
 }
 
+export const getAnswers = async (req, res) => {
+    try {
+        // First, get answers without populate to see raw data
+        const rawAnswers = await BattleBreakersAnswer.find({});
+        console.log(`Found ${rawAnswers.length} raw answer documents`);
+        
+        // Then get answers with populate
+        const answers = await BattleBreakersAnswer.find({})
+            .populate('questionId', 'question answer')
+            .populate('responses.userId', 'name nameInShort');
+        
+        console.log(`After populate: ${answers.length} answer documents`);
+        
+        // More lenient filtering - only remove if both questionId and all responses are invalid
+        const validAnswers = answers.filter(answer => {
+            if (!answer.questionId) {
+                console.warn(`Answer document ${answer._id} has null questionId - keeping with raw questionId`);
+                // Keep the document but with raw questionId
+                const rawAnswer = rawAnswers.find(raw => raw._id.toString() === answer._id.toString());
+                if (rawAnswer) {
+                    answer.questionId = { _id: rawAnswer.questionId, question: 'Question not found', answer: 'Answer not found' };
+                }
+            }
+            
+            // Filter out responses with null userId but keep the document if some responses are valid
+            const validResponses = answer.responses.filter(response => {
+                if (!response.userId) {
+                    console.warn(`Response in answer ${answer._id} has null userId - keeping with raw userId`);
+                    // Find the raw response and use the raw userId
+                    const rawAnswer = rawAnswers.find(raw => raw._id.toString() === answer._id.toString());
+                    if (rawAnswer) {
+                        const rawResponse = rawAnswer.responses.find(r => 
+                            r._id.toString() === response._id.toString()
+                        );
+                        if (rawResponse) {
+                            response.userId = { 
+                                _id: rawResponse.userId, 
+                                name: 'User not found',
+                                nameInShort: 'N/A'
+                            };
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                return true;
+            });
+            
+            answer.responses = validResponses;
+            
+            // Only remove the document if it has no valid responses at all
+            return answer.responses.length > 0;
+        });
+        
+        console.log(`After filtering: ${validAnswers.length} valid answer documents`);
+        
+        res.status(200).json(validAnswers);
+    } catch (error) {
+        console.error("Error fetching answers:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
 export const submitAnswers = async (req, res) => {
     const { questionId, submissions } = req.body;
 
@@ -181,10 +244,14 @@ export const submitAnswers = async (req, res) => {
             });
         }
         
-        // Ensure attempt is a number
-        if (typeof submission.attempt !== 'number') {
+        // Convert attempt to number if it's a string, and validate it's a valid number
+        if (typeof submission.attempt === 'string') {
+            submission.attempt = parseInt(submission.attempt, 10);
+        }
+        
+        if (typeof submission.attempt !== 'number' || isNaN(submission.attempt) || submission.attempt < 1) {
             return res.status(400).json({
-                message: "The attempt field must be a numerical value"
+                message: "The attempt field must be a valid positive number"
             });
         }
     }
@@ -197,7 +264,7 @@ export const submitAnswers = async (req, res) => {
             // Create a new answer document if none exists
             const responses = submissions.map(sub => ({
                 userId: sub.userId,
-                attempt: sub.attempt,
+                attempt: Number(sub.attempt), // Ensure it's stored as a number
                 status: sub.status
             }));
             
@@ -210,7 +277,7 @@ export const submitAnswers = async (req, res) => {
             for (const submission of submissions) {
                 answerDoc.responses.push({
                     userId: submission.userId,
-                    attempt: submission.attempt,
+                    attempt: Number(submission.attempt), // Ensure it's stored as a number
                     status: submission.status
                 });
             }
@@ -218,37 +285,40 @@ export const submitAnswers = async (req, res) => {
         
         await answerDoc.save();
         
-        // Process and update scores for all submitted schools
+        // Process and update scores for each school's submission
         const scoreUpdates = [];
         
         for (const submission of submissions) {
-            const userId = submission.userId;
+            const { userId, attempt, status } = submission;
             
-            // Get all responses for this user and question
-            const userResponses = answerDoc.responses.filter(
-                r => r.userId.toString() === userId.toString()
-            );
-
-            // Calculate score based on response pattern
+            // Calculate score based on attempt number and status
             let score = 0;
-            if (userResponses.length >= 1) {
-                if (userResponses[0].status === "Correct") {
-                    score = 10;
+            
+            if (attempt === 1) {
+                // First attempt (global attempt 1)
+                if (status === "Correct") {
+                    score = 10; // First attempt correct: +10 points
                 } else {
-                    score = -5;
-                    if (userResponses.length > 1 && userResponses[1].status === "Correct") {
-                        score += 5;
-                    }
+                    score = -5; // First attempt wrong: -5 points
+                }
+            } else if (attempt === 2) {
+                // Second attempt (global attempt 2)
+                if (status === "Correct") {
+                    score = 5; // Second attempt correct: +5 points
+                } else {
+                    score = 0; // Second attempt wrong: no points (no additional penalty)
                 }
             }
 
-            // Update the BattleBreakers score for the school
+            // Update the BattleBreakers score for this specific school
             await School.findByIdAndUpdate(userId, {
                 $inc: { "score.BattleBreakers": score }
             });
             
             scoreUpdates.push({
                 userId,
+                attempt,
+                status,
                 scoreUpdated: score
             });
         }

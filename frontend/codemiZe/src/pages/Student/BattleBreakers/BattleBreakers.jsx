@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
 import GameNodeMini from '../../../components/Games/GameNodeMini';
-import { useAuth } from '../../../context/AuthContext';
 import axiosInstance from '../../../utils/axiosInstance';
 import { API_PATHS } from '../../../utils/apiPaths';
 import { SocketContext } from '../../../context/SocketContext';
@@ -17,11 +16,11 @@ export default function BattleBreakers() {
   const [isPressedBuzzer, setIsPressedBuzzer] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
   const [questionStartTime, setQuestionStartTime] = useState(null);
-  const [questions, setQuestions] = useState([    {
+  const [questions, setQuestions] = useState([{
       _id: "",
       question: "",
       answer: ""
-    },]);
+    }]);
 
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState(30);
