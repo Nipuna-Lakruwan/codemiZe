@@ -217,7 +217,10 @@ export default function BuzzerDashboard() {
       });
 
       socket.on("battleBreakers-startQuestionclient", (data) => {
-        clearBuzzerPresses();
+        // Only clear buzzer presses if this is a new question (not a reconnection)
+        if (!data.isReconnect) {
+          clearBuzzerPresses();
+        }
         setQuestions(() => [
           {
             _id: data._id,
@@ -227,6 +230,10 @@ export default function BuzzerDashboard() {
         // Set initial timer state - will be updated by server timer
         setTimeRemaining(data.allocatedTime);
         setCurrentQuestion(data.questionNo);
+        
+        if (data.isReconnect) {
+          console.log('BuzzerDashboard: Reconnected to active question');
+        }
       });
 
       // Listen for synchronized timer updates from server
@@ -236,14 +243,8 @@ export default function BuzzerDashboard() {
 
       // Listen for timer synchronization (for newly connected clients)
       socket.on("battleBreakers-syncTimer", (data) => {
-        setQuestions(() => [
-          {
-            _id: data.questionData._id,
-            question: data.questionData.question,
-          },
-        ]);
+        // Update timer with accurate remaining time
         setTimeRemaining(data.timeRemaining);
-        setCurrentQuestion(data.questionData.questionNo);
       });
 
       // Listen for time up event from server

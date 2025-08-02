@@ -77,17 +77,28 @@ const setupSocket = (io, app) => {
       console.log("Scoreboard client joined");
     }
 
-    if (socket.user.role === "School" || socket.user.role === "Dashboard" || socket.user.role === "Admin" || socket.user.role === "Judge") {
+    if (socket.user.role === "School" || socket.user.role === "Dashboard" || socket.user.role === "Admin") {
       socket.join("battleBreakers");
       console.log(`BattleBreakers client joined - Role: ${socket.user.role}`);
       
-      // Send current timer state to newly connected client if a question is active
+      // Send current question and timer state to newly connected client if a question is active
       if (currentQuestionData && battleBreakersTimer) {
         const elapsedTime = Math.floor((Date.now() - currentQuestionData.startTime) / 1000);
         const timeRemaining = Math.max(0, currentQuestionData.allocatedTime - elapsedTime);
         
-        console.log(`Syncing timer for new client (${socket.user.role}): ${timeRemaining}s remaining`);
+        console.log(`Syncing question and timer for new client (${socket.user.role}): ${timeRemaining}s remaining`);
         
+        // Send both the question start event and timer sync for reconnecting clients
+        socket.emit("battleBreakers-startQuestionclient", {
+          _id: currentQuestionData._id,
+          question: currentQuestionData.question,
+          startTime: currentQuestionData.startTime,
+          allocatedTime: currentQuestionData.allocatedTime,
+          questionNo: currentQuestionData.questionNo,
+          isReconnect: true // Flag to indicate this is a reconnection
+        });
+        
+        // Also send timer sync for accurate timer state
         socket.emit("battleBreakers-syncTimer", {
           timeRemaining,
           questionId: currentQuestionData._id,
@@ -125,6 +136,32 @@ const setupSocket = (io, app) => {
       console.log(`Received stop question event for question ${data.questionNo}`);
       // Stop the synchronized timer
       stopBattleBreakersTimer();
+    });
+
+    // Handle request for current state (for reconnection)
+    socket.on("battleBreakers-requestCurrentState", () => {
+      console.log(`User ${userId} requested current battle breakers state`);
+      
+      // Send current timer state
+      socket.emit("battleBreakers-currentState", {
+        timer: battleBreakersTimer,
+        isActive: battleBreakersTimerActive,
+        isQuestionActive: currentQuestionData !== null
+      });
+
+      // If there's an active question, send the question data
+      if (currentQuestionData) {
+        console.log(`Sending current question data to reconnecting user: ${currentQuestionData.questionNo}`);
+        socket.emit("battleBreakers-startQuestionclient", {
+          _id: currentQuestionData._id,
+          question: currentQuestionData.question,
+          startTime: Date.now() - (battleBreakersTimer * 1000),
+          allocatedTime: currentQuestionData.allocatedTime,
+          questionNo: currentQuestionData.questionNo,
+          totalTime: currentQuestionData.allocatedTime,
+          questionData: currentQuestionData
+        });
+      }
     });
 
     socket.on("disconnect", () => {

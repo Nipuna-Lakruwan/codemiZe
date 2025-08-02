@@ -29,7 +29,7 @@ export default function BattleBreakers() {
   useEffect(() => {
     // Listen for battle breakers events from the server
     if (socket) {
-      // Listen for question start events
+      // Listen for question start events (both new questions and reconnections)
       socket.on("battleBreakers-startQuestionclient", (data) => {
         console.log('Student: Received question start event', data);
         setQuestions(() => [
@@ -39,10 +39,15 @@ export default function BattleBreakers() {
           },
         ]);
 
-        // Set initial timer state - will be updated by server timer
+        // Set timer state
         setQuestionStartTime(data.startTime);
         setTimeRemaining(data.allocatedTime);
         setIsTimerRunning(true);
+        
+        // If this is a reconnection, we might get a timer sync afterward
+        if (data.isReconnect) {
+          console.log('Student: This is a reconnection, waiting for timer sync...');
+        }
       });
 
       // Listen for synchronized timer updates from server
@@ -53,16 +58,13 @@ export default function BattleBreakers() {
 
       // Listen for timer synchronization (for newly connected clients)
       socket.on("battleBreakers-syncTimer", (data) => {
-        console.log('Student: Timer sync', data);
-        setQuestions(() => [
-          {
-            _id: data.questionData._id,
-            question: data.questionData.question,
-          },
-        ]);
-        setQuestionStartTime(Date.now() - (data.totalTime - data.timeRemaining) * 1000);
+        console.log('Student: Timer sync received', data);
+        // Update timer with accurate remaining time
         setTimeRemaining(data.timeRemaining);
         setIsTimerRunning(true);
+        
+        // Update question start time for accurate timing calculations
+        setQuestionStartTime(Date.now() - (data.totalTime - data.timeRemaining) * 1000);
       });
 
       // Listen for time up event from server
