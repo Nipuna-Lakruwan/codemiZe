@@ -617,6 +617,13 @@ export default function AdminBattleBreakers() {
     }
   };
 
+  const finishGame = async () => {
+    if (window.confirm('Are you sure you want to finish the game?')) {
+      // Emit end game event to the server
+      await axiosInstance.put(API_PATHS.BATTLE_BREAKERS.FINISH_GAME);
+    }
+  };
+
   const handleMarkAnswer = async (schoolId, isCorrect) => {
     // Only allow marking if no correct answer yet and less than 2 wrongs
     if (correctSchool !== null) return;
@@ -1005,6 +1012,13 @@ export default function AdminBattleBreakers() {
                     disabled={currentQuestionIndex === questions.length - 1}
                   >
                     Next
+                    <FaChevronRight />
+                  </button>
+                  <button
+                    onClick={finishGame}
+                    className="px-4 py-2 bg-gray-200 rounded flex items-center gap-1"
+                  >
+                    Finish Game
                     <FaChevronRight />
                   </button>
                   {isQuestionActive && (

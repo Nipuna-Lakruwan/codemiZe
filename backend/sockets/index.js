@@ -1,13 +1,11 @@
 import socketAuth from "../middleware/socketAuth.js";
 
-const setupSocket = (io, app) => {
-  const onlineUsers = app.get("onlineUsers");
+// Timer management for Battle Breakers - moved outside to be exportable
+let battleBreakersTimer = null;
+let currentQuestionData = null;
+let ioInstance = null;
 
-  // Timer management for Battle Breakers
-  let battleBreakersTimer = null;
-  let currentQuestionData = null;
-
-  const startBattleBreakersTimer = (questionData) => {
+export const startBattleBreakersTimer = (questionData) => {
     // Clear any existing timer
     if (battleBreakersTimer) {
       clearInterval(battleBreakersTimer);
@@ -25,11 +23,13 @@ const setupSocket = (io, app) => {
       timeRemaining--;
       
       // Broadcast timer update to all connected clients
-      io.to("battleBreakers").emit("battleBreakers-timerUpdate", {
-        timeRemaining,
-        questionId: questionData._id,
-        totalTime: questionData.allocatedTime
-      });
+      if (ioInstance) {
+        ioInstance.to("battleBreakers").emit("battleBreakers-timerUpdate", {
+          timeRemaining,
+          questionId: questionData._id,
+          totalTime: questionData.allocatedTime
+        });
+      }
 
       //console.log(`Timer update: ${timeRemaining}s remaining`);
 
@@ -38,26 +38,36 @@ const setupSocket = (io, app) => {
         //console.log('Timer finished - notifying clients');
         clearInterval(battleBreakersTimer);
         battleBreakersTimer = null;
-        io.to("battleBreakers").emit("battleBreakers-timeUp", {
-          questionId: questionData._id
-        });
+        if (ioInstance) {
+          ioInstance.to("battleBreakers").emit("battleBreakers-timeUp", {
+            questionId: questionData._id
+          });
+        }
       }
     }, 1000);
   };
 
-  const stopBattleBreakersTimer = () => {
+export const stopBattleBreakersTimer = () => {
     //console.log('Stopping Battle Breakers timer');
     if (battleBreakersTimer) {
       clearInterval(battleBreakersTimer);
       battleBreakersTimer = null;
     }
     // Notify all clients that the timer has stopped
-    io.to("battleBreakers").emit("battleBreakers-timerStopped", {
-      questionId: currentQuestionData?._id
-    });
+    if (ioInstance) {
+      ioInstance.to("battleBreakers").emit("battleBreakers-timerStopped", {
+        questionId: currentQuestionData?._id
+      });
+    }
     // Reset current question data
     currentQuestionData = null;
   };
+
+const setupSocket = (io, app) => {
+  const onlineUsers = app.get("onlineUsers");
+  
+  // Store io instance for timer functions
+  ioInstance = io;
 
   socketAuth(io);
 
@@ -145,7 +155,7 @@ const setupSocket = (io, app) => {
       // Send current timer state
       socket.emit("battleBreakers-currentState", {
         timer: battleBreakersTimer,
-        isActive: battleBreakersTimerActive,
+        isActive: battleBreakersTimer !== null,
         isQuestionActive: currentQuestionData !== null
       });
 

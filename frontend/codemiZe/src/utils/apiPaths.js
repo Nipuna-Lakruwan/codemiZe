@@ -42,6 +42,7 @@ export const API_PATHS = {
     BUZZER_PRESS: "/api/v1/battle-breakers/press",
     GET_DASHBOARD: (questionId) => `/api/v1/battle-breakers/school/${questionId}`,
     SUBMIT_ANSWERS: "/api/v1/battle-breakers/submit",
+    FINISH_GAME: "/api/v1/battle-breakers/finishGame",
   },
   QUIZ_HUNTERS: {
     GET_ALL_QUESTIONS: "/api/v1/quiz-hunters/",
