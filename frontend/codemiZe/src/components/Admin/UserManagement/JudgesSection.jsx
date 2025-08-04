@@ -45,7 +45,7 @@ export default function JudgesSection({
                   {judge.name}
                 </div>
                 <div className="justify-start text-black/70 text-xs font-medium font-['Inter']">
-                  @{judge.username}
+                  {judge.email}
                 </div>
               </div>
 
@@ -54,7 +54,7 @@ export default function JudgesSection({
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => onEdit(judge.id, 'judge')}
+                  onClick={() => onEdit(judge._id, 'judge')}
                   className="w-8 h-7 bg-blue-600 rounded-[3px] flex items-center justify-center"
                 >
                   <FaEdit className="text-white text-xs" />
@@ -62,7 +62,7 @@ export default function JudgesSection({
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => onDelete(judge.id, 'judge')}
+                  onClick={() => onDelete(judge._id, 'judge')}
                   className="w-8 h-7 bg-red-600 rounded-[3px] flex items-center justify-center"
                 >
                   <FaTrash className="text-white text-xs" />

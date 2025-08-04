@@ -10,7 +10,8 @@ const JudgeModal = ({
   onFileChange,
   file,
   isEditing,
-  showEmailField = false
+  showEmailField = false,
+  loading = false
 }) => {
   if (!show) return null;
   return (
@@ -33,18 +34,6 @@ const JudgeModal = ({
               value={judgeData.name}
               onChange={onChange}
               placeholder="Full Name"
-              className="border rounded px-3 py-2 w-full focus:ring-2 focus:ring-sky-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold mb-1 text-gray-700">Username</label>
-            <input
-              type="text"
-              name="username"
-              value={judgeData.email}
-              onChange={onChange}
-              placeholder="Username"
               className="border rounded px-3 py-2 w-full focus:ring-2 focus:ring-sky-500"
               required
             />
@@ -92,16 +81,18 @@ const JudgeModal = ({
               whileTap={{ scale: 0.95 }}
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded font-medium"
               onClick={onClose}
+              disabled={loading}
             >
               Cancel
             </motion.button>
             <motion.button
               type="submit"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-4 py-2 bg-sky-600 text-white rounded font-medium"
+              whileHover={{ scale: loading ? 1 : 1.05 }}
+              whileTap={{ scale: loading ? 1 : 0.95 }}
+              className="px-4 py-2 bg-sky-600 text-white rounded font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading}
             >
-              {isEditing ? 'Update' : 'Add'}
+              {loading ? 'Processing...' : (isEditing ? 'Update' : 'Add')}
             </motion.button>
           </div>
         </form>
