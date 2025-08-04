@@ -104,13 +104,18 @@ export default function GamesRoadmap() {
         // Merge with mock data and compute status
         const mergedGames = mockGames.map((mockGame) => {
           const backendGame = backendGames.find(bg => bg.name === mockGame.title);
+          const gameStatus = backendGame?.status || mockGame.status;
 
           return {
             ...mockGame,
             _id: backendGame?._id || null,
             icon: imagePath(backendGame?.icon?.url) || mockGame.icon,
             allocateTime: backendGame?.allocateTime || 0,
-            status: backendGame?.status,
+            status: gameStatus,
+            // Map status to boolean properties for GameNode component
+            isCompleted: gameStatus === 'completed',
+            isAvailable: gameStatus === 'active',
+            isInactive: gameStatus === 'inactive',
           };
         });
 
