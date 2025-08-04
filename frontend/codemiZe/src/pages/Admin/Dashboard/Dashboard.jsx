@@ -1,130 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import TeamRankItem from '../../../components/Admin/TeamRankItem';
-import { use } from 'react';
+import GameActionModal from '../../../components/modals/GameActionModal';
 import axiosInstance from '../../../utils/axiosInstance';
 import { API_PATHS } from '../../../utils/apiPaths';
-
-// Modal component for button actions
-const GameActionModal = ({ show, onClose, game }) => {
-  if (!show) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-lg p-6 w-[400px] shadow-xl"
-      >
-        <h3 className="text-xl font-bold mb-4">{game.name}</h3>
-        <div className="mb-4">
-          <p>Current status: <span className="font-medium">{game.status}</span></p>
-          <p className="text-sm text-gray-600 mt-2">
-            Select an action to change the game status.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <button
-            className="py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            onClick={() => onClose('activate')}
-          >
-            Activate
-          </button>
-          <button
-            className="py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-            onClick={() => onClose('deactivate')}
-          >
-            Deactivate
-          </button>
-          <button
-            className="py-2 bg-red-500 text-white rounded hover:bg-red-600"
-            onClick={() => onClose('reset')}
-          >
-            Reset
-          </button>
-          <button
-            className="py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-            onClick={() => onClose('cancel')}
-          >
-            Cancel
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
 
 export default function Dashboard() {
   // State
   const [selectedScore, setSelectedScore] = useState('overall');
   const [selectedGame, setSelectedGame] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(0); // in seconds, default 0
+  const [timeRemaining, setTimeRemaining] = useState(0);
   const [games, setGames] = useState([]);
-  const [activeGame, setActiveGame] = useState();
-  const [teamScores, setTeamScores] = useState({
-    'overall': [
-      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 450 },
-      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 420 },
-      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 380 },
-      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 350 },
-      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 330 }
-    ],
-    'quiz-hunters': [
-      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 95 },
-      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 90 },
-      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 85 },
-      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 80 },
-      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 75 }
-    ],
-    'code-crushers': [
-      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 98 },
-      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 90 },
-      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 88 },
-      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 85 },
-      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 80 }
-    ],
-    'circuit-smashers': [
-      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 95 },
-      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 90 },
-      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 85 },
-      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 82 },
-      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 78 }
-    ],
-    'route-seekers': [
-      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 92 },
-      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 90 },
-      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 85 },
-      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 80 },
-      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 75 }
-    ],
-    'battle-breakers': [
-      { name: "St. Joseph's College", logo: "/quiz_hunters_logo-removebg 1.png", city: "Colombo", score: 95 },
-      { name: "Maris Stella College", logo: "/circuit samshers logo 1.png", city: "Negombo", score: 90 },
-      { name: "Sri Sangabodhi Central College", logo: "/code crushers logo 1.png", city: "Dankotuwa", score: 85 },
-      { name: "Ananda College", logo: "/circuit samshers logo 1.png", city: "Colombo", score: 80 },
-      { name: "Royal College", logo: "/code crushers logo 1.png", city: "Colombo", score: 75 }
-    ]
-  });
+  const [teamScores, setTeamScores] = useState({});
 
-  /**
-   * BACKEND INTEGRATION POINT:
-   * 
-   * The following data should be fetched from the API:
-   * 1. List of games with their current status
-   * 2. Currently active game (if any) with remaining time
-   * 3. Game scores for each team
-   * 
-   * Suggested API endpoints:
-   * - GET /api/games - List all games with status
-   * - GET /api/games/active - Get currently active game with timer
-   * - GET /api/scores - Get all team scores (can be filtered by game)
-   * - POST /api/games/:id/activate - Activate a specific game
-   * - POST /api/games/:id/deactivate - Deactivate a specific game
-   * - POST /api/games/:id/reset - Reset a specific game
-   */
+  // Dynamically get active game from games array
+  const activeGame = games.find(game => game.status === 'active') || null;
 
   // Fetch games data from backend
   useEffect(() => {
@@ -136,27 +27,39 @@ export default function Dashboard() {
       const response = await axiosInstance.get(API_PATHS.GAMES.GET_ALL_GAMES);
       setGames(response.data);
     } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-
-    // Fetch active game if any
-    try {
-      const activeResponse = await axiosInstance.get(API_PATHS.GAMES.GET_ACTIVE_GAME);
-      setActiveGame(activeResponse.data);
-    } catch (error) {
-      console.error('Error fetching active game:', error);
+      console.error('Error fetching games:', error);
     }
   };
 
-  const activateGame = async () => {
+  const activateGame = async (gameId) => {
     try {
-      const response = await axiosInstance.patch(API_PATHS.GAMES.ACTIVATE_GAME(selectedGame._id));
+      const response = await axiosInstance.patch(API_PATHS.GAMES.ACTIVATE_GAME(gameId));
       console.log('Game activated:', response.data);
-      fetchData();
+      fetchData(); // Refresh games data
     } catch (error) {
       console.error('Error activating game:', error);
     }
-  }
+  };
+
+  const deactivateGame = async (gameId) => {
+    try {
+      const response = await axiosInstance.patch(API_PATHS.GAMES.DEACTIVATE_GAME(gameId));
+      console.log('Game deactivated:', response.data);
+      fetchData(); // Refresh games data
+    } catch (error) {
+      console.error('Error deactivating game:', error);
+    }
+  };
+
+  const completeGame = async (gameId) => {
+    try {
+      const response = await axiosInstance.patch(API_PATHS.GAMES.COMPLETE_GAME(gameId));
+      console.log('Game completed:', response.data);
+      fetchData(); // Refresh games data
+    } catch (error) {
+      console.error('Error completing game:', error);
+    }
+  };
 
   // Score tabs - This should match the game types from your backend
   const scoreTabs = [
@@ -168,22 +71,8 @@ export default function Dashboard() {
     { id: 'battle-breakers', name: 'Battle Breakers' },
   ];
 
-  /**
-   * BACKEND INTEGRATION POINT:
-   * 
-   * Team scores should be fetched from the backend.
-   * The structure should match what's shown below, with:
-   * - team name
-   * - logo path
-   * - city
-   * - score
-   * 
-   * The API should allow filtering by game type.
-   * Suggested endpoint: GET /api/scores?game=game_id
-   */
-
+  // Fetch team scores from backend
   useEffect(() => {
-    // Fetch team scores from backend
     const fetchTeamScores = async () => {
       try {
         const response = await axiosInstance.get(API_PATHS.ADMIN.GET_SCHOOL_SCORES);
@@ -202,156 +91,64 @@ export default function Dashboard() {
     if (status === 'active') return "bg-sky-600";
     return "bg-purple-800";
   };
-  /**
-   * Event handlers for game management
-   * 
-   * BACKEND INTEGRATION POINTS:
-   * These functions should make API calls to update game status
-   */
 
   // Handle game button click to show options modal
   const handleGameButtonClick = (game) => {
     setSelectedGame(game);
     setShowModal(true);
-  };  // Handle modal action - updates state and would make API calls to backend
-
-  const handleModalAction = (action) => {
-    if (action !== 'cancel') {
-      console.log(`Action ${action} for game ${selectedGame.name}`);
-
-      // Frontend implementation with proper state updates
-      const updatedGames = [...games];
-      const gameIndex = updatedGames.findIndex(g => g._id === selectedGame._id);
-
-      if (gameIndex !== -1) {
-        switch (action) {
-          case 'activate':
-            // First deactivate any currently active game
-            const activeGameIndex = updatedGames.findIndex(g => g.status === 'active');
-            if (activeGameIndex !== -1) {
-              updatedGames[activeGameIndex] = {
-                ...updatedGames[activeGameIndex],
-                status: 'inactive'
-              };
-            }
-
-            // Then activate the selected game
-            updatedGames[gameIndex] = {
-              ...updatedGames[gameIndex],
-              status: 'active'
-            };
-
-            // Set the active game for the ongoing game section
-            setActiveGame(updatedGames[gameIndex]);
-            activateGame();
-
-            // Reset the timer for the newly activated game
-            setTimeRemaining(60); // 60 minutes for a new game
-            break;
-
-          case 'deactivate':
-            updatedGames[gameIndex] = {
-              ...updatedGames[gameIndex],
-              status: 'inactive'
-            };
-
-            // Clear active game if we're deactivating it
-            if (activeGame && activeGame._id === selectedGame._id) {
-              setActiveGame(null);
-            }
-            break;
-
-          case 'reset':
-            updatedGames[gameIndex] = {
-              ...updatedGames[gameIndex],
-              status: 'inactive'
-            };
-
-            // Clear active game if we're resetting it
-            if (activeGame && activeGame._id === selectedGame._id) {
-              setActiveGame(null);
-            }
-            break;
-
-          default:
-            break;
-        }
-
-        // Update the games state
-        setGames(updatedGames);
-      }
-
-      /**
-       * Make API call based on action:
-       * - 'activate': POST /api/games/${selectedGame.id}/activate
-       * - 'deactivate': POST /api/games/${selectedGame.id}/deactivate
-       * - 'reset': POST /api/games/${selectedGame.id}/reset
-       * 
-       * After successful response, update local state or refetch games data
-       */
-
-      // Example API call (to be implemented)
-      // const endpoint = `/api/games/${selectedGame.id}/${action}`;
-      // fetch(endpoint, { method: 'POST' })
-      //   .then(response => response.json())
-      //   .then(data => {
-      //     // Update game status or refetch games
-      //   })
-      //   .catch(error => console.error(`Error ${action} game:`, error));
-    }
-    setShowModal(false);
-  };  // Handle stop game - updates state and would make API call to backend
-
-  const handleStopGame = () => {
-    if (!activeGame) return;
-
-    console.log(`Stopping game: ${activeGame.name}`);
-
-    // Frontend implementation with proper state updates
-    const updatedGames = [...games];
-    const activeGameIndex = updatedGames.findIndex(g => g.id === activeGame.id);
-
-    if (activeGameIndex !== -1) {
-      // Change active game to completed
-      updatedGames[activeGameIndex] = {
-        ...updatedGames[activeGameIndex],
-        status: 'completed'
-      };
-
-      // Update the games state
-      setGames(updatedGames);
-
-      // Update time remaining to show game is complete
-      setTimeRemaining(0);
-
-      // Mark the game as completed in active game state
-      setActiveGame({
-        ...activeGame,
-        status: 'completed'
-      });
-    }
-
-    /**
-     * Make API call to stop the active game:
-     * POST /api/games/active/stop
-     * 
-     * After successful response, update local state or refetch games data
-     */
-
-    // Example API call (to be implemented)
-    // fetch('/api/games/active/stop', { method: 'POST' })
-    //   .then(response => response.json())
-    //   .then(data => {
-    //     // Update game status
-    //   })
-    //   .catch(error => console.error('Error stopping game:', error));
   };
 
-  // Helper: get total time for progress bar (set to 15 seconds for testing)
-  const totalGameTime = 15; // 15 seconds for testing
+  // Handle modal action - makes API calls to backend
+  const handleModalAction = async (action) => {
+    if (action === 'cancel' || !selectedGame) {
+      setShowModal(false);
+      return;
+    }
 
-  // Helper: convert timeRemaining to seconds (always seconds now)
-  const getTimeRemainingSeconds = () => timeRemaining;
+    try {
+      console.log(`Action ${action} for game ${selectedGame.name}`);
+
+      switch (action) {
+        case 'activate':
+          await activateGame(selectedGame._id);
+          setTimeRemaining(selectedGame.allocateTime || 15); // Set timer for newly activated game
+          break;
+        case 'deactivate':
+          await deactivateGame(selectedGame._id);
+          if (activeGame && activeGame._id === selectedGame._id) {
+            setTimeRemaining(0);
+          }
+          break;
+        case 'complete':
+          await completeGame(selectedGame._id);
+          if (activeGame && activeGame._id === selectedGame._id) {
+            setTimeRemaining(0);
+          }
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      console.error(`Error ${action} game:`, error);
+    }
+
+    setShowModal(false);
+  };  
+  
+  // Handle stop game - makes API call to backend
+  const handleStopGame = async () => {
+    if (!activeGame) return;
+
+    try {
+      console.log(`Stopping game: ${activeGame.name}`);
+      await deactivateGame(activeGame._id);
+      setTimeRemaining(0);
+    } catch (error) {
+      console.error('Error stopping game:', error);
+    }
+  };
+
+  const totalGameTime = activeGame?.allocateTime || 15; // Default to 15 seconds if not set
 
   // Helper: format time as MM:SS
   const formatTime = (seconds) => {
@@ -360,11 +157,10 @@ export default function Dashboard() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Timer effect - simulates countdown for active game
+  // Timer effect - countdown for active game
   useEffect(() => {
     let timerId;
 
-    // Only countdown if we have an active game and time remaining
     if (activeGame && activeGame.status === 'active' && timeRemaining > 0) {
       timerId = setInterval(() => {
         setTimeRemaining(prev => {
@@ -374,7 +170,7 @@ export default function Dashboard() {
           }
           return prev - 1;
         });
-      }, 1000); // Update every second
+      }, 1000);
     }
 
     return () => {
@@ -382,9 +178,9 @@ export default function Dashboard() {
     };
   }, [activeGame, timeRemaining]);
 
-  // When a game is activated, set timer to 15 seconds for testing
+  // Set timer when a game becomes active
   useEffect(() => {
-    if (activeGame && activeGame.status === 'active') {
+    if (activeGame && activeGame.status === 'active' && timeRemaining === 0) {
       setTimeRemaining(totalGameTime);
     }
   }, [activeGame]);
@@ -405,7 +201,7 @@ export default function Dashboard() {
               <button
                 key={game._id}
                 onClick={() => handleGameButtonClick(game)}
-                className={`w-44 h-14 ${getButtonStyle(game)} rounded-[5px] shadow-[0px_0px_6px_1px_rgba(0,0,0,0.15)] border border-white text-white font-medium text-lg transition-all duration-200 hover:scale-105`}
+                className={`w-44 h-14 ${getButtonStyle(game.status)} rounded-[5px] shadow-[0px_0px_6px_1px_rgba(0,0,0,0.15)] border border-white text-white font-medium text-lg transition-all duration-200 hover:scale-105`}
               >
                 {game.name}
               </button>
@@ -430,14 +226,14 @@ export default function Dashboard() {
                   <div
                     className="bg-purple-800 h-5 rounded-full transition-all duration-300 ease-in-out"
                     style={{
-                      width: `${(getTimeRemainingSeconds() / totalGameTime) * 100}%`
+                      width: `${(timeRemaining / totalGameTime) * 100}%`
                     }}
                   ></div>
                 </div>
 
                 {/* Time remaining display */}
                 <div className="text-gray-700 text-lg mt-2 mb-4 md:mb-0 text-center font-medium">
-                  Time remaining: {formatTime(getTimeRemainingSeconds())}
+                  Time remaining: {formatTime(timeRemaining)}
                 </div>
               </div>
 

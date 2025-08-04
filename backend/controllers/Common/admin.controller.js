@@ -1,6 +1,7 @@
 import School from "../../models/School.js";
 import User from "../../models/User.js";
 import { imagePath } from "../../utils/helper.js";
+import { deleteFromLocal } from "../../config/localStorage.js";
 
 export const getAllUsers = async (req, res) => {
   try {
@@ -46,15 +47,46 @@ export const editSchool = async (req, res) => {
   const { name, email, city, nameInShort, password } = req.body;
 
   try {
-    const updatedSchool = await School.findByIdAndUpdate(
-      id,
-      { name, email, city, nameInShort, password },
-      { new: true }
-    ).select("-password -__v");
-
-    if (!updatedSchool) {
+    // Find the existing school first
+    const existingSchool = await School.findById(id);
+    if (!existingSchool) {
       return res.status(404).json({ message: "School not found" });
     }
+
+    // Handle avatar upload
+    let avatarData = existingSchool.avatar; // Keep existing avatar by default
+    if (req.file) {
+      // Delete old avatar if it exists and is not the default
+      if (existingSchool.avatar && existingSchool.avatar.publicId && existingSchool.avatar.publicId !== 'default') {
+        try {
+          await deleteFromLocal(existingSchool.avatar.publicId, 'avatars');
+        } catch (error) {
+          console.log('Error deleting old avatar:', error.message);
+        }
+      }
+      
+      // Set new avatar data
+      avatarData = {
+        url: `/uploads/avatars/${req.file.filename}`,
+        publicId: req.file.filename
+      };
+    }
+
+    // Prepare update data
+    const updateData = {
+      name,
+      email,
+      city,
+      nameInShort,
+      avatar: avatarData,
+      ...(password && { password }) // Only include password if provided
+    };
+
+    const updatedSchool = await School.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    ).select("-password -__v");
 
     res.status(200).json({
       message: "School updated successfully",
@@ -67,17 +99,48 @@ export const editSchool = async (req, res) => {
 
 export const editUser = async (req, res) => {
   const { id } = req.params;
-  const { name, email, role } = req.body;
+  const { name, email, role, password } = req.body;
+  
   try {
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { name, email, role },
-      { new: true }
-    ).select("-password -__v");
-
-    if (!updatedUser) {
+    // Find the existing user first
+    const existingUser = await User.findById(id);
+    if (!existingUser) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    // Handle avatar upload
+    let avatarData = existingUser.avatar; // Keep existing avatar by default
+    if (req.file) {
+      // Delete old avatar if it exists and is not the default
+      if (existingUser.avatar && existingUser.avatar.publicId && existingUser.avatar.publicId !== 'default') {
+        try {
+          await deleteFromLocal(existingUser.avatar.publicId, 'avatars');
+        } catch (error) {
+          console.log('Error deleting old avatar:', error.message);
+        }
+      }
+      
+      // Set new avatar data
+      avatarData = {
+        url: `/uploads/avatars/${req.file.filename}`,
+        publicId: req.file.filename
+      };
+    }
+
+    // Prepare update data
+    const updateData = {
+      name,
+      email,
+      role,
+      avatar: avatarData,
+      ...(password && { password }) // Only include password if provided
+    };
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    ).select("-password -__v");
 
     res.status(200).json({
       message: "User updated successfully",

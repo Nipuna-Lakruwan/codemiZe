@@ -65,9 +65,9 @@ const CriteriaItem = ({
         </div>
       ) : (
         <>
-          <div className="flex items-center text-gray-400 opacity-0 group-hover:opacity-100 mr-2">
+          {/* <div className="flex items-center text-gray-400 opacity-0 group-hover:opacity-100 mr-2">
             <FaGripVertical />
-          </div>
+          </div> */}
           <div className="flex-1 flex items-center">
             <span className="text-gray-800">{criteria.criteria}</span>
             {criteria.gameId && (

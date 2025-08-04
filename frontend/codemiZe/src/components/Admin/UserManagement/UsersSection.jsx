@@ -45,7 +45,7 @@ export default function UsersSection({
                   {user.name}
                 </div>
                 <div className="justify-start text-black/70 text-xs font-medium font-['Inter']">
-                  @{user.username} • {user.role}
+                  {user.email} • {user.role}
                 </div>
               </div>
 
@@ -54,7 +54,7 @@ export default function UsersSection({
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => onEdit(user.id, 'user')}
+                  onClick={() => onEdit(user._id, 'user')}
                   className="w-8 h-7 bg-blue-600 rounded-[3px] flex items-center justify-center"
                 >
                   <FaEdit className="text-white text-xs" />
@@ -62,7 +62,7 @@ export default function UsersSection({
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => onDelete(user.id, 'user')}
+                  onClick={() => onDelete(user._id, 'user')}
                   className="w-8 h-7 bg-red-600 rounded-[3px] flex items-center justify-center"
                 >
                   <FaTrash className="text-white text-xs" />

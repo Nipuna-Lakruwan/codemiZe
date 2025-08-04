@@ -9,6 +9,49 @@ import { SocketContext } from '../../../context/SocketContext';
 
 export default function BattleBreakers() {
   const socket = useContext(SocketContext);
+  
+  // Helper functions for localStorage with expiration (1 minute = 60000ms)
+  const EXPIRATION_TIME = 60000; // 1 minute in milliseconds
+  
+  const setLocalStorageWithExpiry = (key, value) => {
+    const now = new Date();
+    const item = {
+      value: value,
+      expiry: now.getTime() + EXPIRATION_TIME,
+    };
+    localStorage.setItem(key, JSON.stringify(item));
+  };
+  
+  const getLocalStorageWithExpiry = (key) => {
+    const itemStr = localStorage.getItem(key);
+    if (!itemStr) {
+      return null;
+    }
+    
+    try {
+      const item = JSON.parse(itemStr);
+      const now = new Date();
+      
+      // If the item has expired, remove it and return null
+      if (now.getTime() > item.expiry) {
+        localStorage.removeItem(key);
+        return null;
+      }
+      
+      return item.value;
+    } catch (error) {
+      // If parsing fails, remove the corrupted item
+      localStorage.removeItem(key);
+      return null;
+    }
+  };
+  
+  const clearBattleBreakersLocalStorage = () => {
+    localStorage.removeItem('battleBreakers_questionId');
+    localStorage.removeItem('battleBreakers_question');
+    console.log('Student: Cleared question data from local storage');
+  };
+
   // Game state
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,12 +69,31 @@ export default function BattleBreakers() {
   const [timeRemaining, setTimeRemaining] = useState(30);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
+  // Effect to check for saved question in local storage on component mount
+  useEffect(() => {
+    const savedQuestionId = getLocalStorageWithExpiry('battleBreakers_questionId');
+    const savedQuestion = getLocalStorageWithExpiry('battleBreakers_question');
+    
+    if (savedQuestionId && savedQuestion) {
+      console.log('Student: Restoring question from local storage');
+      setQuestions([{
+        _id: savedQuestionId,
+        question: savedQuestion,
+      }]);
+    }
+  }, []);
+
   useEffect(() => {
     // Listen for battle breakers events from the server
     if (socket) {
       // Listen for question start events (both new questions and reconnections)
       socket.on("battleBreakers-startQuestionclient", (data) => {
         console.log('Student: Received question start event', data);
+        
+        // Save question and questionId to local storage with expiry (replace if exists)
+        setLocalStorageWithExpiry('battleBreakers_questionId', data._id);
+        setLocalStorageWithExpiry('battleBreakers_question', data.question);
+        
         setQuestions(() => [
           {
             _id: data._id,
@@ -79,6 +141,16 @@ export default function BattleBreakers() {
         console.log('Student: Timer stopped event');
         setIsTimerRunning(false);
       });
+
+      // Add this inside the useEffect with other socket listeners
+      socket.on("battleBreakers-gameCompleted", (data) => {
+        console.log('Game completed:', data);
+        setGameCompleted(true);
+        setIsTimerRunning(false);
+        
+        // Clear question and questionId from local storage when game is completed
+        clearBattleBreakersLocalStorage();
+      });
       
       // Clean up the event listeners when component unmounts
       return () => {
@@ -87,9 +159,18 @@ export default function BattleBreakers() {
         socket.off("battleBreakers-syncTimer");
         socket.off("battleBreakers-timeUp");
         socket.off("battleBreakers-timerStopped");
+        socket.off("battleBreakers-gameCompleted");
       };
     }
   }, [socket]);
+
+  // Cleanup local storage when component unmounts
+  useEffect(() => {
+    return () => {
+      // Clear question data from local storage when component is unmounted
+      clearBattleBreakersLocalStorage();
+    };
+  }, []);
 
   // Mock buzzer sound functionality
   const playBuzzerSound = () => {

@@ -2,7 +2,9 @@ import BattleBreakersDashboard from "../../models/BattleBreakersDashboard.js";
 import BattleBreakersAnswer from "../../models/markings/BattleBreakersAnswer.js";
 import BattleBreakersQuestion from "../../models/questions/BattleBreakersQuestion.js";
 import School from "../../models/School.js";
+import Game from "../../models/Game.js";
 import { parseCSVFile } from "../../utils/csvParser.js";
+import { stopBattleBreakersTimer } from "../../sockets/index.js";
 
 export const buzzerPress = async (req, res) => {
     try {
@@ -167,19 +169,15 @@ export const getAnswers = async (req, res) => {
     try {
         // First, get answers without populate to see raw data
         const rawAnswers = await BattleBreakersAnswer.find({});
-        console.log(`Found ${rawAnswers.length} raw answer documents`);
         
         // Then get answers with populate
         const answers = await BattleBreakersAnswer.find({})
             .populate('questionId', 'question answer')
             .populate('responses.userId', 'name nameInShort');
         
-        console.log(`After populate: ${answers.length} answer documents`);
-        
         // More lenient filtering - only remove if both questionId and all responses are invalid
         const validAnswers = answers.filter(answer => {
             if (!answer.questionId) {
-                console.warn(`Answer document ${answer._id} has null questionId - keeping with raw questionId`);
                 // Keep the document but with raw questionId
                 const rawAnswer = rawAnswers.find(raw => raw._id.toString() === answer._id.toString());
                 if (rawAnswer) {
@@ -190,7 +188,6 @@ export const getAnswers = async (req, res) => {
             // Filter out responses with null userId but keep the document if some responses are valid
             const validResponses = answer.responses.filter(response => {
                 if (!response.userId) {
-                    console.warn(`Response in answer ${answer._id} has null userId - keeping with raw userId`);
                     // Find the raw response and use the raw userId
                     const rawAnswer = rawAnswers.find(raw => raw._id.toString() === answer._id.toString());
                     if (rawAnswer) {
@@ -216,8 +213,6 @@ export const getAnswers = async (req, res) => {
             // Only remove the document if it has no valid responses at all
             return answer.responses.length > 0;
         });
-        
-        console.log(`After filtering: ${validAnswers.length} valid answer documents`);
         
         res.status(200).json(validAnswers);
     } catch (error) {
@@ -333,3 +328,31 @@ export const submitAnswers = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+export const finishGame = async (req, res) => {
+    try {
+        // Stop the Battle Breakers timer
+        stopBattleBreakersTimer();
+        
+        // Get the io instance and emit game completed
+        const io = req.app.get("io");
+        io.to("battleBreakers").emit("battleBreakers-gameCompleted", {
+            message: "Game has ended"
+        });
+        
+        // Update the BattleBreakers game status to completed
+        const updatedGame = await Game.findOneAndUpdate(
+            { name: "Battle Breakers" },
+            { status: "completed" },
+            { new: true }
+        );
+
+        res.status(200).json({ 
+            message: "Game finished successfully",
+            gameUpdated: !!updatedGame 
+        });
+    } catch (error) {
+        console.error("Error finishing game:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}

@@ -10,7 +10,7 @@ export const seedGames = async () => {
   const gamesData = [
     {
       name: "Quiz Hunters",
-      allocateTime: 30,
+      allocateTime: 1200,
       icon: {
         url: "uploads/gameIcons/QuizHunters.png",
         publicId: "QuizHunters.png"
@@ -19,7 +19,7 @@ export const seedGames = async () => {
     },
     {
       name: "Code Crushers",
-      allocateTime: 30,
+      allocateTime: 1800,
       icon: {
         url: "uploads/gameIcons/CodeCrushers.png",
         publicId: "CodeCrushers.png"
@@ -28,7 +28,7 @@ export const seedGames = async () => {
     },
     {
       name: "Circuit Smashers",
-      allocateTime: 30,
+      allocateTime: 1800,
       icon: {
         url: "uploads/gameIcons/CircuitSmashers.png",
         publicId: "CircuitSmashers.png"
@@ -37,7 +37,7 @@ export const seedGames = async () => {
     },
     {
       name: "Route Seekers",
-      allocateTime: 30,
+      allocateTime: 2400,
       icon: {
         url: "uploads/gameIcons/RouteSeekers.png",
         publicId: "RouteSeekers.png"

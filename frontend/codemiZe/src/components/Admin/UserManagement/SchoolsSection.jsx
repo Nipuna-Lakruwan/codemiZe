@@ -54,7 +54,7 @@ export default function SchoolsSection({
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => onEdit(school.id, 'school')}
+                  onClick={() => onEdit(school._id, 'school')}
                   className="w-8 h-7 bg-blue-600 rounded-[3px] flex items-center justify-center"
                 >
                   <FaEdit className="text-white text-xs" />
@@ -62,7 +62,7 @@ export default function SchoolsSection({
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => onDelete(school.id, 'school')}
+                  onClick={() => onDelete(school._id, 'school')}
                   className="w-8 h-7 bg-red-600 rounded-[3px] flex items-center justify-center"
                 >
                   <FaTrash className="text-white text-xs" />

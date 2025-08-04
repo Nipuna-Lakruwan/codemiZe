@@ -13,6 +13,7 @@ export const API_PATHS = {
     GET_ACTIVE_GAME: "/api/v1/games/active",
     ACTIVATE_GAME: (gameId) => `/api/v1/games/activate/${gameId}`,
     DEACTIVATE_GAME: (gameId) => `/api/v1/games/deactivate/${gameId}`,
+    COMPLETE_GAME: (gameId) => `/api/v1/games/complete/${gameId}`,
   },
   ADMIN: {
     GET_ALL_USERS: "/api/v1/admin/users",
@@ -20,8 +21,8 @@ export const API_PATHS = {
     GET_ALL_SCHOOLS: "/api/v1/admin/schools",
     EDIT_SCHOOL: (id) => `/api/v1/admin/schools/${id}`,
     EDIT_USER: (id) => `/api/v1/admin/users/${id}`,
-    DELETE_USER: (id) => `/api/v1/admin/users/${id}`,
-    DELETE_SCHOOL: (id) => `/api/v1/admin/schools/${id}`,
+    DELETE_USER: (id) => `/api/v1/admin/user/${id}`,
+    DELETE_SCHOOL: (id) => `/api/v1/admin/school/${id}`,
     GET_SCHOOL_SCORES: "/api/v1/admin/dashboard",
     SHOW_WINNERS: "/api/v1/admin/winners",
   },
@@ -42,6 +43,7 @@ export const API_PATHS = {
     BUZZER_PRESS: "/api/v1/battle-breakers/press",
     GET_DASHBOARD: (questionId) => `/api/v1/battle-breakers/school/${questionId}`,
     SUBMIT_ANSWERS: "/api/v1/battle-breakers/submit",
+    FINISH_GAME: "/api/v1/battle-breakers/finishGame",
   },
   QUIZ_HUNTERS: {
     GET_ALL_QUESTIONS: "/api/v1/quiz-hunters/",
