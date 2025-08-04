@@ -5,6 +5,8 @@ import { FaUpload, FaFileAlt, FaDownload, FaFilePdf } from 'react-icons/fa';
 import AdminBox from '../../../components/Admin/QuizComponents/AdminBox';
 import ConfirmationModal from '../../../components/Admin/QuizComponents/ConfirmationModal';
 import AlertModal from '../../../components/Admin/QuizComponents/AlertModal';
+import { API_PATHS } from '../../../utils/apiPaths';
+import axiosInstance from '../../../utils/axiosInstance';
 
 export default function AdminCodeCrushers() {
   // Resources state
@@ -91,10 +93,17 @@ export default function AdminCodeCrushers() {
     }
   };
 
-  const handleResourceUpload = () => {
+  const handleResourceUpload = async () => {
     if (selectedFile) {
       // Here you would handle the resource upload to the backend
-      console.log('Uploading resource:', selectedFile);
+      const formData = new FormData();
+      formData.append('slides', selectedFile);
+
+      await axiosInstance.post(API_PATHS.CODE_CRUSHERS.UPLOAD_SLIDES, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       showAlert('Resource uploaded: ' + selectedFile.name, 'Upload Successful', 'success');
       // Simulating new resources added
       setResources(resources + 1);
@@ -106,9 +115,23 @@ export default function AdminCodeCrushers() {
 
   // No response upload or delete resources functionality
 
-  const handleDownloadResources = () => {
+  const handleDownloadResources = async () => {
+    try {
     showAlert('Resources are being downloaded', 'Download Started', 'info');
-    // Here you would implement the actual download logic
+    const response = await axiosInstance.get(API_PATHS.CODE_CRUSHERS.GET_ALL_RESOURCES, { responseType: "blob" });
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "codeCrushers-resources.zip");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    } catch (error) {
+      console.error('Error downloading resources:', error);
+      showAlert('Failed to download resources', 'Download Error', 'error');
+    }
   };
 
   const handleDownloadPDF = () => {
