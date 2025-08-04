@@ -264,7 +264,7 @@ const GameTitle = ({ game }) => {
       {/* Status labels with improved styling */}
       {!game.isAvailable && (
         <div className="text-xs mt-1 text-gray-400 bg-gray-800/60 rounded-full px-2 py-1 inline-block">
-          <span className="mr-1">🔒</span> Locked
+          <span className="mr-1">⏳</span> Coming Soon
         </div>
       )}
       {game.isAvailable && !game.isCompleted && (
