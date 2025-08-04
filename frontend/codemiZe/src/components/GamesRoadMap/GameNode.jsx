@@ -60,7 +60,7 @@ const GameNode = ({ game, idx, visibleGames }) => {
                   ease: "easeOut",
                 }
               }}
-              whileHover={game.isAvailable ? { scale: 1.08 } : {}}
+              whileHover={(game.isAvailable && !game.isCompleted) ? { scale: 1.08 } : {}}
             >
               {/* Triangle gradient with game icon */}
               <div
@@ -80,10 +80,10 @@ const GameNode = ({ game, idx, visibleGames }) => {
                     width: '500px',
                     height: '500px',
                     filter: game.isCompleted
-                      ? 'drop-shadow(0 0 10px rgba(34, 197, 94, 0.6))'
+                      ? 'drop-shadow(0 0 10px rgba(34, 197, 94, 0.6)) hue-rotate(90deg) saturate(1.2)'
                       : game.isAvailable
                         ? 'drop-shadow(0 0 10px rgba(140, 20, 252, 0.6))'
-                        : 'brightness(0.5) saturate(0.3)',
+                        : 'brightness(0.4) saturate(0) contrast(0.8)',
                   }}
                   initial={{ opacity: 0, rotateZ: 15 }}
                   animate={{
@@ -104,9 +104,11 @@ const GameNode = ({ game, idx, visibleGames }) => {
                   style={{
                     width: '300px',
                     height: '300px',
-                    filter: game.isAvailable
-                      ? 'drop-shadow(0 0 5px rgba(255, 255, 255, 0.8))'
-                      : 'grayscale(1) brightness(0.7)',
+                    filter: game.isCompleted
+                      ? 'drop-shadow(0 0 5px rgba(34, 197, 94, 0.8)) brightness(1.1)'
+                      : game.isAvailable
+                        ? 'drop-shadow(0 0 5px rgba(255, 255, 255, 0.8))'
+                        : 'grayscale(1) brightness(0.5) contrast(0.8)',
                   }}
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={[
@@ -119,7 +121,7 @@ const GameNode = ({ game, idx, visibleGames }) => {
                         ease: "easeOut"
                       }
                     },
-                    game.isAvailable ? "animate" : {}
+                    (game.isAvailable && !game.isCompleted) ? "animate" : {}
                   ]}
                   variants={floatingAnimation}
                 />
@@ -152,9 +154,9 @@ const GameButton = ({ game, buttonAnimation, navigate }) => {
 
   return (
     <div
-      className={`relative w-32 h-32 ${game.isAvailable ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+      className={`relative w-32 h-32 ${(game.isAvailable && !game.isCompleted) ? 'cursor-pointer' : 'cursor-not-allowed'}`}
       onClick={() => {
-        if (game.isAvailable && gameRoutes[game.title]) {
+        if (game.isAvailable && !game.isCompleted && gameRoutes[game.title]) {
           navigate(gameRoutes[game.title]);
         }
       }}
@@ -164,7 +166,7 @@ const GameButton = ({ game, buttonAnimation, navigate }) => {
         className="absolute inset-0 z-30 rounded-full"
         style={{
           background: 'transparent',
-          cursor: game.isAvailable ? 'pointer' : 'not-allowed'
+          cursor: (game.isAvailable && !game.isCompleted) ? 'pointer' : 'not-allowed'
         }}
       ></div>
 
@@ -172,9 +174,9 @@ const GameButton = ({ game, buttonAnimation, navigate }) => {
       <motion.div
         className="relative w-full h-full flex items-center justify-center bg-transparent border-none focus:outline-none"
         initial="rest"
-        whileHover={game.isAvailable ? "hover" : "disabled"}
-        whileTap={game.isAvailable ? "tap" : "disabled"}
-        animate={game.isAvailable ? "rest" : "disabled"}
+        whileHover={(game.isAvailable && !game.isCompleted) ? "hover" : "disabled"}
+        whileTap={(game.isAvailable && !game.isCompleted) ? "tap" : "disabled"}
+        animate={(game.isAvailable && !game.isCompleted) ? "rest" : "disabled"}
         variants={buttonAnimation}
       >
         <motion.img
@@ -183,10 +185,10 @@ const GameButton = ({ game, buttonAnimation, navigate }) => {
           className="w-full h-full object-contain"
           style={{
             filter: game.isCompleted
-              ? 'drop-shadow(0 0 12px rgba(34, 197, 94, 0.7))'
-              : game.isAvailable
+              ? 'drop-shadow(0 0 12px rgba(34, 197, 94, 0.7)) hue-rotate(80deg) saturate(1.5) brightness(1.2)'
+              : (game.isAvailable && !game.isCompleted)
                 ? 'drop-shadow(0 0 10px rgba(140, 20, 252, 0.5))'
-                : 'grayscale(1) opacity(0.6) brightness(0.7)',
+                : 'grayscale(1) opacity(0.5) brightness(0.6)',
             pointerEvents: 'none' // Make sure image doesn't capture clicks
           }}
           initial={{ opacity: 0, rotateY: 90 }}
@@ -202,8 +204,8 @@ const GameButton = ({ game, buttonAnimation, navigate }) => {
         />
       </motion.div>
 
-      {/* Locked indicator only for unavailable games */}
-      {!game.isAvailable && (
+      {/* Locked indicator for unavailable games or completed games */}
+      {(!game.isAvailable || game.isCompleted) && (
         <motion.div
           className="absolute inset-0 flex items-center justify-center z-40"
           initial={{ opacity: 0 }}
@@ -216,10 +218,20 @@ const GameButton = ({ game, buttonAnimation, navigate }) => {
           }}
           style={{ pointerEvents: 'none' }} // Prevent lock icon from blocking clicks
         >
-          <div className="bg-black/60 backdrop-blur-sm w-12 h-12 rounded-full flex items-center justify-center border border-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+          <div className={`backdrop-blur-sm w-12 h-12 rounded-full flex items-center justify-center border ${
+            game.isCompleted 
+              ? 'bg-green-900/60 border-green-500'
+              : 'bg-black/60 border-gray-500'
+          }`}>
+            {game.isCompleted ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            )}
           </div>
         </motion.div>
       )}
@@ -251,17 +263,17 @@ const GameTitle = ({ game }) => {
 
       {/* Status labels with improved styling */}
       {!game.isAvailable && (
-        <div className="text-xs mt-1 text-gray-300 bg-black/40 rounded-full px-2 py-1 inline-block">
-          <span className="mr-1">🔒</span> Coming Soon
+        <div className="text-xs mt-1 text-gray-400 bg-gray-800/60 rounded-full px-2 py-1 inline-block">
+          <span className="mr-1">🔒</span> Locked
         </div>
       )}
       {game.isAvailable && !game.isCompleted && (
-        <div className="text-xs mt-1 text-blue-300 bg-blue-900/40 rounded-full px-2 py-1 inline-block">
+        <div className="text-xs mt-1 text-purple-300 bg-purple-900/60 rounded-full px-2 py-1 inline-block">
           <span className="mr-1">🎮</span> Available Now
         </div>
       )}
       {game.isCompleted && (
-        <div className="text-xs mt-1 text-green-300 bg-green-900/40 rounded-full px-2 py-1 inline-block">
+        <div className="text-xs mt-1 text-green-300 bg-green-900/60 rounded-full px-2 py-1 inline-block">
           <span className="mr-1">✓</span> Completed
         </div>
       )}
