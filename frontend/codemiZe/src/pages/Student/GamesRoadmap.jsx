@@ -114,7 +114,7 @@ export default function GamesRoadmap() {
             status: gameStatus,
             // Map status to boolean properties for GameNode component
             isCompleted: gameStatus === 'completed',
-            isAvailable: gameStatus === 'active' || gameStatus === 'available',
+            isAvailable: gameStatus === 'active',
             isInactive: gameStatus === 'inactive',
           };
         });
