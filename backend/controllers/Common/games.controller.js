@@ -64,3 +64,22 @@ export const deactivateGame = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const completeGame = async (req, res) => {
+  const { gameId } = req.params;
+
+  try {
+    const game = await Game.findById(gameId);
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+
+    game.status = 'completed';
+    await game.save();
+
+    res.status(200).json({ message: 'Game completed successfully' });
+  } catch (error) {
+    console.error('Error completing game:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

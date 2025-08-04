@@ -13,6 +13,7 @@ export const API_PATHS = {
     GET_ACTIVE_GAME: "/api/v1/games/active",
     ACTIVATE_GAME: (gameId) => `/api/v1/games/activate/${gameId}`,
     DEACTIVATE_GAME: (gameId) => `/api/v1/games/deactivate/${gameId}`,
+    COMPLETE_GAME: (gameId) => `/api/v1/games/complete/${gameId}`,
   },
   ADMIN: {
     GET_ALL_USERS: "/api/v1/admin/users",
