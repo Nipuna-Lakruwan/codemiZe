@@ -78,4 +78,12 @@ export const API_PATHS = {
     GET_MARKINGS: "/api/v1/circuit-smashers/markings",
     SET_TIME: "/api/v1/circuit-smashers/time",
   },
+  JUDGE: {
+    SUBMIT_CODE_CRUSHERS_MARKS: "/api/v1/judge/code-crushers/",
+    GET_CODE_CRUSHERS_MARKINGS: "/api/v1/judge/code-crushers/",
+    SUBMIT_CIRCUIT_SMASHERS_MARKS_BULK: "/api/v1/judge/circuit-smashers/bulk",
+    GET_CIRCUIT_SMASHERS_MARKINGS: "/api/v1/judge/circuit-smashers/",
+    SUBMIT_ROUTE_SEEKERS_MARKS: "/api/v1/judge/route-seekers/",
+    GET_ROUTE_SEEKERS_MARKINGS: "/api/v1/judge/route-seekers/",
+  }
 };

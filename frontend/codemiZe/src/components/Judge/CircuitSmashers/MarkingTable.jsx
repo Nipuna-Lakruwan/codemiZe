@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { imagePath } from '../../../utils/helper';
 
 const MarkingTable = ({
   schools,
@@ -7,7 +8,9 @@ const MarkingTable = ({
   markings,
   handleMarkUpdate,
   handleKeyDown,
-  calculateTotal
+  calculateTotal,
+  onSubmission,
+  onDownload
 }) => (
   <div className="flex flex-col h-full w-full items-center">
     <div className="w-[1020px] h-[540px] bg-white rounded-[5px] border border-black/90 mx-auto flex flex-col">
@@ -18,11 +21,11 @@ const MarkingTable = ({
               <tr className="bg-gray-100 border-b border-black/20">
                 <th className="py-3 px-4 text-left text-sm font-medium text-purple-800 w-40 sticky left-0 bg-gray-100 z-10">Criteria</th>
                 {schools.map((school) => (
-                  <th key={school.id} className="py-2 px-3 text-center text-sm font-medium text-purple-800 border-l border-black/20 min-w-[120px]">
+                  <th key={school._id} className="py-2 px-3 text-center text-sm font-medium text-purple-800 border-l border-black/20 min-w-[120px]">
                     <div className="flex flex-col items-center">
                       <div className="w-10 h-10 rounded-full overflow-hidden mb-1">
                         <img
-                          src={school.avatar?.url || '/c-logo.png'}
+                          src={imagePath(school.avatar?.url) || '/c-logo.png'}
                           alt={school.name}
                           className="w-full h-full object-cover"
                         />
@@ -33,6 +36,7 @@ const MarkingTable = ({
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className="mt-1 text-[10px] bg-sky-600 text-white px-2 py-1 rounded text-center"
+                        onClick={() => onDownload(school._id)}
                       >
                         Download
                       </motion.button>
@@ -43,24 +47,24 @@ const MarkingTable = ({
             </thead>
             <tbody>
               {criteria.map((criterion) => (
-                <tr key={criterion.id} className="border-b border-black/20">
+                <tr key={criterion._id} className="border-b border-black/20">
                   <td className="py-3 px-4 text-sm font-medium sticky left-0 bg-white border-r border-black/20 z-10">
                     {criterion.criteria}
                   </td>
                   {schools.map((school) => (
-                    <td key={`${school.id}-${criterion.id}`} className="py-2 px-3 text-center border-l border-black/20">
+                    <td key={`${school._id}-${criterion._id}`} className="py-2 px-3 text-center border-l border-black/20">
                       <input
                         type="number"
                         min="0"
                         max="10"
-                        value={markings[school.id]?.[criterion.id] || ''}
+                        value={markings[school._id]?.[criterion._id] || ''}
                         onChange={(e) => {
                           const value = e.target.value;
                           if (value === '') {
-                            handleMarkUpdate(school.id, criterion.id, 0);
+                            handleMarkUpdate(school._id, criterion._id, 0);
                           } else {
                             const numValue = Math.min(10, Math.max(0, parseInt(value) || 0));
-                            handleMarkUpdate(school.id, criterion.id, numValue);
+                            handleMarkUpdate(school._id, criterion._id, numValue);
                           }
                         }}
                         onKeyDown={handleKeyDown}
@@ -76,8 +80,8 @@ const MarkingTable = ({
                   Total Score
                 </td>
                 {schools.map((school) => (
-                  <td key={`${school.id}-total`} className="py-2 px-3 text-center font-bold text-purple-800 border-l border-black/20">
-                    {calculateTotal(school.id)}
+                  <td key={`${school._id}-total`} className="py-2 px-3 text-center font-bold text-purple-800 border-l border-black/20">
+                    {calculateTotal(school._id)}
                   </td>
                 ))}
               </tr>
@@ -91,6 +95,7 @@ const MarkingTable = ({
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         className="px-4 py-2 bg-sky-600 text-white rounded-md text-sm font-medium"
+        onClick={onSubmission}
       >
         Submit All Marks
       </motion.button>
