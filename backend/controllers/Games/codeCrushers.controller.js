@@ -1,3 +1,4 @@
+import archiver from "archiver";
 import GameSlides from "../../models/GameSlides.js";
 import StudentUpload from "../../models/StudentUpload.js";
 
@@ -59,7 +60,27 @@ export const uploadResource = async (req, res) => {
 export const getAllResources = async (req, res) => {
     try {
         const resources = await StudentUpload.find({ gameName: "codeCrushers" });
-        res.status(200).json({ message: "Resources retrieved successfully", resources });
+        if (!resources.length) {
+            return res.status(404).json({ message: "No resources found" });
+        }
+
+         // Set headers for zip download
+        res.setHeader("Content-Type", "application/zip");
+        res.setHeader("Content-Disposition", "attachment; filename=codeCrushers-resources.zip");
+
+        const archive = archiver("zip", { zlib: { level: 9 } });
+        archive.pipe(res); // Pipe archive stream to the response
+
+        for (const resource of resources) {
+            const fileName = path.basename(resource.fileUrl);
+            const filePath = path.join(process.cwd(), "uploads", "resources", fileName);
+
+            if (fs.existsSync(filePath)) {
+                archive.file(filePath, { name: fileName });
+            }
+        }
+        
+        archive.finalize(); // Close and send the zip
     } catch (error) {
         console.error("Error retrieving resources:", error);
         res.status(500).json({ message: "Internal Server Error" });

@@ -20,10 +20,8 @@ import circuitSmashersRoutes from "./routes/circuitSmashers.routes.js";
 import criteriaRoutes from "./routes/criteria.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 // Judge import routes :)
-import judgeBattleBreakerRoutes from "./routes/Judges/battleBreakerAnswer.routes.js";
 import judgeCircuitSmashersRoutes from "./routes/Judges/circuitSmashers.routes.js";
 import judgeCodeCrusherRoutes from "./routes/Judges/codeCrusher.routes.js";
-import judgeQuizHunterRoutes from "./routes/Judges/quizHunter.routes.js";
 import judgeRouteSeekersRoutes from "./routes/Judges/routeSeekersMarking.routes.js";
 
 const app = express();
@@ -88,10 +86,8 @@ app.use("/api/v1/circuit-smashers", circuitSmashersRoutes);
 app.use("/api/v1/criteria", criteriaRoutes);
 app.use("/api/v1/admin", adminRoutes);
 // Judge routes :)
-app.use("/api/v1/judge/battle-breakers", judgeBattleBreakerRoutes);
 app.use("/api/v1/judge/circuit-smashers", judgeCircuitSmashersRoutes);
 app.use("/api/v1/judge/code-crushers", judgeCodeCrusherRoutes);
-app.use("/api/v1/judge/quiz-hunters", judgeQuizHunterRoutes);
 app.use("/api/v1/judge/route-seekers", judgeRouteSeekersRoutes);
 
 // Connect to DB

@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Document, Page, pdfjs } from 'react-pdf';
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
 import GameNodeMini from '../../../components/Games/GameNodeMini';
+import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
+import { imagePath } from '../../../utils/helper';
+
+// Set up PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 export default function CircuitSmashers() {
   // Game state
@@ -12,8 +19,12 @@ export default function CircuitSmashers() {
 
   // PDF viewer state
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(5); // Set to actual number of PDF pages
+  const [totalPages, setTotalPages] = useState(0);
   const [showFullscreenPdf, setShowFullscreenPdf] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState(); // Add your PDF path here
+  const [pdfError, setPdfError] = useState(null);
+  const [pdfLoading, setPdfLoading] = useState(true);
+  const [useIframeViewer, setUseIframeViewer] = useState(false); // Fallback to iframe
 
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState(30 * 60); // 30 minutes in seconds
@@ -25,6 +36,15 @@ export default function CircuitSmashers() {
   const [isFileValid, setIsFileValid] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const getSlides = async () => {
+      const response = await axiosInstance.get(API_PATHS.CIRCUIT_SMASHERS.GET_SLIDES);
+      // Fetch or generate your PDF slides here
+      setPdfUrl(imagePath(response.data.slides[0].slides[0]));
+    };
+    getSlides();
+  }, []);
 
   // Listen for messages from popup window
   useEffect(() => {
@@ -63,6 +83,27 @@ export default function CircuitSmashers() {
       window.removeEventListener('message', handleMessage);
     };
   }, [currentPage, totalPages]);
+
+  // Initialize PDF loading when game starts
+  useEffect(() => {
+    if (isGameStarted) {
+      console.log('Game started, attempting to load PDF:', pdfUrl);
+      // Force PDF loading state reset when game starts
+      setPdfLoading(true);
+      setPdfError(null);
+      
+      // Set a timeout to prevent infinite loading
+      const loadingTimeout = setTimeout(() => {
+        if (pdfLoading) {
+          console.error('PDF loading timeout');
+          setPdfError('PDF loading timeout - please check if the file exists and is accessible');
+          setPdfLoading(false);
+        }
+      }, 15000); // 15 seconds timeout
+      
+      return () => clearTimeout(loadingTimeout);
+    }
+  }, [isGameStarted, pdfUrl, pdfLoading]);
 
   // Timer effect
   useEffect(() => {
@@ -117,6 +158,25 @@ export default function CircuitSmashers() {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
+  };
+
+  // PDF handlers
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    console.log('PDF loaded successfully, pages:', numPages);
+    setTotalPages(numPages);
+    setPdfLoading(false);
+    setPdfError(null);
+  };
+
+  const onDocumentLoadError = (error) => {
+    console.error('Error loading PDF:', error);
+    setPdfError(`Failed to load PDF: ${error.message || 'Unknown error'}`);
+    setPdfLoading(false);
+  };
+
+  const onPageLoadError = (error) => {
+    console.error('Error loading PDF page:', error);
+    setPdfError(`Failed to load page: ${error.message || 'Unknown error'}`);
   };
 
   // File upload handlers
@@ -739,11 +799,90 @@ export default function CircuitSmashers() {
                 </button>
               </div>
               <div className="flex-grow flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-2xl text-gray-600 font-semibold">Circuit Diagram Viewer</p>
-                  <p className="text-gray-500">Page {currentPage} of {totalPages}</p>
-                  <p className="text-sm text-gray-400 mt-4">Arduino circuit schematics and programming challenges would appear here</p>
-                </div>
+                {pdfLoading ? (
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600 font-semibold">Loading PDF...</p>
+                  </div>
+                ) : pdfError ? (
+                  <div className="text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-red-600 font-semibold mb-2">Error loading PDF</p>
+                    <p className="text-gray-500 text-sm">{pdfError}</p>
+                    <p className="text-gray-400 text-xs mt-2">PDF Path: {pdfUrl}</p>
+                    <button
+                      className="mt-3 px-4 py-2 bg-violet-700 text-white rounded hover:bg-violet-600 transition-colors mr-2"
+                      onClick={() => {
+                        console.log('Retrying PDF load...');
+                        setPdfLoading(true);
+                        setPdfError(null);
+                      }}
+                    >
+                      Retry Loading PDF
+                    </button>
+                    <button
+                      className="mt-3 px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-600 transition-colors"
+                      onClick={() => {
+                        console.log('Switching to iframe viewer...');
+                        setUseIframeViewer(true);
+                        setPdfError(null);
+                        setPdfLoading(false);
+                      }}
+                    >
+                      Use Alternative Viewer
+                    </button>
+                  </div>
+                ) : (
+                  useIframeViewer ? (
+                    <div className="w-full h-full">
+                      <iframe
+                        src={`${pdfUrl}#page=${currentPage}&toolbar=0&navpanes=0&scrollbar=0`}
+                        width="100%"
+                        height="100%"
+                        style={{ border: 'none' }}
+                        title="PDF Viewer"
+                        onLoad={() => {
+                          setPdfLoading(false);
+                          if (totalPages === 0) setTotalPages(5); // Default for iframe
+                        }}
+                        onError={() => setPdfError('Failed to load PDF in iframe')}
+                      />
+                    </div>
+                  ) : (
+                    <Document
+                      file={pdfUrl}
+                      onLoadSuccess={onDocumentLoadSuccess}
+                      onLoadError={onDocumentLoadError}
+                      loading={
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600 mx-auto mb-2"></div>
+                          <p className="text-gray-600">Loading...</p>
+                        </div>
+                      }
+                      error={
+                        <div className="text-center">
+                          <p className="text-red-600">Failed to load PDF</p>
+                          <button
+                            className="mt-2 px-3 py-1 bg-violet-700 text-white rounded text-sm"
+                            onClick={() => setUseIframeViewer(true)}
+                          >
+                            Try Alternative Viewer
+                          </button>
+                        </div>
+                      }
+                    >
+                      <Page
+                        pageNumber={currentPage}
+                        onLoadError={onPageLoadError}
+                        width={950} // Adjust width to fit your container
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                      />
+                    </Document>
+                  )
+                )}
               </div>
             </div>
 
@@ -840,11 +979,34 @@ export default function CircuitSmashers() {
 
                 <div className="flex-grow w-full overflow-auto p-8 flex items-center justify-center">
                   <div className="w-full max-w-5xl h-[80vh] bg-zinc-300 rounded-md flex items-center justify-center">
-                    <div className="text-center">
-                      <p className="text-3xl text-gray-600 font-semibold">Circuit Diagram Viewer (Fullscreen)</p>
-                      <p className="text-gray-500 text-xl">Page {currentPage} of {totalPages}</p>
-                      <p className="text-gray-400 mt-4">Arduino circuit schematics and programming challenges would appear here</p>
-                    </div>
+                    {pdfLoading ? (
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-violet-600 mx-auto mb-4"></div>
+                        <p className="text-gray-600 font-semibold text-xl">Loading PDF...</p>
+                      </div>
+                    ) : pdfError ? (
+                      <div className="text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-red-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-red-600 font-semibold text-xl mb-2">Error loading PDF</p>
+                        <p className="text-gray-500">{pdfError}</p>
+                      </div>
+                    ) : (
+                      <Document
+                        file={pdfUrl}
+                        onLoadSuccess={onDocumentLoadSuccess}
+                        onLoadError={onDocumentLoadError}
+                      >
+                        <Page
+                          pageNumber={currentPage}
+                          onLoadError={onPageLoadError}
+                          width={Math.min(window.innerWidth * 0.8, 1200)} // Responsive width for fullscreen
+                          renderTextLayer={false}
+                          renderAnnotationLayer={false}
+                        />
+                      </Document>
+                    )}
                   </div>
                 </div>
 

@@ -23,7 +23,7 @@ export default function AdminLayout({ children }) {
   // Handle logouthandleLogout
   const handleLogout = async () => {
     await axiosInstance.post(API_PATHS.AUTH.LOGOUT);
-    console.log('Logout clicked');
+    //console.log('Logout clicked');
     navigate('/');
   };
 

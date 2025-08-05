@@ -63,7 +63,12 @@ export const uploadResource = async (req, res) => {
 
     try {
         const resourcePath = `/uploads/resources/${file.filename}`;
-        await StudentUpload.create({ userId: req.user.id, gameName: "circuitSmashers", fileUrl: resourcePath });
+        await StudentUpload.create({ 
+            userId: req.user.id, 
+            gameName: "circuitSmashers", 
+            fileUrl: resourcePath,
+            originalName: file.filename
+        });
         res.status(200).json({ message: "Resource uploaded successfully", resourcePath });
     } catch (error) {
         console.error("Error uploading resource:", error);
@@ -109,8 +114,32 @@ export const getResource = async (req, res) => {
         if (!resource) {
             return res.status(404).json({ message: "Resource not found" });
         }
-        res.status(200).json({ message: "Resource retrieved successfully", resource });
-        //res.download(resource);
+
+        // Get the file path from the resource
+        const filePath = path.join(process.cwd(), resource.fileUrl);
+        
+        // Check if file exists
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ message: "File not found on server" });
+        }
+
+        // Get the original filename from the database or extract from path
+        const originalName = resource.originalName || path.basename(filePath);
+        
+        // Set appropriate headers for file download
+        res.setHeader('Content-Disposition', `attachment; filename="${originalName}"`);
+        res.setHeader('Content-Type', 'application/octet-stream');
+        
+        // Send the file
+        res.download(filePath, originalName, (err) => {
+            if (err) {
+                console.error("Error downloading file:", err);
+                if (!res.headersSent) {
+                    res.status(500).json({ message: "Error downloading file" });
+                }
+            }
+        });
+        
     } catch (error) {
         console.error("Error retrieving resource:", error);
         res.status(500).json({ message: "Internal Server Error" });

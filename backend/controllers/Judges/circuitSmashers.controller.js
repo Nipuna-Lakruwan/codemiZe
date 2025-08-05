@@ -1,19 +1,62 @@
 
 import CircuitSmashersMarking from "../../models/markings/CircuitSmashersMarking.js";
 
-// Create a new marking
-export const createMarking = async (req, res) => {
+// Create or update bulk markings
+export const createOrUpdateBulkMarkings = async (req, res) => {
   try {
-    const { schoolId, judgeId, marks, totalMarks } = req.body;
-    const newMarking = new CircuitSmashersMarking({
-      schoolId,
-      judgeId,
-      marks,
-      totalMarks,
+    const { markings } = req.body;
+    const judgeId = req.user.id;
+    
+    // markings is an object where keys are schoolIds and values are objects with criteriaId: mark pairs
+    const results = [];
+    
+    for (const schoolId in markings) {
+      const schoolMarks = markings[schoolId];
+      
+      // Convert the marks object to the required array format
+      const marksArray = [];
+      let totalMarks = 0;
+      
+      for (const criteriaId in schoolMarks) {
+        const mark = parseInt(schoolMarks[criteriaId]) || 0;
+        marksArray.push({
+          criteriaId: criteriaId,
+          mark: mark
+        });
+        totalMarks += mark;
+      }
+      
+      // Check if marking already exists for this school and judge
+      const existingMarking = await CircuitSmashersMarking.findOne({
+        schoolId: schoolId,
+        judgeId: judgeId
+      });
+      
+      if (existingMarking) {
+        // Update existing marking
+        existingMarking.marks = marksArray;
+        existingMarking.totalMarks = totalMarks;
+        await existingMarking.save();
+        results.push(existingMarking);
+      } else {
+        // Create new marking
+        const newMarking = new CircuitSmashersMarking({
+          schoolId: schoolId,
+          judgeId: judgeId,
+          marks: marksArray,
+          totalMarks: totalMarks
+        });
+        await newMarking.save();
+        results.push(newMarking);
+      }
+    }
+    
+    res.status(200).json({
+      message: "Markings saved successfully",
+      markings: results
     });
-    await newMarking.save();
-    res.status(201).json(newMarking);
   } catch (error) {
+    console.error("Error saving bulk markings:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -21,44 +64,19 @@ export const createMarking = async (req, res) => {
 // Get all markings
 export const getMarkings = async (req, res) => {
   try {
-    const markings = await CircuitSmashersMarking.find();
-    res.status(200).json(markings);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+    const judgeId  = req.user.id;
+    const markings = await CircuitSmashersMarking.find({ judgeId });
 
-// Get a single marking by ID
-export const getMarkingById = async (req, res) => {
-  try {
-    const marking = await CircuitSmashersMarking.findById(req.params.id);
-    if (!marking) {
-      return res.status(404).json({ message: "Marking not found" });
-    }
-    res.status(200).json(marking);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Update a marking
-export const updateMarking = async (req, res) => {
-  try {
-    const { schoolId, judgeId, marks, totalMarks } = req.body;
-    const updatedMarking = await CircuitSmashersMarking.findByIdAndUpdate(
-      req.params.id,
-      {
-        schoolId,
-        judgeId,
-        marks,
-        totalMarks,
-      },
-      { new: true }
-    );
-    if (!updatedMarking) {
-      return res.status(404).json({ message: "Marking not found" });
-    }
-    res.status(200).json(updatedMarking);
+    // Transform markings to the expected format
+    const transformedMarkings = {};
+    markings.forEach(marking => {
+      transformedMarkings[marking.schoolId] = {};
+      marking.marks.forEach(mark => {
+        transformedMarkings[marking.schoolId][mark.criteriaId] = mark.mark;
+      });
+    });
+    
+    res.status(200).json(transformedMarkings);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

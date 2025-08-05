@@ -105,7 +105,14 @@ export default function AdminCircuitSmashers() {
     if (selectedFile) {
       // Here you would handle the resource upload to the backend
       try {
-        await axiosInstance.post(API_PATHS.CIRCUIT_SMASHERS.UPLOAD_SLIDES, { slides: selectedFile });
+        const formData = new FormData();
+        formData.append('slides', selectedFile);
+        
+        await axiosInstance.post(API_PATHS.CIRCUIT_SMASHERS.UPLOAD_SLIDES, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
       } catch (error) {
         console.error('Error uploading resource:', error);
         showAlert('Failed to upload resource', 'Upload Error', 'error');

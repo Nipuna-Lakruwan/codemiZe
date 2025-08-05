@@ -62,7 +62,7 @@ export const getDefaultRoute = (userRole) => {
     case ROLES.SCHOOL:
       return '/student/games-roadmap';
     case ROLES.JUDGE:
-      return '/judge/dashboard';
+      return '/judge/quiz-hunters';
     case ROLES.ADMIN:
       return '/admin/dashboard';
     case ROLES.DASHBOARD:

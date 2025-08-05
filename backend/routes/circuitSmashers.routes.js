@@ -17,7 +17,7 @@ router.post("/slides", protect, requireAdmin, slidesUpload.array('slides', 10), 
 router.delete("/slides/delete", protect, requireAdmin, deleteAllSlides);
 router.post("/upload", protect, requireSchool, resourceUpload.single('resource'), uploadResource);
 router.get("/resources", protect, requireAdmin, getAllResources);
-router.get("/resources/:id", protect, requireAdmin, getResource);
+router.get("/resources/:id", protect, requireAdminorJudge, getResource);
 router.get("/markings", protect, requireAdminorJudge, getFormattedCircuitSmashersMarkings);
 router.post("/time", protect, requireAdmin, setTime);
 

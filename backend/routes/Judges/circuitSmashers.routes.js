@@ -1,19 +1,17 @@
 
 import express from "express";
 import {
-  createMarking,
   getMarkings,
-  getMarkingById,
-  updateMarking,
   deleteMarking,
+  createOrUpdateBulkMarkings,
 } from "../../controllers/Judges/circuitSmashers.controller.js";
+import { protect } from "../../middleware/authMiddleware.js";
+import { requireJudge } from "../../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-router.post("/", createMarking);
-router.get("/", getMarkings);
-router.get("/:id", getMarkingById);
-router.put("/:id", updateMarking);
-router.delete("/:id", deleteMarking);
+router.post("/bulk", protect, requireJudge, createOrUpdateBulkMarkings);
+router.get("/", protect, requireJudge, getMarkings);
+router.delete("/:id", protect, deleteMarking);
 
 export default router;
