@@ -10,7 +10,8 @@ const MarkingTable = ({
   handleKeyDown,
   calculateTotal,
   onSubmission,
-  onDownload
+  onDownload,
+  maxMark
 }) => (
   <div className="flex flex-col h-full w-full items-center">
     <div className="w-[1020px] h-[540px] bg-white rounded-[5px] border border-black/90 mx-auto flex flex-col">
@@ -56,14 +57,14 @@ const MarkingTable = ({
                       <input
                         type="number"
                         min="0"
-                        max="10"
+                        max= {maxMark}
                         value={markings[school._id]?.[criterion._id] || ''}
                         onChange={(e) => {
                           const value = e.target.value;
                           if (value === '') {
                             handleMarkUpdate(school._id, criterion._id, 0);
                           } else {
-                            const numValue = Math.min(10, Math.max(0, parseInt(value) || 0));
+                            const numValue = Math.min(maxMark, Math.max(0, parseInt(value) || 0));
                             handleMarkUpdate(school._id, criterion._id, numValue);
                           }
                         }}

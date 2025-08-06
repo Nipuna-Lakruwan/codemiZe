@@ -59,6 +59,7 @@ export const API_PATHS = {
     CURRENT_QUESTION: "/api/v1/quiz-hunters/currentQuestion",
   },
   CODE_CRUSHERS: {
+    GET_CRITERIA: "/api/v1/code-crushers/criteria",
     GET_SLIDES: "/api/v1/code-crushers/",
     UPLOAD_SLIDES: "/api/v1/code-crushers/slides",
     DELETE_ALL_SLIDES: "/api/v1/code-crushers/slides/delete",

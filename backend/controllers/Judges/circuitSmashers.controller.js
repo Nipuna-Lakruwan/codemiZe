@@ -1,5 +1,6 @@
 
 import CircuitSmashersMarking from "../../models/markings/CircuitSmashersMarking.js";
+import School from "../../models/School.js";
 
 // Create or update bulk markings
 export const createOrUpdateBulkMarkings = async (req, res) => {
@@ -50,7 +51,7 @@ export const createOrUpdateBulkMarkings = async (req, res) => {
         results.push(newMarking);
       }
     }
-    
+    handleMarkings();
     res.status(200).json({
       message: "Markings saved successfully",
       markings: results
@@ -92,5 +93,49 @@ export const deleteMarking = async (req, res) => {
     res.status(200).json({ message: "Marking deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+const handleMarkings = async () => {
+  try {
+    // Get all markings for CircuitSmashers game
+    const allMarkings = await CircuitSmashersMarking.find({});
+    
+    if (allMarkings.length === 0) {
+      return;
+    }
+
+    // Group markings by schoolId
+    const markingsBySchool = {};
+    allMarkings.forEach(marking => {
+      if (!markingsBySchool[marking.schoolId]) {
+        markingsBySchool[marking.schoolId] = [];
+      }
+      markingsBySchool[marking.schoolId].push(marking);
+    });
+
+    // Process each school's markings
+    for (const schoolId in markingsBySchool) {
+      const schoolMarkings = markingsBySchool[schoolId];
+      const numberOfJudges = schoolMarkings.length;
+      
+      // Calculate average total marks
+      const totalMarksSum = schoolMarkings.reduce((sum, marking) => sum + marking.totalMarks, 0);
+      const averageScore = totalMarksSum / numberOfJudges;
+      
+      // Update school's CircuitSmashers score
+      const updatedSchool = await School.findByIdAndUpdate(
+        schoolId,
+        { 
+          $set: { 
+            "score.CircuitSmashers": Math.round(averageScore)
+          } 
+        },
+        { new: true }
+      );
+    }
+
+  } catch (error) {
+    console.error("Error processing markings:", error);
   }
 };

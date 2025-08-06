@@ -3,67 +3,63 @@ import JudgeLayout from '../JudgeLayout';
 import ScrollbarStyles from '../../../components/Admin/UserManagement/ScrollbarStyles';
 import MarkingTable from '../../../components/Judge/CodeCrushers/MarkingTable';
 import LoadingScreen from '../../../components/Judge/CodeCrushers/LoadingScreen';
+import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
 
 // CodeCrushersJudge: Main judge page for Code Crushers game
 const CodeCrushersJudge = () => {
   // Game status: waiting, marking, completed
   const [gameStatus, setGameStatus] = useState('waiting');
-  // Loading spinner state
   const [loading, setLoading] = useState(true);
-  // School/team list
+
   const [schools, setSchools] = useState([]);
-  // Marking criteria
   const [criteria, setCriteria] = useState([]);
-  // Markings for each school/criteria
   const [markings, setMarkings] = useState({});
-  // Not used in UI, but kept for future: activeSchool
-  const [activeSchool, setActiveSchool] = useState(null);
-
-  // Mock data for criteria and schools
-  const mockCriteria = [
-    { id: 'c1', criteria: 'Code Quality' },
-    { id: 'c2', criteria: 'Algorithm Efficiency' },
-    { id: 'c3', criteria: 'Functionality' },
-    { id: 'c4', criteria: 'User Interface' },
-    { id: 'c5', criteria: 'Documentation' }
-  ];
-
-  const mockSchools = [
-    { id: 's1', name: 'Royal College', nameInShort: 'RC', avatar: { url: '/c-logo.png' } },
-    { id: 's2', name: 'Ananda College', nameInShort: 'AC', avatar: { url: '/c-logo.png' } },
-    { id: 's3', name: 'St. Joseph\'s College', nameInShort: 'SJC', avatar: { url: '/c-logo.png' } },
-    { id: 's4', name: 'D.S. Senanayake College', nameInShort: 'DSC', avatar: { url: '/c-logo.png' } },
-    { id: 's5', name: 'Visakha Vidyalaya', nameInShort: 'VV', avatar: { url: '/c-logo.png' } },
-    { id: 's6', name: 'Nalanda College', nameInShort: 'NC', avatar: { url: '/c-logo.png' } },
-    { id: 's7', name: 'Mahanama College', nameInShort: 'MC', avatar: { url: '/c-logo.png' } },
-    { id: 's8', name: 'Isipathana College', nameInShort: 'IC', avatar: { url: '/c-logo.png' } },
-    { id: 's9', name: 'St. Thomas\' College', nameInShort: 'STC', avatar: { url: '/c-logo.png' } },
-    { id: 's10', name: 'Dharmaraja College', nameInShort: 'DRC', avatar: { url: '/c-logo.png' } }
-  ];
 
   // Simulate fetching data (API call)
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      setTimeout(() => {
+
         const status = 'marking';
         setGameStatus(status);
         if (status === 'marking') {
-          setSchools(mockSchools);
-          setCriteria(mockCriteria);
+          const schools = await axiosInstance.get(API_PATHS.ADMIN.GET_ALL_SCHOOLS);
+          const criteria = await axiosInstance.get(API_PATHS.CODE_CRUSHERS.GET_CRITERIA);
+          setSchools(schools.data.schools);
+          setCriteria(criteria.data.criteria);
+
           // Initialize empty markings for all schools/criteria
           const initialMarkings = {};
-          mockSchools.forEach(school => {
-            initialMarkings[school.id] = {};
-            mockCriteria.forEach(criterion => {
-              initialMarkings[school.id][criterion.id] = 0;
+          schools.data.schools.forEach(school => {
+            initialMarkings[school._id] = {};
+            criteria.data.criteria.forEach(criterion => {
+              initialMarkings[school._id][criterion._id] = 0;
             });
           });
-          setMarkings(initialMarkings);
-          setActiveSchool(mockSchools[0].id);
+          // Fetch existing markings and merge with initialized structure
+        try {
+          const existingMarkings = await axiosInstance.get(API_PATHS.JUDGE.GET_CODE_CRUSHERS_MARKINGS);
+          
+          // Merge existing markings with the initialized structure
+          if (existingMarkings.data && typeof existingMarkings.data === 'object') {
+            for (const schoolId in existingMarkings.data) {
+              if (initialMarkings[schoolId]) {
+                for (const criteriaId in existingMarkings.data[schoolId]) {
+                  if (initialMarkings[schoolId][criteriaId] !== undefined) {
+                    initialMarkings[schoolId][criteriaId] = existingMarkings.data[schoolId][criteriaId];
+                  }
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching existing markings:', error);
+          // Continue with empty markings if fetch fails
         }
-        setLoading(false);
-      }, 1500);
+        setMarkings(initialMarkings);
+      }
+      setLoading(false);
     };
     fetchData();
   }, []);
@@ -95,6 +91,59 @@ const CodeCrushersJudge = () => {
     if (!markings[schoolId]) return 0;
     return Object.values(markings[schoolId]).reduce((sum, mark) => sum + mark, 0);
   };
+
+  const handleSubmit = async () => {
+    try {
+      await axiosInstance.post(API_PATHS.JUDGE.SUBMIT_CODE_CRUSHERS_MARKS, { 
+        markings
+      });
+      alert('Marks submitted successfully!');
+    } catch (error) {
+      console.error('Error submitting marks:', error);
+      alert('Failed to submit marks. Please try again.');
+    }
+  };
+
+  const handleDownload = async (schoolId) => {
+    try {
+      const response = await axiosInstance.get(API_PATHS.CODE_CRUSHERS.GET_RESOURCE(schoolId), {
+        responseType: 'blob' // Important for file downloads
+      });
+      
+      // Get the filename from the response headers
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'resource_file';
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      // Create a blob URL and trigger download
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Error downloading resource:', error);
+      if (error.response?.status === 404) {
+        alert('Resource file not found for this school.');
+      } else {
+        alert('Failed to download resource. Please try again.');
+      }
+    }
+  };
+
 
   return (
     <JudgeLayout gameName="Code Crushers">
@@ -132,6 +181,9 @@ const CodeCrushersJudge = () => {
                   handleMarkUpdate={handleMarkUpdate}
                   handleKeyDown={handleKeyDown}
                   calculateTotal={calculateTotal}
+                  onSubmission={handleSubmit}
+                  onDownload={handleDownload}
+                  maxMark={20}
                 />
               )}
             </div>
