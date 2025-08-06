@@ -1,6 +1,7 @@
 import archiver from "archiver";
 import GameSlides from "../../models/GameSlides.js";
 import StudentUpload from "../../models/StudentUpload.js";
+import Criteria from "../../models/Criteria.js";
 
 export const uploadSlides = async (req, res) => {
     const slides = req.files;
@@ -16,6 +17,16 @@ export const uploadSlides = async (req, res) => {
         res.status(200).json({ message: "Slides uploaded successfully", slidePaths });
     } catch (error) {
         console.error("Error uploading slides:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const getCriteria = async (req, res) => {
+    try {
+        const criteria = await Criteria.find({ gameType: "codeCrushers" });
+        res.status(200).json({ message: "Criteria retrieved successfully", criteria });
+    } catch (error) {
+        console.error("Error retrieving criteria:", error);
         res.status(500).json({ message: "Internal Server Error" });
     }
 };

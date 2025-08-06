@@ -5,11 +5,9 @@ import MarkingTable from '../../../components/Judge/CircuitSmashers/MarkingTable
 import LoadingScreen from '../../../components/Judge/CircuitSmashers/LoadingScreen';
 import axiosInstance from '../../../utils/axiosInstance';
 import { API_PATHS } from '../../../utils/apiPaths';
-import { useAuth } from '../../../context/AuthContext';
 
 // CircuitSmashersJudge: Main judge page for Circuit Smashers game
 const CircuitSmashersJudge = () => {
-  const { user } = useAuth();
   // Game status: waiting, marking, completed
   const [gameStatus, setGameStatus] = useState('waiting');
   const [loading, setLoading] = useState(true);
@@ -42,7 +40,6 @@ const CircuitSmashersJudge = () => {
 
         // Fetch existing markings and merge with initialized structure
         try {
-          const judgeId = user?._id || user?.id;
           const existingMarkings = await axiosInstance.get(API_PATHS.JUDGE.GET_CIRCUIT_SMASHERS_MARKINGS);
           console.log('Existing markings:', existingMarkings.data);
           
@@ -101,8 +98,7 @@ const CircuitSmashersJudge = () => {
   const handleSubmit = async () => {
     try {
       await axiosInstance.post(API_PATHS.JUDGE.SUBMIT_CIRCUIT_SMASHERS_MARKS_BULK, { 
-        markings,
-        judgeId: user?._id || user?.id
+        markings
       });
       alert('Marks submitted successfully!');
     } catch (error) {

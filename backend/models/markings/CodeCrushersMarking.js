@@ -9,7 +9,8 @@ const codeCrushersMarkingSchema = new mongoose.Schema(
         criteriaId: { type: mongoose.Schema.Types.ObjectId, ref: "Criteria" },
         mark: Number
       }
-    ]
+    ],
+    totalMarks: { type: Number, default: 0 }
   },
   { timestamps: true }
 );
