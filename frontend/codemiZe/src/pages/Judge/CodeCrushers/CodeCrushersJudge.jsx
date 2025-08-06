@@ -40,7 +40,6 @@ const CodeCrushersJudge = () => {
           // Fetch existing markings and merge with initialized structure
         try {
           const existingMarkings = await axiosInstance.get(API_PATHS.JUDGE.GET_CODE_CRUSHERS_MARKINGS);
-          console.log('Existing markings:', existingMarkings.data);
           
           // Merge existing markings with the initialized structure
           if (existingMarkings.data && typeof existingMarkings.data === 'object') {
