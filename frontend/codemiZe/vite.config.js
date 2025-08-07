@@ -6,6 +6,25 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [
     react(),
-  tailwindcss(),
-],
+    tailwindcss(),
+  ],
+  optimizeDeps: {
+    include: ['pdfjs-dist'],
+  },
+  server: {
+    fs: {
+      allow: ['..'],
+    },
+  },
+  build: {
+    rollupOptions: {
+      external: (id) => {
+        // Don't bundle the PDF worker
+        return id.includes('pdf.worker')
+      }
+    }
+  },
+  worker: {
+    format: 'es'
+  }
 })
