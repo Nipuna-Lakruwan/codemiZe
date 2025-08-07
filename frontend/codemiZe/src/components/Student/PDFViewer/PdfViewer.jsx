@@ -1,14 +1,36 @@
 import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 import { motion } from 'framer-motion';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+
+// Configure worker - using the bundled worker from react-pdf with fallback
+try {
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url,
+  ).toString();
+} catch (error) {
+  // Fallback to CDN if bundled worker fails
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+}
 
 const PdfViewer = ({ pdfUrl }) => {
   const [numPages, setNumPages] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const handleLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
+    setLoading(false);
+    setError(null);
+  };
+
+  const handleLoadError = (error) => {
+    console.error('PDF load error:', error);
+    setError('Failed to load PDF. Please try refreshing the page.');
+    setLoading(false);
   };
 
   const handlePreviousPage = () => {
@@ -45,19 +67,43 @@ const PdfViewer = ({ pdfUrl }) => {
 
         {/* PDF rendering */}
         <div className="flex-grow flex justify-center items-center">
-          <Document
-            file={pdfUrl}
-            onLoadSuccess={handleLoadSuccess}
-            loading={<p>Loading PDF...</p>}
-            className="text-center"
-          >
-            <Page
-              pageNumber={currentPage}
-              width={850}
-              renderAnnotationLayer={false}
-              renderTextLayer={false}
-            />
-          </Document>
+          {error ? (
+            <div className="text-center text-red-600">
+              <p className="text-lg font-semibold mb-2">Error Loading PDF</p>
+              <p className="text-sm">{error}</p>
+              <button 
+                className="mt-4 px-4 py-2 bg-violet-700 text-white rounded hover:bg-violet-600"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <Document
+              file={pdfUrl}
+              onLoadSuccess={handleLoadSuccess}
+              onLoadError={handleLoadError}
+              loading={
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600 mx-auto mb-2"></div>
+                  <p className="text-gray-600">Loading PDF...</p>
+                </div>
+              }
+              error={
+                <div className="text-center text-red-600">
+                  <p>Failed to load PDF</p>
+                </div>
+              }
+              className="text-center"
+            >
+              <Page
+                pageNumber={currentPage}
+                width={850}
+                renderAnnotationLayer={false}
+                renderTextLayer={false}
+              />
+            </Document>
+          )}
         </div>
       </div>
 
