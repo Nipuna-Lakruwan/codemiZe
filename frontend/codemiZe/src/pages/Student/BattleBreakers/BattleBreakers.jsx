@@ -9,10 +9,10 @@ import { SocketContext } from '../../../context/SocketContext';
 
 export default function BattleBreakers() {
   const socket = useContext(SocketContext);
-  
-  // Helper functions for localStorage with expiration (1 minute = 60000ms)
-  const EXPIRATION_TIME = 60000; // 1 minute in milliseconds
-  
+
+  // Helper functions for localStorage with expiration (20 seconds = 20000ms)
+  const EXPIRATION_TIME = 20000; // 20 seconds in milliseconds
+
   const setLocalStorageWithExpiry = (key, value) => {
     const now = new Date();
     const item = {
@@ -68,6 +68,7 @@ export default function BattleBreakers() {
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState(30);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [allocatedTime, setAllocatedTime] = useState(30);
 
   // Effect to check for saved question in local storage on component mount
   useEffect(() => {
@@ -104,6 +105,7 @@ export default function BattleBreakers() {
         // Set timer state
         setQuestionStartTime(data.startTime);
         setTimeRemaining(data.allocatedTime);
+        setAllocatedTime(data.allocatedTime);
         setIsTimerRunning(true);
         
         // If this is a reconnection, we might get a timer sync afterward
@@ -123,6 +125,7 @@ export default function BattleBreakers() {
         console.log('Student: Timer sync received', data);
         // Update timer with accurate remaining time
         setTimeRemaining(data.timeRemaining);
+        setAllocatedTime(data.totalTime);
         setIsTimerRunning(true);
         
         // Update question start time for accurate timing calculations
@@ -229,7 +232,8 @@ export default function BattleBreakers() {
   const handleBuzzerPress = async () => {
     setIsPressedBuzzer(true);
     setIsTimerRunning(false);
-    const responseTime = Date.now() - questionStartTime;
+    // Calculate response time based on server-managed timer
+    const responseTime = (allocatedTime - timeRemaining);
     await axiosInstance.post(API_PATHS.BATTLE_BREAKERS.BUZZER_PRESS, { questionId: questions[currentQuestion]._id, responseTime: responseTime });
 
     playBuzzerSound();
