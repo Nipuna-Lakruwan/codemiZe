@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useContext } from 'react';
 import { motion } from 'framer-motion';
 
 // Import new components
@@ -9,6 +9,7 @@ import CentralLogo from '../../components/GamesRoadMap/CentralLogo';
 import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPaths';
 import { imagePath } from '../../utils/helper';
+import { SocketContext } from '../../context/SocketContext';
 
 // Game data with positions and status (status: 'completed', 'active', 'inactive')
 const mockGames = [
@@ -88,11 +89,52 @@ const generatePaths = (width, height) => {
 };
 
 export default function GamesRoadmap() {
-  const [activeGame, setActiveGame] = useState(null);
   const containerRef = useRef(null);
   const [containerSize, setContainerSize] = useState({ width: 1000, height: 600 });
   const [paths, setPaths] = useState(generatePaths(1000, 600));
   const [games, setGames] = useState([]);
+  const socket = useContext(SocketContext);
+
+  useEffect(() => {
+    if (socket) {
+      // Listen for game state updates
+      socket.on('gameStateUpdate', (updateData) => {
+        console.log('Received game state update:', updateData);
+        updateGameState(updateData);
+      });
+
+      // Clean up the event listeners when component unmounts
+      return () => {
+        socket.off("gameStateUpdate");
+      };
+    }
+  }, [socket]);
+
+    // Function to update game state based on socket data
+  const updateGameState = (updateData) => {
+    const { gameId, newStatus } = updateData;
+
+    setGames(prevGames => {
+      return prevGames.map(game => {
+        const isTargetGame = game._id === gameId;
+        
+        if (isTargetGame) {
+          return {
+            ...game,
+            status: newStatus,
+            // Update boolean properties for GameNode component
+            isCompleted: newStatus === 'completed',
+            isAvailable: newStatus === 'active',
+            isInactive: newStatus === 'inactive',
+          };
+        }
+        return game;
+      });
+    });
+
+    // Update path availability based on new game states
+    //updatePathAvailability();
+  };
 
   useEffect(() => {
     const fetchGames = async () => {
@@ -188,11 +230,6 @@ export default function GamesRoadmap() {
     animateSequence();
   }, [games]);
 
-  // Function to handle game button clicks
-  const handleGameClick = (gameId) => {
-    setActiveGame(activeGame === gameId ? null : gameId);
-  };
-
   return (
     <div
       ref={containerRef}
@@ -207,39 +244,6 @@ export default function GamesRoadmap() {
 
       {/* Header */}
       <Header />
-
-      {/* Winners button - only appears after all animations are complete */}
-      {/* NOTE: In production, this button will be conditionally shown based on game completion and admin status */}
-      {/* <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: games.length * 0.6 + 1, duration: 0.5 }} // Delay based on number of games + additional time
-        className="absolute top-24 right-10 z-30"
-      >
-        <a
-          href="/student/winners"
-          className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg flex items-center space-x-2 transition-all"
-        >
-          <span>🏆</span>
-          <span>View Winners</span>
-        </a>
-      </motion.div> */}
-
-      {/* Admin Dashboard link - For development purposes */}
-      {/* <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7, duration: 0.5 }}
-        className="absolute top-24 right-60 z-30"
-      >
-        <a
-          href="/admin/dashboard/battle-breakers"
-          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg flex items-center space-x-2 transition-all"
-        >
-          <span>⚙️</span>
-          <span>Admin Dashboard</span>
-        </a>
-      </motion.div> */}
 
       {/* SVG paths with color-coded availability */}
       <PathMap

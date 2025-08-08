@@ -261,7 +261,7 @@ const GameTitle = ({ game }) => {
     >
       <div className="text-xl">{game.title}</div>
 
-      {/* Status labels with improved styling */}
+      {/* Status labels with improved styling
       {!game.isAvailable && (
         <div className="text-xs mt-1 text-gray-400 bg-gray-800/60 rounded-full px-2 py-1 inline-block">
           <span className="mr-1">⏳</span> Coming Soon
@@ -276,7 +276,7 @@ const GameTitle = ({ game }) => {
         <div className="text-xs mt-1 text-green-300 bg-green-900/60 rounded-full px-2 py-1 inline-block">
           <span className="mr-1">✓</span> Completed
         </div>
-      )}
+      )} */}
     </motion.div>
   );
 };
