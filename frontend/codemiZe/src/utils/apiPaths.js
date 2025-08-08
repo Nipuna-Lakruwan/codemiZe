@@ -86,5 +86,6 @@ export const API_PATHS = {
     GET_CIRCUIT_SMASHERS_MARKINGS: "/api/v1/judge/circuit-smashers/",
     SUBMIT_ROUTE_SEEKERS_MARKS: "/api/v1/judge/route-seekers/",
     GET_ROUTE_SEEKERS_MARKINGS: "/api/v1/judge/route-seekers/",
+    GET_QUIZ_HUNTERS_MARKINGS: "/api/v1/judge/quiz-hunters/",
   }
 };

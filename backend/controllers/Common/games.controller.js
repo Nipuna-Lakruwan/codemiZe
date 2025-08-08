@@ -31,13 +31,17 @@ export const activateGame = async (req, res) => {
       if(g._id.equals(gameId)) {
         g.status = 'active';
       }
+      else {
+        g.status = 'inactive';
+      }
       await g.save(); // Save each update
     }
 
-    // Emit the updated games list to all connected clients
-    const updatedGames = await Game.find();
     const io = req.app.get("io");
-    io.emit('gamesUpdated', updatedGames);
+    io.emit('gameStateUpdate', {
+      gameId: gameId,
+      newStatus: 'active',
+    });
 
     res.status(200).json({ message: 'Game activated successfully' });
   } catch (error) {
@@ -58,6 +62,12 @@ export const deactivateGame = async (req, res) => {
     game.status = 'inactive';
     await game.save();
 
+    const io = req.app.get("io");
+    io.emit('gameStateUpdate', {
+      gameId: gameId,
+      newStatus: 'inactive',
+    });
+
     res.status(200).json({ message: 'Game deactivated successfully' });
   } catch (error) {
     console.error('Error deactivating game:', error);
@@ -76,6 +86,12 @@ export const completeGame = async (req, res) => {
 
     game.status = 'completed';
     await game.save();
+
+    const io = req.app.get("io");
+    io.emit('gameStateUpdate', {
+      gameId: gameId,
+      newStatus: 'completed',
+    });
 
     res.status(200).json({ message: 'Game completed successfully' });
   } catch (error) {

@@ -245,6 +245,9 @@ export const showWinners = async (req, res) => {
         $match: { totalScore: { $gt: 0 } }
       },
       {
+        $limit: 2
+      },
+      {
         $project: {
           _id: 0,
           name: 1,
