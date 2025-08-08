@@ -2,6 +2,7 @@ import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
 import { 
   requireAdmin, 
+  requireAdminorJudge, 
   requireJudge, 
   requireSchool 
 } from "../middleware/roleMiddleware.js";
@@ -11,8 +12,8 @@ import { CSVUpload } from "../middleware/uploadMiddleware.js";
 const router = express.Router();
 
 // Public routes
-router.get("/", protect, requireAdmin, getQuestions);
-router.get("/answers", protect, requireAdmin, getAnswers);
+router.get("/", protect, requireAdminorJudge, getQuestions);
+router.get("/answers", protect, requireAdminorJudge, getAnswers);
 router.post("/press", protect, requireSchool, buzzerPress);
 router.get("/school/:questionId", protect, requireAdmin, getDashboard);
 router.post("/addQuestion", protect, requireAdmin, addQuestion);
