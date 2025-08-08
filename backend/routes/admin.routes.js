@@ -18,6 +18,6 @@ router.put("/users/:id", protect, requireAdmin, avatarUpload.single('avatar'), e
 router.delete("/school/:schoolId", protect, requireAdmin, deleteSchool);
 router.delete("/user/:userId", protect, requireAdmin, deleteUser);
 router.get("/dashboard", protect, requireAdmin, getSchoolScores);
-router.get("/winners", protect, requireAdmin, showWinners);
+router.get("/winners", protect, showWinners);
 
 export default router;

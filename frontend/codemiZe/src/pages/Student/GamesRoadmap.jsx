@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useContext } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 // Import new components
 import GameNode from '../../components/GamesRoadMap/GameNode';
@@ -94,18 +95,25 @@ export default function GamesRoadmap() {
   const [paths, setPaths] = useState(generatePaths(1000, 600));
   const [games, setGames] = useState([]);
   const socket = useContext(SocketContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (socket) {
       // Listen for game state updates
       socket.on('gameStateUpdate', (updateData) => {
-        console.log('Received game state update:', updateData);
+        //console.log('Received game state update:', updateData);
         updateGameState(updateData);
+      });
+
+      socket.on('finalists', () => {
+        console.log('Finalists event received');
+        navigate('/student/winners');
       });
 
       // Clean up the event listeners when component unmounts
       return () => {
         socket.off("gameStateUpdate");
+        socket.off("finalists");
       };
     }
   }, [socket]);

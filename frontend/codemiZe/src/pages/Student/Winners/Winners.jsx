@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import GameLayout from '../GameLayout/GameLayout';
 import axiosInstance from '../../../utils/axiosInstance';
 import { API_PATHS } from '../../../utils/apiPaths';
+import { SocketContext } from '../../../context/SocketContext';
+import { useAuth } from '../../../context/AuthContext';
 
 const Confetti = () => {
   const [particles, setParticles] = useState([]);
@@ -69,10 +71,21 @@ const Confetti = () => {
 
 export default function Winners() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const socket = useContext(SocketContext);
+  const [winners, setWinners] = useState([]);
 
   // Function to navigate back to the roadmap
   const goBackToRoadmap = () => {
-    navigate('/student/games-roadmap');
+    if (user.role === "Admin") {
+      navigate('/admin/dashboard');
+    } else {
+      navigate('/student/games-roadmap');
+    }
+  };
+
+  const displayWinners = () => {
+    socket.emit('displayWinners');
   };
 
   useEffect(() => {
@@ -85,26 +98,12 @@ export default function Winners() {
     getWinners();
   }, []);
 
-  // Sample data for winners - in a real app this would come from an API or props
-  const [winners, setWinners] = useState([
-    {
-      name: "Nipuna ge team eka",
-      avatar: "/scl1.png",
-      totalScore: 450,
-    },
-    {
-      name: "Nipuna ge team eka 2",
-      avatar: "/scl2.png",
-      totalScore: 420,
-    }
-  ]);
-
   return (
     <GameLayout>
       {/* Confetti animation */}
       <Confetti />
 
-      <div className="flex flex-col items-center justify-start pt-16 min-h-screen">
+      <div className="flex flex-col items-center justify-start pt-10 min-h-screen">
         {/* Back button */}
         <motion.button
           initial={{ opacity: 0 }}
@@ -116,15 +115,28 @@ export default function Winners() {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
           </svg>
-          <span>Back to Roadmap</span>
+          {user.role === "Admin" ? (<span>Back to Dashboard</span>) : (<span>Back to Roadmap</span>)}
         </motion.button>
+        {/* confirm button */}
+        {user?.role === "Admin" && (
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              onClick={displayWinners}
+              className="absolute top-8 right-8 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg flex items-center space-x-2 transition-all z-50"
+            >
+              <span>Confirm</span>
+            </motion.button>
+        )}
+        
 
         {/* Main heading - centered at the top */}
         <motion.div
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="mb-4 mt-8 flex justify-center w-full"
+          className="mb-1 mt-0 flex justify-center w-full"
         >
           <img
             src="/codemize-logo.png"
@@ -138,9 +150,9 @@ export default function Winners() {
           initial={{ y: -30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-12 flex justify-center w-full"
+          className="mb-24 flex justify-center w-full"
         >
-          <div className="text-orange-200 text-9xl font-normal font-['Jersey_25'] text-center">
+          <div className="text-orange-200 text-9xl font-normal font-['Jersey_25'] text-center" style={{ fontFamily: 'Jersey_25' }}>
             Winners
           </div>
         </motion.div>
@@ -187,7 +199,8 @@ export default function Winners() {
 
                   {/* Marks display with special styling - positioned within the stage */}
                   <motion.div
-                    className="absolute bottom-[30%] justify-start text-sky-400 text-6xl font-normal font-['Jersey_25']"
+                    className="absolute bottom-[33%] justify-start text-sky-400 text-6xl font-normal font-['Jersey_25']"
+                    style={{ fontFamily: 'Jersey_25' }}
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{

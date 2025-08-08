@@ -87,6 +87,11 @@ const setupSocket = (io, app) => {
       console.log("Scoreboard client joined");
     }
 
+    if (socket.user.role === "School") {
+      socket.join("student");
+      console.log("Student client joined");
+    }
+
     if (socket.user.role === "School" || socket.user.role === "Dashboard" || socket.user.role === "Admin") {
       socket.join("battleBreakers");
       //console.log(`BattleBreakers client joined - Role: ${socket.user.role}`);
@@ -172,6 +177,11 @@ const setupSocket = (io, app) => {
           questionData: currentQuestionData
         });
       }
+    });
+
+    socket.on("displayWinners", () => {
+      console.log(`User ${userId} requested to display winners`);
+      io.to("student").emit("finalists");
     });
 
     socket.on("disconnect", () => {
