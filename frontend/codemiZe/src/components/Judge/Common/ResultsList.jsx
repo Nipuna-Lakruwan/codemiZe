@@ -1,4 +1,5 @@
 import React from 'react';
+import { imagePath } from '../../../utils/helper.js';
 
 const ResultsList = ({ results, isLoading = false }) => {
   if (isLoading) {
@@ -28,7 +29,7 @@ const ResultsList = ({ results, isLoading = false }) => {
             </div>
             {/* School logo rectangle */}
             <div className="ml-6 w-14 h-16 bg-neutral-500 rounded-md flex items-center justify-center overflow-hidden">
-              <img src={school.avatar.url} alt={school.name} className="w-12 h-12 object-cover rounded" />
+              <img src={imagePath(school.avatar.url)} alt={school.name} className="w-12 h-12 object-cover rounded" />
             </div>
             {/* School info */}
             <div className="ml-6 flex flex-col justify-center">
