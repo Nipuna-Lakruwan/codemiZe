@@ -1,10 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
 import GameNodeMini from '../../../components/Games/GameNodeMini';
+import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
+import { imagePath } from '../../../utils/helper';
+import PdfViewer from '../../../components/Student/PDFViewer/PdfViewer';
+import { SocketContext } from '../../../context/SocketContext';
 
 export default function CodeCrushers() {
+  const socket = useContext(SocketContext);
   // Game state
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -12,12 +18,17 @@ export default function CodeCrushers() {
 
   // PDF viewer state
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(5); // Set to actual number of PDF pages
+  const [totalPages, setTotalPages] = useState(0);
+  const [showFullscreenPdf, setShowFullscreenPdf] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState(); // Add your PDF path here
+  const [pdfError, setPdfError] = useState(null);
+  const [pdfLoading, setPdfLoading] = useState(true);
 
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState(30 * 60); // 30 minutes in seconds
   const [showTimeWarning, setShowTimeWarning] = useState(false);
   const [timeIsUp, setTimeIsUp] = useState(false);
+  const [isServerTimerActive, setIsServerTimerActive] = useState(false); // Track if server timer is active
 
   // File upload state
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -25,8 +36,13 @@ export default function CodeCrushers() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const fileInputRef = useRef(null);
 
-  // PDF viewer state
-  const [showFullscreenPdf, setShowFullscreenPdf] = useState(false);
+  useEffect(() => {
+    const getSlides = async () => {
+      const response = await axiosInstance.get(API_PATHS.CODE_CRUSHERS.GET_SLIDES);
+      setPdfUrl(imagePath(response.data.slides[0].slides[0]));
+    };
+    getSlides();
+  }, []);
 
   // Listen for messages from popup window
   useEffect(() => {
@@ -66,41 +82,92 @@ export default function CodeCrushers() {
     };
   }, [currentPage, totalPages]);
 
-  // Timer effect
+  // Timer effect - handles server synchronization only
   useEffect(() => {
-    let timer;
-    if (isGameStarted && !gameCompleted && !timeIsUp && timeRemaining > 0) {
-      timer = setInterval(() => {
-        setTimeRemaining(prev => {
-          // Show warning when 5 minutes remain
-          if (prev === 5 * 60) {
-            setShowTimeWarning(true);
-            setTimeout(() => setShowTimeWarning(false), 5000);
-          }
-          // Show warning when 1 minute remains
-          else if (prev === 60) {
-            setShowTimeWarning(true);
-            setTimeout(() => setShowTimeWarning(false), 5000);
-          }
+    if (socket) {
+      socket.on('codeCrushers-roundStarted', (data) => {
+        console.log('Round started from server:', data);
+        if (data.allocatedTime) {
+          setTimeRemaining(data.allocatedTime);
+          setIsGameStarted(true);
+          setGameCompleted(false);
+          setTimeIsUp(false);
+          setIsServerTimerActive(true);
+        }
+      });
 
-          if (prev <= 1) {
-            clearInterval(timer);
-            setTimeIsUp(true);
-            handleGameEnd();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      // Listen for server timer updates
+      socket.on('codeCrushers-timerUpdate', (data) => {
+        setTimeRemaining(data.timeRemaining);
+        setIsServerTimerActive(true);
+
+        if (data.timeRemaining === 5 * 60) {
+          setShowTimeWarning(true);
+          setTimeout(() => setShowTimeWarning(false), 5000);
+        } else if (data.timeRemaining === 60) {
+          setShowTimeWarning(true);
+          setTimeout(() => setShowTimeWarning(false), 5000);
+        }
+      });
+
+      // Listen for time up event from server
+      socket.on('codeCrushers-timeUp', (data) => {
+        setTimeRemaining(0);
+        setTimeIsUp(true);
+        setIsServerTimerActive(false);
+        handleGameEnd();
+      });
+
+      // Listen for timer stopped event from server
+      socket.on('codeCrushers-timerStopped', (data) => {
+        setTimeRemaining(0);
+        setTimeIsUp(true);
+        setIsServerTimerActive(false);
+        handleGameEnd();
+      });
+
+      // Listen for timer paused event from server
+      socket.on('codeCrushers-roundPaused', (data) => {
+      });
+
+      // Listen for timer resumed event from server
+      socket.on('codeCrushers-roundResumed', (data) => {
+      });
+
+      // Listen for sync timer event (for reconnection)
+      socket.on('codeCrushers-syncTimer', (data) => {
+        if (data.timeRemaining !== undefined) {
+          setTimeRemaining(data.timeRemaining);
+          setIsGameStarted(data.isReconnect || false);
+          setIsServerTimerActive(data.timeRemaining > 0);
+        }
+      });
+
+      // Request current state when component mounts (for reconnection)
+      socket.emit('codeCrushers-requestCurrentState');
     }
 
+    // Cleanup function
     return () => {
-      if (timer) clearInterval(timer);
+      if (socket) {
+        socket.off('codeCrushers-roundStarted');
+        socket.off('codeCrushers-timerUpdate');
+        socket.off('codeCrushers-timeUp');
+        socket.off('codeCrushers-timerStopped');
+        socket.off('codeCrushers-roundPaused');
+        socket.off('codeCrushers-roundResumed');
+        socket.off('codeCrushers-syncTimer');
+      }
     };
-  }, [isGameStarted, gameCompleted, timeRemaining]);
+  }, [socket]);
 
   // Start game handler
   const handleStartGame = () => {
+    if (!isServerTimerActive) {
+      console.log('Cannot start game: Server timer is not active');
+      return; // Prevent game start if server timer is not active
+    }
+
     setIsLoading(true);
     setTimeout(() => {
       setIsGameStarted(true);
@@ -119,6 +186,25 @@ export default function CodeCrushers() {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
+  };
+
+    // PDF handlers
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    console.log('PDF loaded successfully, pages:', numPages);
+    setTotalPages(numPages);
+    setPdfLoading(false);
+    setPdfError(null);
+  };
+
+  const onDocumentLoadError = (error) => {
+    console.error('Error loading PDF:', error);
+    setPdfError(`Failed to load PDF: ${error.message || 'Unknown error'}`);
+    setPdfLoading(false);
+  };
+
+  const onPageLoadError = (error) => {
+    console.error('Error loading PDF page:', error);
+    setPdfError(`Failed to load page: ${error.message || 'Unknown error'}`);
   };
 
   // File upload handlers
@@ -310,6 +396,8 @@ export default function CodeCrushers() {
           topRightImageSrc="/robo1.png"
           bottomLeftImageSrc="/robo2.png"
           showScoreInfo={false}
+          isDisabled={!isServerTimerActive}
+          buttonText={!isServerTimerActive ? "Waiting..." : "Start Game"}
         />
       ) : gameCompleted ? (
         // Game completed screen
@@ -608,170 +696,7 @@ export default function CodeCrushers() {
             )}
           </div>
 
-          {/* Main PDF viewer container */}
-          <motion.div
-            className="w-[1029px] h-[566px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6"
-            variants={pdfContainerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            {/* PDF content area with fullscreen option */}
-            <div className="w-[973px] h-[466px] bg-zinc-300 rounded-md flex flex-col relative mb-4">
-              {/* PDF Viewer Controls - Top right */}
-              <div className="absolute top-2 right-2 flex space-x-2 z-10">
-                <button
-                  className="bg-violet-800/80 hover:bg-violet-700 text-white px-3 py-1 rounded flex items-center text-sm"
-                  onClick={() => {
-                    // Open a new window/tab with the PDF viewer
-                    const pdfWindow = window.open('', '_blank');
-                    pdfWindow.document.write(`
-                      <html>
-                        <head>
-                          <title>Code Crushers - Problem Statement</title>
-                          <style>
-                            body { 
-                              margin: 0; 
-                              padding: 0; 
-                              background-color: #1e1e1e;
-                              color: white;
-                              font-family: Arial, sans-serif;
-                              overflow: hidden;
-                            }
-                            .pdf-container {
-                              display: flex;
-                              flex-direction: column;
-                              height: 100vh;
-                              padding: 16px;
-                            }
-                            .header {
-                              display: flex;
-                              justify-content: space-between;
-                              align-items: center;
-                              margin-bottom: 16px;
-                            }
-                            .pdf-content {
-                              background-color: #d4d4d8;
-                              border-radius: 8px;
-                              flex-grow: 1;
-                              display: flex;
-                              align-items: center;
-                              justify-content: center;
-                              margin-bottom: 16px;
-                            }
-                            .footer {
-                              display: flex;
-                              justify-content: center;
-                              align-items: center;
-                              gap: 24px;
-                            }
-                            .nav-button {
-                              background-color: #6d28d9;
-                              color: white;
-                              border: none;
-                              border-radius: 4px;
-                              padding: 8px 16px;
-                              cursor: pointer;
-                            }
-                            .nav-button:disabled {
-                              background-color: #71717a;
-                              cursor: not-allowed;
-                            }
-                            .nav-button:hover:not(:disabled) {
-                              background-color: #7c3aed;
-                            }
-                          </style>
-                        </head>
-                        <body>
-                          <div class="pdf-container">
-                            <div class="header">
-                              <h1>Code Crushers - Problem Statement</h1>
-                              <span>Page ${currentPage} of ${totalPages}</span>
-                            </div>
-                            <div class="pdf-content">
-                              <div class="text-center">
-                                <p style="font-size: 24px; color: #4b5563; font-weight: 600;">PDF Viewer</p>
-                                <p style="color: #6b7280;">Page ${currentPage} of ${totalPages}</p>
-                                <p style="font-size: 14px; color: #9ca3af; margin-top: 16px;">Scenario and coding problem description would appear here</p>
-                              </div>
-                            </div>
-                            <div class="footer">
-                              <button class="nav-button" onclick="prevPage()" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
-                              <span>Page ${currentPage} of ${totalPages}</span>
-                              <button class="nav-button" onclick="nextPage()" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
-                            </div>
-                          </div>
-                          <script>
-                            function prevPage() {
-                              window.opener.postMessage({ action: 'prevPage' }, '*');
-                            }
-                            function nextPage() {
-                              window.opener.postMessage({ action: 'nextPage' }, '*');
-                            }
-                            // Listen for page updates from parent window
-                            window.addEventListener('message', (event) => {
-                              if (event.data.action === 'updatePage') {
-                                document.querySelectorAll('.footer span, .header span').forEach(el => {
-                                  el.textContent = 'Page ' + event.data.page + ' of ' + event.data.totalPages;
-                                });
-                              }
-                            });
-                          </script>
-                        </body>
-                      </html>
-                    `);
-                    pdfWindow.document.close();
-                  }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  Open in New Tab
-                </button>
-                <button
-                  className="bg-violet-800/80 hover:bg-violet-700 text-white px-3 py-1 rounded flex items-center text-sm"
-                  onClick={() => {
-                    // Create a fullscreen modal with the PDF
-                    setShowFullscreenPdf(true);
-                  }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
-                  </svg>
-                  Fullscreen
-                </button>
-              </div>
-              <div className="flex-grow flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-2xl text-gray-600 font-semibold">PDF Viewer</p>
-                  <p className="text-gray-500">Page {currentPage} of {totalPages}</p>
-                  <p className="text-sm text-gray-400 mt-4">Scenario and coding problem description would appear here</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Page navigation controls */}
-            <div className="flex items-center justify-center space-x-6">
-              <button
-                className={`px-4 py-2 rounded-md ${currentPage === 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1}
-              >
-                Back
-              </button>
-
-              <div className="text-white/80">
-                Page {currentPage} of {totalPages}
-              </div>
-
-              <button
-                className={`px-4 py-2 rounded-md ${currentPage === totalPages ? 'bg-gray-400 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </button>
-            </div>
-          </motion.div>
+          <PdfViewer pdfUrl={pdfUrl} />
 
           {/* Spacer between PDF viewer and progress bar */}
           <div className="h-6"></div>
@@ -842,11 +767,34 @@ export default function CodeCrushers() {
 
                 <div className="flex-grow w-full overflow-auto p-8 flex items-center justify-center">
                   <div className="w-full max-w-5xl h-[80vh] bg-zinc-300 rounded-md flex items-center justify-center">
-                    <div className="text-center">
-                      <p className="text-3xl text-gray-600 font-semibold">PDF Viewer (Fullscreen)</p>
-                      <p className="text-gray-500 text-xl">Page {currentPage} of {totalPages}</p>
-                      <p className="text-gray-400 mt-4">Scenario and coding problem description would appear here</p>
-                    </div>
+                    {pdfLoading ? (
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-violet-600 mx-auto mb-4"></div>
+                        <p className="text-gray-600 font-semibold text-xl">Loading PDF...</p>
+                      </div>
+                    ) : pdfError ? (
+                      <div className="text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-red-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-red-600 font-semibold text-xl mb-2">Error loading PDF</p>
+                        <p className="text-gray-500">{pdfError}</p>
+                      </div>
+                    ) : (
+                      <Document
+                        file={pdfUrl}
+                        onLoadSuccess={onDocumentLoadSuccess}
+                        onLoadError={onDocumentLoadError}
+                      >
+                        <Page
+                          pageNumber={currentPage}
+                          onLoadError={onPageLoadError}
+                          width={Math.min(window.innerWidth * 0.8, 1200)} // Responsive width for fullscreen
+                          renderTextLayer={false}
+                          renderAnnotationLayer={false}
+                        />
+                      </Document>
+                    )}
                   </div>
                 </div>
 
