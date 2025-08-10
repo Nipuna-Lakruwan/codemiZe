@@ -39,7 +39,7 @@ export default function CodeCrushers() {
   useEffect(() => {
     const getSlides = async () => {
       const response = await axiosInstance.get(API_PATHS.CODE_CRUSHERS.GET_SLIDES);
-      setPdfUrl(imagePath(response.data.slides[0].slides[0]));
+      setPdfUrl(imagePath(response.data?.slides[0]?.slides[0]));
     };
     getSlides();
   }, []);

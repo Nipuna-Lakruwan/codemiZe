@@ -39,7 +39,7 @@ export default function CircuitSmashers() {
   useEffect(() => {
     const getSlides = async () => {
       const response = await axiosInstance.get(API_PATHS.CIRCUIT_SMASHERS.GET_SLIDES);
-      setPdfUrl(imagePath(response.data.slides[0].slides[0]));
+      setPdfUrl(imagePath(response.data?.slides[0]?.slides[0]));
     };
     getSlides();
   }, []);

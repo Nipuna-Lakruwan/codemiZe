@@ -8,8 +8,8 @@ import GameTimer from "../gameTimer.js";
  * Events handled:
  * - codeCrushers-startRound: Start a new coding round with timer
  * - codeCrushers-stopRound: Stop current round and timer
- * - codeCrushers-pauseTimer: Pause the current timer
- * - codeCrushers-resumeTimer: Resume the paused timer
+ * - codeCrushers-pauseRound: Pause the current round
+ * - codeCrushers-resumeRound: Resume the paused round
  * - codeCrushers-requestCurrentState: Send current game state to reconnecting clients
  * 
  * Events emitted:
@@ -71,11 +71,11 @@ class CodeCrushersHandler {
       this.handleStopChallenge();
     });
 
-    socket.on("codeCrushers-pauseTimer", () => {
+    socket.on("codeCrushers-pauseRound", () => {
       this.handlePauseTimer();
     });
 
-    socket.on("codeCrushers-resumeTimer", () => {
+    socket.on("codeCrushers-resumeRound", () => {
       this.handleResumeTimer();
     });
 
