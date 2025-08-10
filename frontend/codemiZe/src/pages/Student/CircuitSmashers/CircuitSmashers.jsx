@@ -23,7 +23,6 @@ export default function CircuitSmashers() {
   const [pdfUrl, setPdfUrl] = useState(); // Add your PDF path here
   const [pdfError, setPdfError] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(true);
-  const [useIframeViewer, setUseIframeViewer] = useState(false); // Fallback to iframe
 
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState(30 * 60); // 30 minutes in seconds
@@ -40,8 +39,7 @@ export default function CircuitSmashers() {
   useEffect(() => {
     const getSlides = async () => {
       const response = await axiosInstance.get(API_PATHS.CIRCUIT_SMASHERS.GET_SLIDES);
-      // Fetch or generate your PDF slides here
-      setPdfUrl(imagePath(response.data.slides[0].slides[0]));
+      setPdfUrl(imagePath(response.data?.slides[0]?.slides[0]));
     };
     getSlides();
   }, []);
@@ -399,7 +397,7 @@ export default function CircuitSmashers() {
           bottomLeftImageSrc="/robo2.png"
           showScoreInfo={false}
           isDisabled={!isServerTimerActive}
-          buttonText={!isServerTimerActive ? "Waiting for Timer..." : "Start Game"}
+          buttonText={!isServerTimerActive ? "Waiting..." : "Start Game"}
         />
       ) : gameCompleted ? (
         // Game completed screen

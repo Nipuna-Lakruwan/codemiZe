@@ -4,7 +4,7 @@ import BattleBreakersQuestion from "../../models/questions/BattleBreakersQuestio
 import School from "../../models/School.js";
 import Game from "../../models/Game.js";
 import { parseCSVFile } from "../../utils/csvParser.js";
-import { stopBattleBreakersTimer } from "../../sockets/index.js";
+import battleBreakersHandler from "../../sockets/games/battleBreakers.js";
 
 export const buzzerPress = async (req, res) => {
     try {
@@ -332,7 +332,7 @@ export const submitAnswers = async (req, res) => {
 export const finishGame = async (req, res) => {
     try {
         // Stop the Battle Breakers timer
-        stopBattleBreakersTimer();
+        battleBreakersHandler.stopTimer();
         
         // Get the io instance and emit game completed
         const io = req.app.get("io");

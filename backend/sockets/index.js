@@ -4,15 +4,6 @@ import codeCrushersHandler from "./games/codeCrushers.js";
 import circuitSmashersHandler from "./games/circuitSmashers.js";
 import routeSeekersHandler from "./games/routeSeekers.js";
 
-// Legacy exports for backward compatibility (if needed elsewhere)
-export const startBattleBreakersTimer = (questionData) => {
-  battleBreakersHandler.startTimer(questionData);
-};
-
-export const stopBattleBreakersTimer = () => {
-  battleBreakersHandler.stopTimer();
-};
-
 const setupSocket = (io, app) => {
   const onlineUsers = app.get("onlineUsers");
 
@@ -41,14 +32,13 @@ const setupSocket = (io, app) => {
 
     // Initialize game handlers based on user role
     if (socket.user.role === "School" || socket.user.role === "Dashboard" || socket.user.role === "Admin") {
-      // Initialize all game handlers for authorized users
       battleBreakersHandler.initializeClient(socket, io);
       codeCrushersHandler.initializeClient(socket, io);
       circuitSmashersHandler.initializeClient(socket, io);
       routeSeekersHandler.initializeClient(socket, io);
     }
 
-    // Global event handlers (not game-specific)
+    // Global event handlers
     socket.on("displayWinners", () => {
       io.to("student").emit("finalists");
     });

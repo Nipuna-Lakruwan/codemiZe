@@ -20,51 +20,136 @@ export default function Dashboard() {
   // Dynamically get active game from games array
   const activeGame = games.find(game => game.status === 'active') || null;
 
-  // Socket listeners for Circuit Smashers timer synchronization
+  // Socket listeners for timer synchronization
   useEffect(() => {
-    if (socket && activeGame && activeGame.name === 'Circuit Smashers') {
-      // Listen for server timer updates
-      socket.on('circuitSmashers-timerUpdate', (data) => {
-        setTimeRemaining(data.timeRemaining);
-        setIsTimerActive(true);
-      });
-
-      // Listen for time up event from server
-      socket.on('circuitSmashers-timeUp', (data) => {
-        setTimeRemaining(0);
-        setIsTimerActive(false);
-      });
-
-      // Listen for timer stopped event from server
-      socket.on('circuitSmashers-timerStopped', (data) => {
-        setTimeRemaining(0);
-        setIsTimerActive(false);
-      });
-
-      // Listen for round started event
-      socket.on('circuitSmashers-roundStarted', (data) => {
-        if (data.allocatedTime) {
-          setTimeRemaining(data.allocatedTime);
+    if (socket && activeGame) {
+      if (activeGame.name === 'Circuit Smashers') {
+        // Listen for server timer updates
+        socket.on('circuitSmashers-timerUpdate', (data) => {
+          setTimeRemaining(data.timeRemaining);
           setIsTimerActive(true);
-        }
-      });
+        });
 
-      // Listen for timer paused event from server
-      socket.on('circuitSmashers-roundPaused', (data) => {
-        setIsTimerActive(false);
-      });
+        // Listen for time up event from server
+        socket.on('circuitSmashers-timeUp', (data) => {
+          setTimeRemaining(0);
+          setIsTimerActive(false);
+        });
 
-      // Cleanup listeners
-      return () => {
-        socket.off('circuitSmashers-timerUpdate');
-        socket.off('circuitSmashers-timeUp');
-        socket.off('circuitSmashers-timerStopped');
-        socket.off('circuitSmashers-roundStarted');
-        socket.off('circuitSmashers-roundPaused');
-      };
+        // Listen for timer stopped event from server
+        socket.on('circuitSmashers-timerStopped', (data) => {
+          setTimeRemaining(0);
+          setIsTimerActive(false);
+        });
+
+        // Listen for round started event
+        socket.on('circuitSmashers-roundStarted', (data) => {
+          if (data.allocatedTime) {
+            setTimeRemaining(data.allocatedTime);
+            setIsTimerActive(true);
+          }
+        });
+
+        // Listen for timer paused event from server
+        socket.on('circuitSmashers-roundPaused', (data) => {
+          setIsTimerActive(false);
+        });
+
+        // Cleanup listeners
+        return () => {
+          socket.off('circuitSmashers-timerUpdate');
+          socket.off('circuitSmashers-timeUp');
+          socket.off('circuitSmashers-timerStopped');
+          socket.off('circuitSmashers-roundStarted');
+          socket.off('circuitSmashers-roundPaused');
+        };
+      }
+
+      if (activeGame.name === 'Code Crushers') {
+        // Listen for server timer updates
+        socket.on('codeCrushers-timerUpdate', (data) => {
+          setTimeRemaining(data.timeRemaining);
+          setIsTimerActive(true);
+        });
+
+        // Listen for time up event from server
+        socket.on('codeCrushers-timeUp', (data) => {
+          setTimeRemaining(0);
+          setIsTimerActive(false);
+        });
+
+        // Listen for timer stopped event from server
+        socket.on('codeCrushers-timerStopped', (data) => {
+          setTimeRemaining(0);
+          setIsTimerActive(false);
+        });
+
+        // Listen for round started event
+        socket.on('codeCrushers-roundStarted', (data) => {
+          if (data.allocatedTime) {
+            setTimeRemaining(data.allocatedTime);
+            setIsTimerActive(true);
+          }
+        });
+
+        // Listen for timer paused event from server
+        socket.on('codeCrushers-roundPaused', (data) => {
+          setIsTimerActive(false);
+        });
+
+        // Cleanup listeners
+        return () => {
+          socket.off('codeCrushers-timerUpdate');
+          socket.off('codeCrushers-timeUp');
+          socket.off('codeCrushers-timerStopped');
+          socket.off('codeCrushers-roundStarted');
+          socket.off('codeCrushers-roundPaused');
+        };
+      }
+
+      if (activeGame.name === 'Route Seekers') {
+        // Listen for server timer updates
+        socket.on('routeSeekers-timerUpdate', (data) => {
+          setTimeRemaining(data.timeRemaining);
+          setIsTimerActive(true);
+        });
+
+        // Listen for time up event from server
+        socket.on('routeSeekers-timeUp', (data) => {
+          setTimeRemaining(0);
+          setIsTimerActive(false);
+        });
+
+        // Listen for timer stopped event from server
+        socket.on('routeSeekers-timerStopped', (data) => {
+          setTimeRemaining(0);
+          setIsTimerActive(false);
+        });
+
+        // Listen for round started event
+        socket.on('routeSeekers-roundStarted', (data) => {
+          if (data.allocatedTime) {
+            setTimeRemaining(data.allocatedTime);
+            setIsTimerActive(true);
+          }
+        });
+
+        // Listen for timer paused event from server
+        socket.on('routeSeekers-roundPaused', (data) => {
+          setIsTimerActive(false);
+        });
+
+        // Cleanup listeners
+        return () => {
+          socket.off('routeSeekers-timerUpdate');
+          socket.off('routeSeekers-timeUp');
+          socket.off('routeSeekers-timerStopped');
+          socket.off('routeSeekers-roundStarted');
+          socket.off('routeSeekers-roundPaused');
+        };
+      }
     }
   }, [socket, activeGame]);
-
 
   // Fetch games data from backend
   useEffect(() => {
@@ -185,7 +270,7 @@ export default function Dashboard() {
     }
 
     setShowModal(false);
-  };  
+  };
   
   // Handle stop game - implements pause functionality when timer is active
   const handleStopGame = async () => {
@@ -199,18 +284,15 @@ export default function Dashboard() {
         if (activeGame.name === 'Circuit Smashers' && socket) {
           socket.emit('circuitSmashers-pauseRound');
         }
-        
-        setIsTimerActive(false);
-      } else {
-        // If timer is not active, stop the game completely
-        console.log(`Stopping game: ${activeGame.name}`);
-        
-        if (activeGame.name === 'Circuit Smashers' && socket) {
-          socket.emit('circuitSmashers-stopRound');
+
+        if (activeGame.name === 'Code Crushers' && socket) {
+          socket.emit('codeCrushers-pauseRound');
         }
-        
-        await deactivateGame(activeGame._id);
-        setTimeRemaining(0);
+
+        if (activeGame.name === 'Route Seekers' && socket) {
+          socket.emit('routeSeekers-pauseRound');
+        }
+
         setIsTimerActive(false);
       }
     } catch (error) {
@@ -222,14 +304,21 @@ export default function Dashboard() {
   const handleStartGameTimer = () => {
     if (!activeGame || !socket) return;
 
+    const allocatedTimeSeconds = activeGame.allocateTime || 1800;
     if (activeGame.name === 'Circuit Smashers') {
-      const allocatedTimeSeconds = activeGame.allocateTime || 1800;
-
       socket.emit('circuitSmashers-startRound', {
         allocatedTime: allocatedTimeSeconds
       });
-      setIsTimerActive(true);
+    } else if (activeGame.name === 'Code Crushers') {
+      socket.emit('codeCrushers-startRound', {
+        allocatedTime: allocatedTimeSeconds
+      });
+    } else if (activeGame.name === 'Route Seekers') {
+      socket.emit('routeSeekers-startRound', {
+        allocatedTime: allocatedTimeSeconds
+      });
     }
+    setIsTimerActive(true);
   };
 
   const totalGameTime = (activeGame?.allocateTime || 1800); // Convert minutes to seconds
@@ -243,9 +332,14 @@ export default function Dashboard() {
 
   // Request current state when Circuit Smashers becomes active
   useEffect(() => {
-    if (activeGame && activeGame.status === 'active' && activeGame.name === 'Circuit Smashers' && socket) {
-      console.log('Requesting Circuit Smashers current state');
-      socket.emit('circuitSmashers-requestCurrentState');
+    if (activeGame && activeGame.status === 'active' && socket) {
+      if (activeGame.name === 'Circuit Smashers') {
+        socket.emit('circuitSmashers-requestCurrentState');
+      } else if (activeGame.name === 'Code Crushers') {
+        socket.emit('codeCrushers-requestCurrentState');
+      } else if (activeGame.name === 'Route Seekers') {
+        socket.emit('routeSeekers-requestCurrentState');
+      }
     }
   }, [activeGame, socket]);
 
