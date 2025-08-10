@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import TeamRankItem from '../../../components/Admin/TeamRankItem';
 import GameActionModal from '../../../components/modals/GameActionModal';
 import axiosInstance from '../../../utils/axiosInstance';
 import { API_PATHS } from '../../../utils/apiPaths';
+import { SocketContext } from '../../../context/SocketContext';
 
 export default function Dashboard() {
   // State
+  const socket = useContext(SocketContext);
   const [selectedScore, setSelectedScore] = useState('overall');
   const [selectedGame, setSelectedGame] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -16,6 +18,46 @@ export default function Dashboard() {
 
   // Dynamically get active game from games array
   const activeGame = games.find(game => game.status === 'active') || null;
+
+  // Socket listeners for Circuit Smashers timer synchronization
+  useEffect(() => {
+    if (socket && activeGame && activeGame.name === 'Circuit Smashers') {
+      // Listen for server timer updates
+      socket.on('circuitSmashers-timerUpdate', (data) => {
+        console.log('Circuit Smashers: Timer update', data.timeRemaining);
+        setTimeRemaining(data.timeRemaining);
+      });
+
+      // Listen for time up event from server
+      socket.on('circuitSmashers-timeUp', (data) => {
+        console.log('Circuit Smashers: Time up event');
+        setTimeRemaining(0);
+      });
+
+      // Listen for timer stopped event from server
+      socket.on('circuitSmashers-timerStopped', (data) => {
+        console.log('Circuit Smashers: Timer stopped event');
+        setTimeRemaining(0);
+      });
+
+      // Listen for round started event
+      socket.on('circuitSmashers-roundStarted', (data) => {
+        console.log('Circuit Smashers: Round started', data);
+        if (data.allocatedTime) {
+          setTimeRemaining(data.allocatedTime);
+        }
+      });
+
+      // Cleanup listeners
+      return () => {
+        socket.off('circuitSmashers-timerUpdate');
+        socket.off('circuitSmashers-timeUp');
+        socket.off('circuitSmashers-timerStopped');
+        socket.off('circuitSmashers-roundStarted');
+      };
+    }
+  }, [socket, activeGame]);
+
 
   // Fetch games data from backend
   useEffect(() => {
@@ -141,6 +183,12 @@ export default function Dashboard() {
 
     try {
       console.log(`Stopping game: ${activeGame.name}`);
+      
+      // For Circuit Smashers, emit stop round event
+      if (activeGame.name === 'Circuit Smashers' && socket) {
+        socket.emit('circuitSmashers-stopRound');
+      }
+      
       await deactivateGame(activeGame._id);
       setTimeRemaining(0);
     } catch (error) {
@@ -148,7 +196,43 @@ export default function Dashboard() {
     }
   };
 
-  const totalGameTime = activeGame?.allocateTime || 15; // Default to 15 seconds if not set
+  // Handle start game timer
+  const handleStartGameTimer = () => {
+    if (!activeGame || !socket) return;
+
+    if (activeGame.name === 'Circuit Smashers') {
+      const allocatedTimeMinutes = activeGame.allocateTime || 30;
+      const allocatedTimeSeconds = allocatedTimeMinutes * 60;
+
+      console.log(`Starting Circuit Smashers timer: ${allocatedTimeMinutes} minutes`);
+      
+      socket.emit('circuitSmashers-startRound', {
+        allocatedTime: allocatedTimeSeconds
+      });
+    }
+  };
+
+  // Handle pause game timer
+  const handlePauseGameTimer = () => {
+    if (!activeGame || !socket) return;
+
+    if (activeGame.name === 'Circuit Smashers') {
+      console.log('Pausing Circuit Smashers timer');
+      socket.emit('circuitSmashers-pauseRound');
+    }
+  };
+
+  // Handle resume game timer
+  const handleResumeGameTimer = () => {
+    if (!activeGame || !socket) return;
+
+    if (activeGame.name === 'Circuit Smashers') {
+      console.log('Resuming Circuit Smashers timer');
+      socket.emit('circuitSmashers-resumeRound');
+    }
+  };
+
+  const totalGameTime = (activeGame?.allocateTime || 20) * 60; // Convert minutes to seconds
 
   // Helper: format time as MM:SS
   const formatTime = (seconds) => {
@@ -157,33 +241,13 @@ export default function Dashboard() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Timer effect - countdown for active game
+  // Request current state when Circuit Smashers becomes active
   useEffect(() => {
-    let timerId;
-
-    if (activeGame && activeGame.status === 'active' && timeRemaining > 0) {
-      timerId = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            clearInterval(timerId);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    if (activeGame && activeGame.status === 'active' && activeGame.name === 'Circuit Smashers' && socket) {
+      console.log('Requesting Circuit Smashers current state');
+      socket.emit('circuitSmashers-requestCurrentState');
     }
-
-    return () => {
-      if (timerId) clearInterval(timerId);
-    };
-  }, [activeGame, timeRemaining]);
-
-  // Set timer when a game becomes active
-  useEffect(() => {
-    if (activeGame && activeGame.status === 'active' && timeRemaining === 0) {
-      setTimeRemaining(totalGameTime);
-    }
-  }, [activeGame]);
+  }, [activeGame, socket]);
 
   return (
     <AdminLayout>
@@ -237,13 +301,49 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Stop button */}
-              <button
-                className="bg-red-500 text-white px-8 py-3 text-lg rounded-lg hover:bg-red-600 ml-0 md:ml-8 font-medium transition-all duration-200 hover:scale-105 shadow-md"
-                onClick={handleStopGame}
-              >
-                Stop
-              </button>
+              {/* Timer Control Buttons for Circuit Smashers */}
+              {activeGame.name === 'Circuit Smashers' ? (
+                <div className="flex flex-wrap gap-3 ml-0 md:ml-8">
+                  {timeRemaining === 0 ? (
+                    <button
+                      className="bg-green-500 text-white px-6 py-2 text-sm rounded-lg hover:bg-green-600 font-medium transition-all duration-200 hover:scale-105 shadow-md"
+                      onClick={handleStartGameTimer}
+                    >
+                      Start Timer
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        className="bg-yellow-500 text-white px-6 py-2 text-sm rounded-lg hover:bg-yellow-600 font-medium transition-all duration-200 hover:scale-105 shadow-md"
+                        onClick={handlePauseGameTimer}
+                      >
+                        Pause
+                      </button>
+                      <button
+                        className="bg-blue-500 text-white px-6 py-2 text-sm rounded-lg hover:bg-blue-600 font-medium transition-all duration-200 hover:scale-105 shadow-md"
+                        onClick={handleResumeGameTimer}
+                      >
+                        Resume
+                      </button>
+                    </>
+                  )}
+                  
+                  <button
+                    className="bg-red-500 text-white px-6 py-2 text-sm rounded-lg hover:bg-red-600 font-medium transition-all duration-200 hover:scale-105 shadow-md"
+                    onClick={handleStopGame}
+                  >
+                    Stop Game
+                  </button>
+                </div>
+              ) : (
+                /* Default stop button for other games */
+                <button
+                  className="bg-red-500 text-white px-8 py-3 text-lg rounded-lg hover:bg-red-600 ml-0 md:ml-8 font-medium transition-all duration-200 hover:scale-105 shadow-md"
+                  onClick={handleStopGame}
+                >
+                  Stop
+                </button>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center mt-8 bg-gray-50 p-10 rounded-xl">
