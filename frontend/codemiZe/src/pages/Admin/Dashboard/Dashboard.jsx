@@ -223,11 +223,8 @@ export default function Dashboard() {
     if (!activeGame || !socket) return;
 
     if (activeGame.name === 'Circuit Smashers') {
-      const allocatedTimeMinutes = activeGame.allocateTime || 30;
-      const allocatedTimeSeconds = allocatedTimeMinutes * 60;
+      const allocatedTimeSeconds = activeGame.allocateTime || 1800;
 
-      console.log(`Starting Circuit Smashers timer: ${allocatedTimeMinutes} minutes`);
-      
       socket.emit('circuitSmashers-startRound', {
         allocatedTime: allocatedTimeSeconds
       });
@@ -235,7 +232,7 @@ export default function Dashboard() {
     }
   };
 
-  const totalGameTime = (activeGame?.allocateTime || 1800) * 60; // Convert minutes to seconds
+  const totalGameTime = (activeGame?.allocateTime || 1800); // Convert minutes to seconds
 
   // Helper: format time as MM:SS
   const formatTime = (seconds) => {
