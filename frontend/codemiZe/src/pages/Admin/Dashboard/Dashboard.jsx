@@ -1,21 +1,70 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import TeamRankItem from '../../../components/Admin/TeamRankItem';
 import GameActionModal from '../../../components/modals/GameActionModal';
 import axiosInstance from '../../../utils/axiosInstance';
 import { API_PATHS } from '../../../utils/apiPaths';
+import { SocketContext } from '../../../context/SocketContext';
 
 export default function Dashboard() {
   // State
+  const socket = useContext(SocketContext);
   const [selectedScore, setSelectedScore] = useState('overall');
   const [selectedGame, setSelectedGame] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [isTimerActive, setIsTimerActive] = useState(false);
   const [games, setGames] = useState([]);
   const [teamScores, setTeamScores] = useState({});
 
   // Dynamically get active game from games array
   const activeGame = games.find(game => game.status === 'active') || null;
+
+  // Socket listeners for Circuit Smashers timer synchronization
+  useEffect(() => {
+    if (socket && activeGame && activeGame.name === 'Circuit Smashers') {
+      // Listen for server timer updates
+      socket.on('circuitSmashers-timerUpdate', (data) => {
+        setTimeRemaining(data.timeRemaining);
+        setIsTimerActive(true);
+      });
+
+      // Listen for time up event from server
+      socket.on('circuitSmashers-timeUp', (data) => {
+        setTimeRemaining(0);
+        setIsTimerActive(false);
+      });
+
+      // Listen for timer stopped event from server
+      socket.on('circuitSmashers-timerStopped', (data) => {
+        setTimeRemaining(0);
+        setIsTimerActive(false);
+      });
+
+      // Listen for round started event
+      socket.on('circuitSmashers-roundStarted', (data) => {
+        if (data.allocatedTime) {
+          setTimeRemaining(data.allocatedTime);
+          setIsTimerActive(true);
+        }
+      });
+
+      // Listen for timer paused event from server
+      socket.on('circuitSmashers-roundPaused', (data) => {
+        setIsTimerActive(false);
+      });
+
+      // Cleanup listeners
+      return () => {
+        socket.off('circuitSmashers-timerUpdate');
+        socket.off('circuitSmashers-timeUp');
+        socket.off('circuitSmashers-timerStopped');
+        socket.off('circuitSmashers-roundStarted');
+        socket.off('circuitSmashers-roundPaused');
+      };
+    }
+  }, [socket, activeGame]);
+
 
   // Fetch games data from backend
   useEffect(() => {
@@ -111,18 +160,21 @@ export default function Dashboard() {
       switch (action) {
         case 'activate':
           await activateGame(selectedGame._id);
-          setTimeRemaining(selectedGame.allocateTime || 15); // Set timer for newly activated game
+          setTimeRemaining(0); // Always start with 0, timer starts when admin clicks "Start Timer"
+          setIsTimerActive(false); // Timer is not active initially
           break;
         case 'deactivate':
           await deactivateGame(selectedGame._id);
           if (activeGame && activeGame._id === selectedGame._id) {
             setTimeRemaining(0);
+            setIsTimerActive(false);
           }
           break;
         case 'complete':
           await completeGame(selectedGame._id);
           if (activeGame && activeGame._id === selectedGame._id) {
             setTimeRemaining(0);
+            setIsTimerActive(false);
           }
           break;
         default:
@@ -135,20 +187,52 @@ export default function Dashboard() {
     setShowModal(false);
   };  
   
-  // Handle stop game - makes API call to backend
+  // Handle stop game - implements pause functionality when timer is active
   const handleStopGame = async () => {
     if (!activeGame) return;
 
     try {
-      console.log(`Stopping game: ${activeGame.name}`);
-      await deactivateGame(activeGame._id);
-      setTimeRemaining(0);
+      if (isTimerActive) {
+        // If timer is active, pause it instead of stopping the game
+        console.log(`Pausing timer for: ${activeGame.name}`);
+        
+        if (activeGame.name === 'Circuit Smashers' && socket) {
+          socket.emit('circuitSmashers-pauseRound');
+        }
+        
+        setIsTimerActive(false);
+      } else {
+        // If timer is not active, stop the game completely
+        console.log(`Stopping game: ${activeGame.name}`);
+        
+        if (activeGame.name === 'Circuit Smashers' && socket) {
+          socket.emit('circuitSmashers-stopRound');
+        }
+        
+        await deactivateGame(activeGame._id);
+        setTimeRemaining(0);
+        setIsTimerActive(false);
+      }
     } catch (error) {
-      console.error('Error stopping game:', error);
+      console.error('Error handling stop/pause:', error);
     }
   };
 
-  const totalGameTime = activeGame?.allocateTime || 15; // Default to 15 seconds if not set
+  // Handle start game timer
+  const handleStartGameTimer = () => {
+    if (!activeGame || !socket) return;
+
+    if (activeGame.name === 'Circuit Smashers') {
+      const allocatedTimeSeconds = activeGame.allocateTime || 1800;
+
+      socket.emit('circuitSmashers-startRound', {
+        allocatedTime: allocatedTimeSeconds
+      });
+      setIsTimerActive(true);
+    }
+  };
+
+  const totalGameTime = (activeGame?.allocateTime || 1800); // Convert minutes to seconds
 
   // Helper: format time as MM:SS
   const formatTime = (seconds) => {
@@ -157,33 +241,13 @@ export default function Dashboard() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Timer effect - countdown for active game
+  // Request current state when Circuit Smashers becomes active
   useEffect(() => {
-    let timerId;
-
-    if (activeGame && activeGame.status === 'active' && timeRemaining > 0) {
-      timerId = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            clearInterval(timerId);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    if (activeGame && activeGame.status === 'active' && activeGame.name === 'Circuit Smashers' && socket) {
+      console.log('Requesting Circuit Smashers current state');
+      socket.emit('circuitSmashers-requestCurrentState');
     }
-
-    return () => {
-      if (timerId) clearInterval(timerId);
-    };
-  }, [activeGame, timeRemaining]);
-
-  // Set timer when a game becomes active
-  useEffect(() => {
-    if (activeGame && activeGame.status === 'active' && timeRemaining === 0) {
-      setTimeRemaining(totalGameTime);
-    }
-  }, [activeGame]);
+  }, [activeGame, socket]);
 
   return (
     <AdminLayout>
@@ -237,12 +301,12 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Stop button */}
+              {/* Single Start/Stop button */}
               <button
-                className="bg-red-500 text-white px-8 py-3 text-lg rounded-lg hover:bg-red-600 ml-0 md:ml-8 font-medium transition-all duration-200 hover:scale-105 shadow-md"
-                onClick={handleStopGame}
+                className={`${!isTimerActive ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} text-white px-8 py-3 text-lg rounded-lg ml-0 md:ml-8 font-medium transition-all duration-200 hover:scale-105 shadow-md`}
+                onClick={!isTimerActive ? handleStartGameTimer : handleStopGame}
               >
-                Stop
+                {!isTimerActive ? 'Start' : 'Stop'}
               </button>
             </div>
           ) : (

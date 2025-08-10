@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
@@ -7,8 +7,10 @@ import axiosInstance from '../../../utils/axiosInstance';
 import { API_PATHS } from '../../../utils/apiPaths';
 import { imagePath } from '../../../utils/helper';
 import PdfViewer from '../../../components/Student/PDFViewer/PdfViewer';
+import { SocketContext } from '../../../context/SocketContext';
 
 export default function CircuitSmashers() {
+  const socket = useContext(SocketContext);
   // Game state
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +29,7 @@ export default function CircuitSmashers() {
   const [timeRemaining, setTimeRemaining] = useState(30 * 60); // 30 minutes in seconds
   const [showTimeWarning, setShowTimeWarning] = useState(false);
   const [timeIsUp, setTimeIsUp] = useState(false);
+  const [isServerTimerActive, setIsServerTimerActive] = useState(false); // Track if server timer is active
 
   // File upload state
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -81,41 +84,92 @@ export default function CircuitSmashers() {
     };
   }, [currentPage, totalPages]);
 
-  // Timer effect
+  // Timer effect - handles server synchronization only
   useEffect(() => {
-    let timer;
-    if (isGameStarted && !gameCompleted && !timeIsUp && timeRemaining > 0) {
-      timer = setInterval(() => {
-        setTimeRemaining(prev => {
-          // Show warning when 5 minutes remain
-          if (prev === 5 * 60) {
-            setShowTimeWarning(true);
-            setTimeout(() => setShowTimeWarning(false), 5000);
-          }
-          // Show warning when 1 minute remains
-          else if (prev === 60) {
-            setShowTimeWarning(true);
-            setTimeout(() => setShowTimeWarning(false), 5000);
-          }
+    if (socket) {
+      socket.on('circuitSmashers-roundStarted', (data) => {
+        console.log('Round started from server:', data);
+        if (data.allocatedTime) {
+          setTimeRemaining(data.allocatedTime);
+          setIsGameStarted(true);
+          setGameCompleted(false);
+          setTimeIsUp(false);
+          setIsServerTimerActive(true);
+        }
+      });
 
-          if (prev <= 1) {
-            clearInterval(timer);
-            setTimeIsUp(true);
-            handleGameEnd();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      // Listen for server timer updates
+      socket.on('circuitSmashers-timerUpdate', (data) => {
+        setTimeRemaining(data.timeRemaining);
+        setIsServerTimerActive(true);
+
+        if (data.timeRemaining === 5 * 60) {
+          setShowTimeWarning(true);
+          setTimeout(() => setShowTimeWarning(false), 5000);
+        } else if (data.timeRemaining === 60) {
+          setShowTimeWarning(true);
+          setTimeout(() => setShowTimeWarning(false), 5000);
+        }
+      });
+
+      // Listen for time up event from server
+      socket.on('circuitSmashers-timeUp', (data) => {
+        setTimeRemaining(0);
+        setTimeIsUp(true);
+        setIsServerTimerActive(false);
+        handleGameEnd();
+      });
+
+      // Listen for timer stopped event from server
+      socket.on('circuitSmashers-timerStopped', (data) => {
+        setTimeRemaining(0);
+        setTimeIsUp(true);
+        setIsServerTimerActive(false);
+        handleGameEnd();
+      });
+
+      // Listen for timer paused event from server
+      socket.on('circuitSmashers-roundPaused', (data) => {
+      });
+
+      // Listen for timer resumed event from server
+      socket.on('circuitSmashers-roundResumed', (data) => {
+      });
+
+      // Listen for sync timer event (for reconnection)
+      socket.on('circuitSmashers-syncTimer', (data) => {
+        if (data.timeRemaining !== undefined) {
+          setTimeRemaining(data.timeRemaining);
+          setIsGameStarted(data.isReconnect || false);
+          setIsServerTimerActive(data.timeRemaining > 0);
+        }
+      });
+
+      // Request current state when component mounts (for reconnection)
+      socket.emit('circuitSmashers-requestCurrentState');
     }
 
+    // Cleanup function
     return () => {
-      if (timer) clearInterval(timer);
+      if (socket) {
+        socket.off('circuitSmashers-roundStarted');
+        socket.off('circuitSmashers-timerUpdate');
+        socket.off('circuitSmashers-timeUp');
+        socket.off('circuitSmashers-timerStopped');
+        socket.off('circuitSmashers-roundPaused');
+        socket.off('circuitSmashers-roundResumed');
+        socket.off('circuitSmashers-syncTimer');
+      }
     };
-  }, [isGameStarted, gameCompleted, timeRemaining]);
+  }, [socket]);
 
-  // Start game handler
+  // Start game handler - only allows start when server timer is active
   const handleStartGame = () => {
+    if (!isServerTimerActive) {
+      console.log('Cannot start game: Server timer is not active');
+      return; // Prevent game start if server timer is not active
+    }
+    
     setIsLoading(true);
     setTimeout(() => {
       setIsGameStarted(true);
@@ -344,6 +398,8 @@ export default function CircuitSmashers() {
           topRightImageSrc="/robo1.png"
           bottomLeftImageSrc="/robo2.png"
           showScoreInfo={false}
+          isDisabled={!isServerTimerActive}
+          buttonText={!isServerTimerActive ? "Waiting for Timer..." : "Start Game"}
         />
       ) : gameCompleted ? (
         // Game completed screen

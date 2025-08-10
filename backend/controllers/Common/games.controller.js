@@ -37,6 +37,7 @@ export const activateGame = async (req, res) => {
       await g.save(); // Save each update
     }
 
+    //Here
     const io = req.app.get("io");
     io.emit('gameStateUpdate', {
       gameId: gameId,
