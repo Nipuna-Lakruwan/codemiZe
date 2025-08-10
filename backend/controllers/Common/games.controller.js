@@ -39,13 +39,6 @@ export const activateGame = async (req, res) => {
 
     //Here
     const io = req.app.get("io");
-    const activatedGame = await Game.findById(gameId);
-    if (activatedGame && activatedGame.name === 'Circuit Smashers') {
-      io.emit("circuitSmashers-startRound", {
-        allocatedTime: activatedGame.allocateTime || 1800 // 30 minutes default
-      });
-    }
-
     io.emit('gameStateUpdate', {
       gameId: gameId,
       newStatus: 'active',

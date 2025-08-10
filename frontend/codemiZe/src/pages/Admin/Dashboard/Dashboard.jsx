@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [isTimerActive, setIsTimerActive] = useState(false);
   const [games, setGames] = useState([]);
   const [teamScores, setTeamScores] = useState({});
 
@@ -24,28 +25,33 @@ export default function Dashboard() {
     if (socket && activeGame && activeGame.name === 'Circuit Smashers') {
       // Listen for server timer updates
       socket.on('circuitSmashers-timerUpdate', (data) => {
-        console.log('Circuit Smashers: Timer update', data.timeRemaining);
         setTimeRemaining(data.timeRemaining);
+        setIsTimerActive(true);
       });
 
       // Listen for time up event from server
       socket.on('circuitSmashers-timeUp', (data) => {
-        console.log('Circuit Smashers: Time up event');
         setTimeRemaining(0);
+        setIsTimerActive(false);
       });
 
       // Listen for timer stopped event from server
       socket.on('circuitSmashers-timerStopped', (data) => {
-        console.log('Circuit Smashers: Timer stopped event');
         setTimeRemaining(0);
+        setIsTimerActive(false);
       });
 
       // Listen for round started event
       socket.on('circuitSmashers-roundStarted', (data) => {
-        console.log('Circuit Smashers: Round started', data);
         if (data.allocatedTime) {
           setTimeRemaining(data.allocatedTime);
+          setIsTimerActive(true);
         }
+      });
+
+      // Listen for timer paused event from server
+      socket.on('circuitSmashers-roundPaused', (data) => {
+        setIsTimerActive(false);
       });
 
       // Cleanup listeners
@@ -54,6 +60,7 @@ export default function Dashboard() {
         socket.off('circuitSmashers-timeUp');
         socket.off('circuitSmashers-timerStopped');
         socket.off('circuitSmashers-roundStarted');
+        socket.off('circuitSmashers-roundPaused');
       };
     }
   }, [socket, activeGame]);
@@ -153,18 +160,21 @@ export default function Dashboard() {
       switch (action) {
         case 'activate':
           await activateGame(selectedGame._id);
-          setTimeRemaining(selectedGame.allocateTime || 15); // Set timer for newly activated game
+          setTimeRemaining(0); // Always start with 0, timer starts when admin clicks "Start Timer"
+          setIsTimerActive(false); // Timer is not active initially
           break;
         case 'deactivate':
           await deactivateGame(selectedGame._id);
           if (activeGame && activeGame._id === selectedGame._id) {
             setTimeRemaining(0);
+            setIsTimerActive(false);
           }
           break;
         case 'complete':
           await completeGame(selectedGame._id);
           if (activeGame && activeGame._id === selectedGame._id) {
             setTimeRemaining(0);
+            setIsTimerActive(false);
           }
           break;
         default:
@@ -177,22 +187,34 @@ export default function Dashboard() {
     setShowModal(false);
   };  
   
-  // Handle stop game - makes API call to backend
+  // Handle stop game - implements pause functionality when timer is active
   const handleStopGame = async () => {
     if (!activeGame) return;
 
     try {
-      console.log(`Stopping game: ${activeGame.name}`);
-      
-      // For Circuit Smashers, emit stop round event
-      if (activeGame.name === 'Circuit Smashers' && socket) {
-        socket.emit('circuitSmashers-stopRound');
+      if (isTimerActive) {
+        // If timer is active, pause it instead of stopping the game
+        console.log(`Pausing timer for: ${activeGame.name}`);
+        
+        if (activeGame.name === 'Circuit Smashers' && socket) {
+          socket.emit('circuitSmashers-pauseRound');
+        }
+        
+        setIsTimerActive(false);
+      } else {
+        // If timer is not active, stop the game completely
+        console.log(`Stopping game: ${activeGame.name}`);
+        
+        if (activeGame.name === 'Circuit Smashers' && socket) {
+          socket.emit('circuitSmashers-stopRound');
+        }
+        
+        await deactivateGame(activeGame._id);
+        setTimeRemaining(0);
+        setIsTimerActive(false);
       }
-      
-      await deactivateGame(activeGame._id);
-      setTimeRemaining(0);
     } catch (error) {
-      console.error('Error stopping game:', error);
+      console.error('Error handling stop/pause:', error);
     }
   };
 
@@ -209,30 +231,11 @@ export default function Dashboard() {
       socket.emit('circuitSmashers-startRound', {
         allocatedTime: allocatedTimeSeconds
       });
+      setIsTimerActive(true);
     }
   };
 
-  // Handle pause game timer
-  const handlePauseGameTimer = () => {
-    if (!activeGame || !socket) return;
-
-    if (activeGame.name === 'Circuit Smashers') {
-      console.log('Pausing Circuit Smashers timer');
-      socket.emit('circuitSmashers-pauseRound');
-    }
-  };
-
-  // Handle resume game timer
-  const handleResumeGameTimer = () => {
-    if (!activeGame || !socket) return;
-
-    if (activeGame.name === 'Circuit Smashers') {
-      console.log('Resuming Circuit Smashers timer');
-      socket.emit('circuitSmashers-resumeRound');
-    }
-  };
-
-  const totalGameTime = (activeGame?.allocateTime || 20) * 60; // Convert minutes to seconds
+  const totalGameTime = (activeGame?.allocateTime || 1800) * 60; // Convert minutes to seconds
 
   // Helper: format time as MM:SS
   const formatTime = (seconds) => {
@@ -301,49 +304,13 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Timer Control Buttons for Circuit Smashers */}
-              {activeGame.name === 'Circuit Smashers' ? (
-                <div className="flex flex-wrap gap-3 ml-0 md:ml-8">
-                  {timeRemaining === 0 ? (
-                    <button
-                      className="bg-green-500 text-white px-6 py-2 text-sm rounded-lg hover:bg-green-600 font-medium transition-all duration-200 hover:scale-105 shadow-md"
-                      onClick={handleStartGameTimer}
-                    >
-                      Start Timer
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        className="bg-yellow-500 text-white px-6 py-2 text-sm rounded-lg hover:bg-yellow-600 font-medium transition-all duration-200 hover:scale-105 shadow-md"
-                        onClick={handlePauseGameTimer}
-                      >
-                        Pause
-                      </button>
-                      <button
-                        className="bg-blue-500 text-white px-6 py-2 text-sm rounded-lg hover:bg-blue-600 font-medium transition-all duration-200 hover:scale-105 shadow-md"
-                        onClick={handleResumeGameTimer}
-                      >
-                        Resume
-                      </button>
-                    </>
-                  )}
-                  
-                  <button
-                    className="bg-red-500 text-white px-6 py-2 text-sm rounded-lg hover:bg-red-600 font-medium transition-all duration-200 hover:scale-105 shadow-md"
-                    onClick={handleStopGame}
-                  >
-                    Stop Game
-                  </button>
-                </div>
-              ) : (
-                /* Default stop button for other games */
-                <button
-                  className="bg-red-500 text-white px-8 py-3 text-lg rounded-lg hover:bg-red-600 ml-0 md:ml-8 font-medium transition-all duration-200 hover:scale-105 shadow-md"
-                  onClick={handleStopGame}
-                >
-                  Stop
-                </button>
-              )}
+              {/* Single Start/Stop button */}
+              <button
+                className={`${!isTimerActive ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} text-white px-8 py-3 text-lg rounded-lg ml-0 md:ml-8 font-medium transition-all duration-200 hover:scale-105 shadow-md`}
+                onClick={!isTimerActive ? handleStartGameTimer : handleStopGame}
+              >
+                {!isTimerActive ? 'Start' : 'Stop'}
+              </button>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center mt-8 bg-gray-50 p-10 rounded-xl">
