@@ -31,7 +31,6 @@ class CircuitSmashersHandler {
   initialize(io) {
     this.io = io;
     this.timer.setSocketInstance(io);
-    console.log('Circuit Smashers handler initialized');
   }
 
   initializeClient(socket, io) {
@@ -41,7 +40,6 @@ class CircuitSmashersHandler {
 
     // Join the Circuit Smashers room
     socket.join(this.roomName);
-    console.log(`Circuit Smashers client joined - Role: ${socket.user.role}`);
 
     // Send current round and timer state to newly connected client
     this.syncClientState(socket);

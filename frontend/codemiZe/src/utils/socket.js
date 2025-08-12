@@ -15,7 +15,6 @@ export const connectSocket = () => {
   }
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-  console.log("Creating new socket connection to:", backendUrl);
 
   socket = io(backendUrl, {
     transports: ["websocket"],

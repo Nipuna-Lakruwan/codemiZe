@@ -3,7 +3,7 @@ import Game from "../models/Game.js";
 export const seedGames = async () => {
   const existingGames = await Game.find();
   if (existingGames.length > 0) {
-    console.log("Games already seeded");
+    //console.log("Games already seeded");
     return;
   }
 
