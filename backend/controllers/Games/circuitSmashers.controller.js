@@ -76,8 +76,8 @@ export const uploadResource = async (req, res) => {
 
         const resourcePath = `/uploads/resources/${file.filename}`;
         await StudentUpload.create({ 
-            userId: req.user.id, 
-            gameName: "circuitSmashers", 
+            userId: req.user.id,
+            gameName: "circuitSmashers",
             fileUrl: resourcePath,
             originalName: file.filename
         });

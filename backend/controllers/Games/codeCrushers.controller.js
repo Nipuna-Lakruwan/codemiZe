@@ -1,4 +1,6 @@
 import archiver from "archiver";
+import path from "path";
+import fs from "fs";
 import GameSlides from "../../models/GameSlides.js";
 import StudentUpload from "../../models/StudentUpload.js";
 import Criteria from "../../models/Criteria.js";
@@ -59,8 +61,25 @@ export const uploadResource = async (req, res) => {
     }
 
     try {
+        // Check for existing resource for this user and game
+        const existingResource = await StudentUpload.findOne({ userId: req.user.id, gameName: "codeCrushers" });
+        if (existingResource) {
+            // Delete the old file from disk if it exists
+            const oldFilePath = path.join(process.cwd(), existingResource.fileUrl);
+            if (fs.existsSync(oldFilePath)) {
+                fs.unlinkSync(oldFilePath);
+            }
+            // Remove the old resource entry from DB
+            await StudentUpload.deleteOne({ _id: existingResource._id });
+        }
+
         const resourcePath = `/uploads/resources/${file.filename}`;
-        await StudentUpload.create({ userId: req.user.id, gameName: "codeCrushers", fileUrl: resourcePath });
+        await StudentUpload.create({ 
+            userId: req.user.id,
+            gameName: "codeCrushers",
+            fileUrl: resourcePath,
+            originalName: file.filename
+        });
         res.status(200).json({ message: "Resource uploaded successfully", resourcePath });
     } catch (error) {
         console.error("Error uploading resource:", error);
