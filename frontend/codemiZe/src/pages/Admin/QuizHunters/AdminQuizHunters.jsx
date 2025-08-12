@@ -115,7 +115,7 @@ export default function AdminQuizHunters() {
 
   const handleAddQuestionClick = () => {
     setModalMode('add');
-    
+
     // Reset the current question for adding a new one
     setCurrentQuestion({
       _id: null,
@@ -164,7 +164,7 @@ export default function AdminQuizHunters() {
 
     // The correct answer is always the first option in this UI design
     const correctAnswer = currentQuestion.options[0];
-    
+
     if (!correctAnswer.trim()) {
       showAlert('Please provide a correct answer', 'Validation Error', 'error');
       return;
@@ -209,7 +209,7 @@ export default function AdminQuizHunters() {
         try {
           // Uncomment when ready for API integration
           const response = await axiosInstance.put(
-            API_PATHS.QUIZ_HUNTERS.EDIT_QUESTION(currentQuestion._id), 
+            API_PATHS.QUIZ_HUNTERS.EDIT_QUESTION(currentQuestion._id),
             questionData
           );
 
@@ -548,85 +548,64 @@ export default function AdminQuizHunters() {
             </select>
           </div>
         </div>
-        <div className="flex flex-col gap-5 max-h-[600px] overflow-y-auto custom-scrollbar px-2">
+        <div className="flex flex-col gap-6 max-h-[70vh] overflow-y-auto custom-scrollbar px-2">
           {isLoading ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-800"></div>
             </div>
           ) : questions.length > 0 ? (
             // Filter questions based on search term
-            questions
-              .filter(q =>
+            (() => {
+              const filteredQuestions = questions.filter(q =>
                 searchTerm === '' ||
                 q.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 q.answer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 q.option1.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 q.option2.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 q.option3.toLowerCase().includes(searchTerm.toLowerCase())
-              )
-              .map((q, index) => {
-                // Convert backend format to UI format for QuestionItem component
-                const questionForDisplay = {
-                  id: q._id,
-                  question: q.question,
-                  options: [q.answer, q.option1, q.option2, q.option3],
-                  correct: q.answer
-                };
-                return (
-                  <QuestionItem
-                    key={q._id}
-                    question={questionForDisplay}
-                    number={index + 1}
-                    onEdit={() => handleEditQuestion(q)}
-                    onDelete={() => handleDeleteQuestion(q._id)}
-                  />
-                );
-              }).length > 0 ? (
-              questions
-                .filter(q =>
-                  searchTerm === '' ||
-                  q.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  q.answer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  q.option1.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  q.option2.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  q.option3.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                .map((q, index) => {
-                  // Convert backend format to UI format for QuestionItem component
-                  const questionForDisplay = {
-                    id: q._id,
-                    question: q.question,
-                    options: [q.answer, q.option1, q.option2, q.option3],
-                    correct: q.answer
-                  };
-                  return (
-                    <QuestionItem
-                      key={q._id}
-                      question={questionForDisplay}
-                      number={index + 1}
-                      onEdit={() => handleEditQuestion(q)}
-                      onDelete={() => handleDeleteQuestion(q._id)}
-                    />
-                  );
-                })
-            ) : (
-              <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
-                {searchTerm ?
-                  `No questions match your search for "${searchTerm}"` :
-                  'No questions found'
-                }
-                {searchTerm && (
-                  <div className="flex justify-center gap-3 mt-2">
-                    <button
-                      onClick={() => setSearchTerm('')}
-                      className="text-purple-600 hover:text-purple-800 underline"
-                    >
-                      Clear search
-                    </button>
-                  </div>
-                )}
-              </div>
-            )
+              );
+
+              return filteredQuestions.length > 0 ? (
+                <div className="pb-4 space-y-6">
+                  {filteredQuestions.map((q, index) => {
+                    // Convert backend format to UI format for QuestionItem component
+                    const questionForDisplay = {
+                      id: q._id,
+                      question: q.question,
+                      options: [q.answer, q.option1, q.option2, q.option3],
+                      correct: q.answer
+                    };
+                    return (
+                      <div key={q._id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                        <QuestionItem
+                          question={questionForDisplay}
+                          number={index + 1}
+                          onEdit={() => handleEditQuestion(q)}
+                          onDelete={() => handleDeleteQuestion(q._id)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
+                  {searchTerm ?
+                    `No questions match your search for "${searchTerm}"` :
+                    'No questions found'
+                  }
+                  {searchTerm && (
+                    <div className="flex justify-center gap-3 mt-2">
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="text-purple-600 hover:text-purple-800 underline"
+                      >
+                        Clear search
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()
           ) : (
             <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
               No questions available. Upload a CSV or add questions manually.
@@ -682,8 +661,13 @@ export default function AdminQuizHunters() {
 
       {/* Custom scrollbar styles */}
       <style>{`
+        .custom-scrollbar {
+          scrollbar-width: thin; /* For Firefox */
+          scrollbar-color: #5b21b6 #f1f1f1; /* For Firefox */
+          overflow-y: auto;
+        }
         .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
+          width: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
           background: #f1f1f1;
@@ -692,6 +676,7 @@ export default function AdminQuizHunters() {
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: #5b21b6;
           border-radius: 8px;
+          border: 2px solid #f1f1f1;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #4c1d95;

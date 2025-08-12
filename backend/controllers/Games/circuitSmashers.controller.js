@@ -62,10 +62,22 @@ export const uploadResource = async (req, res) => {
     }
 
     try {
+        // Check for existing resource for this user and game
+        const existingResource = await StudentUpload.findOne({ userId: req.user.id, gameName: "circuitSmashers" });
+        if (existingResource) {
+            // Delete the old file from disk if it exists
+            const oldFilePath = path.join(process.cwd(), existingResource.fileUrl);
+            if (fs.existsSync(oldFilePath)) {
+                fs.unlinkSync(oldFilePath);
+            }
+            // Remove the old resource entry from DB
+            await StudentUpload.deleteOne({ _id: existingResource._id });
+        }
+
         const resourcePath = `/uploads/resources/${file.filename}`;
         await StudentUpload.create({ 
-            userId: req.user.id, 
-            gameName: "circuitSmashers", 
+            userId: req.user.id,
+            gameName: "circuitSmashers",
             fileUrl: resourcePath,
             originalName: file.filename
         });

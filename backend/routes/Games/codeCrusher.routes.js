@@ -1,13 +1,13 @@
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect } from "../../middleware/authMiddleware.js";
 import { 
   requireAdmin, 
   requireAdminorJudge, 
   requireJudge, 
   requireSchool 
-} from "../middleware/roleMiddleware.js";
-import { resourceUpload, slidesUpload } from "../middleware/uploadMiddleware.js";
-import { deleteAllSlides, getAllResources, getCriteria, getResource, getSlides, setTime, uploadResource, uploadSlides } from "../controllers/Games/codeCrushers.controller.js";
+} from "../../middleware/roleMiddleware.js";
+import { resourceUpload, slidesUpload } from "../../middleware/uploadMiddleware.js";
+import { deleteAllSlides, getAllResources, getCriteria, getResource, getSlides, setTime, uploadResource, uploadSlides } from "../../controllers/Games/codeCrushers.controller.js";
 
 const router = express.Router();
 

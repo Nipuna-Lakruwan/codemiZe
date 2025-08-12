@@ -226,9 +226,27 @@ export default function CircuitSmashers() {
     }
   };
 
-  const handleSubmitCode = () => {
-    if (isFileValid) {
-      setGameCompleted(true);
+  const handleSubmitCode = async () => {
+    if (isFileValid && uploadedFile) {
+      try {
+        setIsLoading(true);
+        const formData = new FormData();
+        formData.append('resource', uploadedFile);
+
+        // Replace with your actual upload endpoint
+        await axiosInstance.post(API_PATHS.CIRCUIT_SMASHERS.UPLOAD_RESOURCE, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        setGameCompleted(true);
+        setIsLoading(false);
+      } catch (error) {
+        setIsLoading(false);
+        // Optionally show error to user
+        console.error('Upload failed:', error);
+      }
     }
   };
 
@@ -245,7 +263,7 @@ export default function CircuitSmashers() {
       setTimeout(() => {
         // Only auto-submit if the time's up modal is still showing (user hasn't clicked)
         if (timeIsUp && !gameCompleted) {
-          setGameCompleted(true);
+          handleSubmitCode();
         }
       }, 15000); // 15 seconds delay
     }

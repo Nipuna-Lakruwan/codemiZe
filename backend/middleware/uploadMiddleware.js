@@ -19,7 +19,12 @@ const createUploadMiddleware = (options = {}) => {
     filename: function (req, file, cb) {
       // Generate unique filename with timestamp
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+      if (destination === 'resources') {
+        const fileName = req.user.name || 'unnamed';
+        cb(null, fileName + path.extname(file.originalname));
+      } else {
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+      }
     }
   });
 

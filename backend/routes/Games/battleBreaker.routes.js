@@ -1,13 +1,13 @@
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect } from "../../middleware/authMiddleware.js";
 import { 
   requireAdmin, 
   requireAdminorJudge, 
   requireJudge, 
   requireSchool 
-} from "../middleware/roleMiddleware.js";
-import { addQuestion, addQuestionsCSV, buzzerPress, deleteAllQuestions, deleteQuestion, editQuestion, finishGame, getAnswers, getDashboard, getQuestions, submitAnswers } from "../controllers/Games/battleBreakers.controller.js";
-import { CSVUpload } from "../middleware/uploadMiddleware.js";
+} from "../../middleware/roleMiddleware.js";
+import { addQuestion, addQuestionsCSV, buzzerPress, deleteAllQuestions, deleteQuestion, editQuestion, finishGame, getAnswers, getDashboard, getQuestions, submitAnswers } from "../../controllers/Games/battleBreakers.controller.js";
+import { CSVUpload } from "../../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
