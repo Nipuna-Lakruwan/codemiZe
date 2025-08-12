@@ -10,15 +10,16 @@ import logger from "./middleware/logger.js";
 import { Server } from "socket.io";
 import setupSocket from "./sockets/index.js";
 
-// Import routes
-import authRoutes from "./routes/auth.routes.js";
-import gameRoutes from "./routes/game.routes.js";
-import battleBreakerRoutes from "./routes/battleBreaker.routes.js";
-import quizHunterRoutes from "./routes/quizHunter.routes.js";
-import codeCrusherRoutes from "./routes/codeCrusher.routes.js";
-import circuitSmashersRoutes from "./routes/circuitSmashers.routes.js";
-import criteriaRoutes from "./routes/criteria.routes.js";
-import adminRoutes from "./routes/admin.routes.js";
+// Import Common routes
+import authRoutes from "./routes/Common/auth.routes.js";
+import adminRoutes from "./routes/Common/admin.routes.js";
+import gameRoutes from "./routes/Common/game.routes.js";
+import criteriaRoutes from "./routes/Common/criteria.routes.js";
+// Game import routes
+import battleBreakerRoutes from "./routes/Games/battleBreaker.routes.js";
+import quizHunterRoutes from "./routes/Games/quizHunter.routes.js";
+import codeCrusherRoutes from "./routes/Games/codeCrusher.routes.js";
+import circuitSmashersRoutes from "./routes/Games/circuitSmashers.routes.js";
 // Judge import routes
 import judgeCircuitSmashersRoutes from "./routes/Judges/circuitSmashers.routes.js";
 import judgeCodeCrusherRoutes from "./routes/Judges/codeCrusher.routes.js";
