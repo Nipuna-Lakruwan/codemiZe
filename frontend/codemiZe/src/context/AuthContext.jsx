@@ -12,6 +12,14 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const token = localStorage.getItem('jwtToken');
+    const isLoginPage = window.location.pathname === '/';
+    if (!token || isLoginPage) {
+      setLoading(false);
+      setIsAuthenticated(false);
+      setUser(null);
+      return;
+    }
     const fetchSession = async () => {
       try {
         const response = await axiosInstance.get(API_PATHS.AUTH.GET_USER_INFO);
@@ -30,7 +38,6 @@ export function AuthProvider({ children }) {
         setLoading(false);
       }
     };
-
     fetchSession();
   }, []);
 
