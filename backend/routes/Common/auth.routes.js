@@ -1,13 +1,13 @@
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js";
-import { avatarUpload } from "../middleware/uploadMiddleware.js";
+import { protect } from "../../middleware/authMiddleware.js";
+import { avatarUpload } from "../../middleware/uploadMiddleware.js";
 import { 
   getUserInfo, 
   loginUser, 
   registerUser, 
   registerSchool,
   logoutUser,
-} from "../controllers/auth.controller.js";
+} from "../../controllers/Common/auth.controller.js";
 
 const router = express.Router();
 
