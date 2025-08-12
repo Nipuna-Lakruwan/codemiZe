@@ -1,11 +1,11 @@
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect } from "../../middleware/authMiddleware.js";
 import { 
   requireAdmin, 
   requireJudge, 
   requireSchool 
-} from "../middleware/roleMiddleware.js";
-import { CSVUpload } from "../middleware/uploadMiddleware.js";
+} from "../../middleware/roleMiddleware.js";
+import { CSVUpload } from "../../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 

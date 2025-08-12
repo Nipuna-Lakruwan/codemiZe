@@ -1,8 +1,8 @@
 import express from 'express';
-import { getAllCriteria, createCriterion, updateCriterion, deleteCriterion, getCriteriaByGameType } from '../controllers/Common/criteria.controller.js';
-import { protect } from '../middleware/authMiddleware.js';
-import { requireAdmin } from '../middleware/roleMiddleware.js';
-import { createCriterias } from '../controllers/Common/criteria.controller.js';
+import { getAllCriteria, createCriterion, updateCriterion, deleteCriterion, getCriteriaByGameType } from '../../controllers/Common/criteria.controller.js';
+import { protect } from '../../middleware/authMiddleware.js';
+import { requireAdmin } from '../../middleware/roleMiddleware.js';
+import { createCriterias } from '../../controllers/Common/criteria.controller.js';
 
 const router = express.Router();
 

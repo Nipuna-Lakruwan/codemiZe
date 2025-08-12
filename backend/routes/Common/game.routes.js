@@ -1,11 +1,11 @@
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect } from "../../middleware/authMiddleware.js";
 import { 
   requireAdmin, 
   requireJudge, 
   requireSchool 
-} from "../middleware/roleMiddleware.js";
-import { activateGame, completeGame, deactivateGame, getActiveGame, getGames } from "../controllers/Common/games.controller.js";
+} from "../../middleware/roleMiddleware.js";
+import { activateGame, completeGame, deactivateGame, getActiveGame, getGames } from "../../controllers/Common/games.controller.js";
 
 const router = express.Router();
 

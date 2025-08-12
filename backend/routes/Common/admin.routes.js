@@ -1,11 +1,11 @@
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js";
-import { avatarUpload } from "../middleware/uploadMiddleware.js";
+import { protect } from "../../middleware/authMiddleware.js";
+import { avatarUpload } from "../../middleware/uploadMiddleware.js";
 import { 
   requireAdmin, 
   requireAdminorJudge
-} from "../middleware/roleMiddleware.js";
-import { deleteSchool, deleteUser, editSchool, editUser, getAllJudges, getAllSchools, getAllUsers, getSchoolScores, showWinners } from "../controllers/Common/admin.controller.js";
+} from "../../middleware/roleMiddleware.js";
+import { deleteSchool, deleteUser, editSchool, editUser, getAllJudges, getAllSchools, getAllUsers, getSchoolScores, showWinners } from "../../controllers/Common/admin.controller.js";
 
 const router = express.Router();
 
