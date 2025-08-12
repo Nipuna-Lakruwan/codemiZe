@@ -15,7 +15,6 @@ export function AuthProvider({ children }) {
     const fetchSession = async () => {
       try {
         const response = await axiosInstance.get(API_PATHS.AUTH.GET_USER_INFO);
-        console.log('Session restored:', response.data.user);
         setUser(response.data.user);
         setIsAuthenticated(true);
       } catch (err) {

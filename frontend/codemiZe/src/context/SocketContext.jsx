@@ -11,7 +11,6 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    console.log("Attempting to connect socket with HttpOnly cookie");
     const s = connectSocket();
     if (s) {
       setSocket(s);
@@ -45,7 +44,6 @@ export const SocketProvider = ({ children }) => {
     window.addEventListener("login", handleLogin);
     window.addEventListener("logout", handleLogout);
 
-    // ⚠️ Vite Hot Reload cleanup
     if (import.meta.hot) {
       import.meta.hot.dispose(() => {
         disconnectSocket();
