@@ -30,7 +30,6 @@ class BattleBreakersHandler {
   initialize(io) {
     this.io = io;
     this.timer.setSocketInstance(io);
-    console.log('Battle Breakers handler initialized');
   }
 
   initializeClient(socket, io) {
@@ -40,7 +39,6 @@ class BattleBreakersHandler {
 
     // Join the Battle Breakers room
     socket.join(this.roomName);
-    // console.log(`Battle Breakers client joined - Role: ${socket.user.role}`);
 
     // Send current question and timer state to newly connected client
     this.syncClientState(socket);
@@ -51,7 +49,6 @@ class BattleBreakersHandler {
     const currentQuestionData = this.timer.getCurrentQuestionData();
     
     if (currentQuestionData && this.timer.isTimerActive()) {
-      // console.log(`Syncing Battle Breakers state for new client (${socket.user.role}): ${currentQuestionData.timeRemaining}s remaining`);
       
       // Send both the question start event and timer sync for reconnecting clients
       socket.emit("battleBreakers-startQuestionclient", {
@@ -85,7 +82,6 @@ class BattleBreakersHandler {
 
   handleStartQuestion(data) {
     const { _id, question, allocatedTime, questionNo } = data;
-    console.log(`Battle Breakers: Starting question ${questionNo}: ${question}`);
     
     const questionData = {
       _id,
@@ -109,7 +105,6 @@ class BattleBreakersHandler {
   }
 
   handleStopQuestion(data) {
-    console.log(`Battle Breakers: Stopping question ${data.questionNo || 'current'}`);
     // Stop the synchronized timer
     this.timer.stopTimer();
   }

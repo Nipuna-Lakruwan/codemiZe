@@ -41,31 +41,18 @@
  */
 
 class GameTimer {
+
   constructor(gameName) {
-    this.gameName = gameName; // Name of the game (e.g., 'battleBreakers', 'quizHunters')
+    this.gameName = gameName;
     this.timer = null; // The setInterval timer instance
-    this.currentQuestionData = null; // Current question data including start time
-    this.ioInstance = null; // Socket.io instance for emitting events
+    this.currentQuestionData = null;
+    this.ioInstance = null;
   }
 
-  /**
-   * Set the socket.io instance for emitting timer events
-   * @param {Object} io - Socket.io instance
-   */
   setSocketInstance(io) {
     this.ioInstance = io;
   }
 
-  /**
-   * Start a timer for a question/round
-   * @param {Object} questionData - Question data object
-   * @param {string} questionData._id - Question ID
-   * @param {string} questionData.question - Question text
-   * @param {number} questionData.allocatedTime - Time allocated in seconds
-   * @param {number} questionData.questionNo - Question number
-   * @param {string} questionData.roomName - Socket room name to emit to
-   * @param {Object} [additionalData] - Any additional data to store with question
-   */
   startTimer(questionData, additionalData = {}) {
     // Clear any existing timer
     this.stopTimer(false); // Don't emit stop event when starting new timer
@@ -110,10 +97,6 @@ class GameTimer {
     }, 1000);
   }
 
-  /**
-   * Stop the current timer
-   * @param {boolean} emitStopEvent - Whether to emit the timer stopped event (default: true)
-   */
   stopTimer(emitStopEvent = true) {
     console.log(`Stopping ${this.gameName} timer`);
     
@@ -133,10 +116,6 @@ class GameTimer {
     this.currentQuestionData = null;
   }
 
-  /**
-   * Clear the timer interval without emitting events
-   * @private
-   */
   clearTimer() {
     if (this.timer) {
       clearInterval(this.timer);
@@ -144,11 +123,6 @@ class GameTimer {
     }
   }
 
-  /**
-   * Get current question data with calculated remaining time
-   * Useful for synchronizing timer state with reconnecting clients
-   * @returns {Object|null} Current question data with remaining time, or null if no active timer
-   */
   getCurrentQuestionData() {
     if (!this.currentQuestionData || !this.timer) {
       return null;
@@ -164,18 +138,10 @@ class GameTimer {
     };
   }
 
-  /**
-   * Alias method for getCurrentQuestionData for backward compatibility
-   * @returns {Object|null} Current data with remaining time, or null if no active timer
-   */
   getCurrentData() {
     return this.getCurrentQuestionData();
   }
 
-  /**
-   * Synchronize timer state with a specific client (useful for reconnections)
-   * @param {Object} socket - Socket instance to sync with
-   */
   syncTimerWithClient(socket) {
     const currentData = this.getCurrentQuestionData();
     
@@ -194,27 +160,15 @@ class GameTimer {
     }
   }
 
-  /**
-   * Check if timer is currently active
-   * @returns {boolean} True if timer is running, false otherwise
-   */
   isTimerActive() {
     return this.timer !== null;
   }
 
-  /**
-   * Get the remaining time without full question data
-   * @returns {number|null} Remaining time in seconds, or null if no active timer
-   */
   getRemainingTime() {
     const currentData = this.getCurrentQuestionData();
     return currentData ? currentData.timeRemaining : null;
   }
 
-  /**
-   * Pause the timer (stops interval but keeps question data)
-   * Note: This doesn't emit any events - useful for implementing pause functionality
-   */
   pauseTimer() {
     if (this.timer) {
       console.log(`Pausing ${this.gameName} timer`);
@@ -223,10 +177,6 @@ class GameTimer {
     }
   }
 
-  /**
-   * Resume a paused timer
-   * @param {string} roomName - Socket room name to emit to
-   */
   resumeTimer(roomName) {
     if (!this.currentQuestionData || this.timer) {
       return; // No question data to resume or timer already running

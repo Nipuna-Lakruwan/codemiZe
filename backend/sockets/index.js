@@ -22,12 +22,10 @@ const setupSocket = (io, app) => {
 
     if (socket.user.role === "Dashboard") {
       socket.join("scoreboard");
-      console.log("Scoreboard client joined");
     }
 
     if (socket.user.role === "School") {
       socket.join("student");
-      console.log("Student client joined");
     }
 
     // Initialize game handlers based on user role

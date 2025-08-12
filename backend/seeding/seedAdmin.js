@@ -37,7 +37,7 @@ export const seedDefaultUsers = async () => {
       await User.insertMany(usersToCreate);
       console.log("Default users seeded successfully.");
     } else {
-      console.log("Default users already exist.");
+      //console.log("Default users already exist.");
     }
   } catch (err) {
     console.error("Error seeding default users:", err);

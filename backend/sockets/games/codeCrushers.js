@@ -31,7 +31,6 @@ class CodeCrushersHandler {
   initialize(io) {
     this.io = io;
     this.timer.setSocketInstance(io);
-    console.log('Code Crushers handler initialized');
   }
 
   initializeClient(socket, io) {
