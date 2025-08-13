@@ -33,3 +33,13 @@ export const submitAnswers = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Get all student answers
+export const getallstudentanswers = async (req, res) => {
+  try {
+    const answers = await RouteSeekersAnswer.find().populate("userId", "username school");
+    res.status(200).json(answers);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
