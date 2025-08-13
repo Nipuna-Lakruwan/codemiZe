@@ -15,6 +15,8 @@ export default function RouteSeekers() {
   const [activity, setActivity] = useState(null); // 'questionnaire' or 'network'
   const [questionnaireCompleted, setQuestionnaireCompleted] = useState(false);
   const [networkCompleted, setNetworkCompleted] = useState(false);
+  const [showNextActivityPopup, setShowNextActivityPopup] = useState(false);
+  const [countdown, setCountdown] = useState(5);
 
   // PDF viewer state
   const [currentPage, setCurrentPage] = useState(1);
@@ -104,6 +106,21 @@ export default function RouteSeekers() {
     };
   }, [isGameStarted, gameCompleted, timeRemaining]);
 
+  // Countdown for next activity popup
+  useEffect(() => {
+    let timer;
+    if (showNextActivityPopup && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (showNextActivityPopup && countdown === 0) {
+      setActivity('network');
+      setShowNextActivityPopup(false);
+      setCountdown(5); // Reset for next time
+    }
+    return () => clearInterval(timer);
+  }, [showNextActivityPopup, countdown]);
+
   useEffect(() => {
     if (isGameStarted && activity === 'questionnaire' && questions.length === 0) {
       const fetchQuestions = async () => {
@@ -176,13 +193,14 @@ export default function RouteSeekers() {
     try {
       await axiosInstance.post('/api/v1/route-seekers/submit', { answers });
       setQuestionnaireCompleted(true);
+      setShowNextActivityPopup(true);
       if (networkCompleted) {
         setGameCompleted(true);
       }
     } catch (error) {
       console.error("Error submitting answers:", error);
     }
-  }, [answers, networkCompleted, setQuestionnaireCompleted, setGameCompleted]);
+  }, [answers, networkCompleted]);
 
   // Game end handler (time's up)
   const handleGameEnd = () => {
@@ -1074,6 +1092,128 @@ export default function RouteSeekers() {
           {/* Time remaining display positioned at the bottom */}
         </div>
       )}
+
+      <AnimatePresence>
+        {showNextActivityPopup && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed inset-0 bg-black bg-opacity-90 backdrop-blur-sm flex items-center justify-center z-50"
+          >
+            <div className="bg-gray-800 border border-blue-500 p-8 rounded-lg text-center shadow-xl text-white">
+              <h2 className="text-3xl font-bold mb-4 text-blue-400">
+                Next Activity: Network Diagram
+              </h2>
+              <p className="mb-6 text-gray-300">
+                Well done! Get ready for the next challenge.
+              </p>
+              <button
+                onClick={() => {
+                  setActivity('network');
+                  setShowNextActivityPopup(false);
+                  setCountdown(5);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg transition-colors duration-300 font-semibold shadow-lg transform hover:scale-105"
+              >
+                Go to Network Diagram ({countdown})
+              </button>
+              <p className="text-sm text-gray-400 mt-4">
+                Automatically proceeding in {countdown} seconds...
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modals for file upload and resources */}
+      <AnimatePresence>
+        {showUploadModal && (
+          <motion.div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-40 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowUploadModal(false)}
+          >
+            <motion.div
+              className="bg-stone-900/90 rounded-lg border border-white/10 p-6 max-w-md w-full"
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-2xl font-bold text-white mb-4">Upload Packet Tracer Solution</h3>
+              <p className="text-white/70 mb-4">Please upload your solution:</p>
+              <ul className="text-white/70 mb-6 list-disc list-inside space-y-1 text-sm">
+                <li>Upload a single .pkt file directly</li>
+                <li>For multiple files, create a .zip archive</li>
+                <li>Files with the same name will be overwritten</li>
+              </ul>
+
+              <div className="mb-6">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".pkt,.zip"
+                  className="hidden"
+                  id="file-upload"
+                />
+                <label
+                  htmlFor="file-upload"
+                  className="flex flex-col items-center justify-center w-full h-32 bg-stone-800/50 border-2 border-dashed border-violet-500/30 rounded-lg cursor-pointer hover:bg-stone-800/70 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-violet-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <span className="text-sm text-violet-300">Click to select a file</span>
+                  <span className="text-xs text-violet-400/70 mt-1">(Packet Tracer .pkt or .zip files only)</span>
+                </label>
+              </div>
+
+              {uploadedFile && (
+                <div className="mb-6 p-3 bg-stone-800/50 rounded border border-stone-700/50">
+                  <p className="text-white flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-violet-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    {uploadedFile.name}
+                    {!isFileValid && (
+                      <span className="ml-auto text-red-400 text-sm">
+                        Invalid file type (must be .pkt or .zip)
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  className="px-4 py-2 bg-stone-700 text-white rounded hover:bg-stone-600 transition-colors"
+                  onClick={() => setShowUploadModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={`px-4 py-2 rounded ${isFileValid
+                    ? 'bg-violet-700 text-white hover:bg-violet-600'
+                    : 'bg-violet-900/40 text-white/50 cursor-not-allowed'} transition-colors`}
+                  onClick={() => {
+                    if (isFileValid) {
+                      setShowUploadModal(false);
+                    }
+                  }}
+                  disabled={!isFileValid}
+                >
+                  Save File
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </GameLayout>
   );
 }
