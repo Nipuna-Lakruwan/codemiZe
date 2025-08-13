@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
 import GameNodeMini from '../../../components/Games/GameNodeMini';
+import axiosInstance from '../../../utils/axiosInstance';
 
 export default function RouteSeekers() {
   // Game state
@@ -31,12 +32,8 @@ export default function RouteSeekers() {
   const fileInputRef = useRef(null);
 
   // Questionnaire state
-  const [answers, setAnswers] = useState(['', '', '']);
-  const questions = [
-    "What is the purpose of a default gateway in a network?",
-    "Explain the difference between a router and a switch.",
-    "How does subnetting help in network management?"
-  ];
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState([]);
 
   // Listen for messages from popup window
   useEffect(() => {
@@ -105,6 +102,21 @@ export default function RouteSeekers() {
     };
   }, [isGameStarted, gameCompleted, timeRemaining]);
 
+  useEffect(() => {
+    if (isGameStarted && activity === 'questionnaire' && questions.length === 0) {
+      const fetchQuestions = async () => {
+        try {
+          const response = await axiosInstance.get('/api/v1/route-seekers/questions');
+          setQuestions(response.data);
+          setAnswers(response.data.map(q => ({ questionId: q._id, answer: '' })));
+        } catch (error) {
+          console.error("Error fetching questions:", error);
+        }
+      };
+      fetchQuestions();
+    }
+  }, [isGameStarted, activity, questions.length]);
+
   // Start game handler
   const handleStartGame = () => {
     setIsLoading(true);
@@ -148,17 +160,23 @@ export default function RouteSeekers() {
     }
   };
 
-  // Questionnaire handlers
-  const handleAnswerChange = (index, value) => {
-    const newAnswers = [...answers];
-    newAnswers[index] = value;
+    // Questionnaire handlers
+  const handleAnswerChange = (questionId, value) => {
+    const newAnswers = answers.map(a =>
+      a.questionId === questionId ? { ...a, answer: value } : a
+    );
     setAnswers(newAnswers);
   };
 
-  const handleSubmitQuestionnaire = () => {
-    setQuestionnaireCompleted(true);
-    if (networkCompleted) {
-      setGameCompleted(true);
+  const handleSubmitQuestionnaire = async () => {
+    try {
+      await axiosInstance.post('/api/v1/route-seekers/submit', { answers });
+      setQuestionnaireCompleted(true);
+      if (networkCompleted) {
+        setGameCompleted(true);
+      }
+    } catch (error) {
+      console.error("Error submitting answers:", error);
     }
   };
 
@@ -405,6 +423,7 @@ export default function RouteSeekers() {
   );
 
   // Questionnaire Activity
+  // Questionnaire Activity
   const QuestionnaireActivity = () => (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       {/* Back to selection button */}
@@ -429,13 +448,13 @@ export default function RouteSeekers() {
         
         <div className="w-[973px] h-[466px] bg-zinc-300 rounded-md flex flex-col p-6 overflow-auto">
           {questions.map((question, index) => (
-            <div key={index} className="mb-8">
+            <div key={question._id} className="mb-8">
               <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                Question {index + 1}: {question}
+                Question {index + 1}: {question.question}
               </h3>
               <textarea
-                value={answers[index]}
-                onChange={(e) => handleAnswerChange(index, e.target.value)}
+                value={answers.find(a => a.questionId === question._id)?.answer || ''}
+                onChange={(e) => handleAnswerChange(question._id, e.target.value)}
                 className="w-full h-32 p-3 rounded-md bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
                 placeholder="Type your answer here..."
                 disabled={questionnaireCompleted}
@@ -451,7 +470,7 @@ export default function RouteSeekers() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleSubmitQuestionnaire}
-            disabled={answers.some(a => a.trim() === '')}
+            disabled={answers.some(a => a.answer.trim() === '')}
           >
             Submit Questionnaire
           </motion.button>
