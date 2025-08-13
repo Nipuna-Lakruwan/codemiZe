@@ -7,3 +7,4 @@ export { default as ModalComponents } from './ModalComponents';
 export { default as TeamQuestionsView } from './TeamQuestionsView';
 export { default as NetworkDiagramsView } from './NetworkDiagramsView';
 export { default as TotalMarksView } from './TotalMarksView';
+export { default as CustomScrollbarStyles } from './CustomScrollbarStyles';

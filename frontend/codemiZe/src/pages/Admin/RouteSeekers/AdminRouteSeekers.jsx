@@ -4,7 +4,16 @@ import { motion } from 'framer-motion';
 import { FaUpload, FaFileAlt, FaTrashAlt, FaDownload, FaEye } from 'react-icons/fa';
 import AdminBox from '../../../components/Admin/QuizComponents/AdminBox';
 {/* Alert and Confirmation modals are now imported via ModalComponents */ }
-import { TeamQuestionsView, QuestionersResponsesSection, NetworkDesignSection, TeamsSection, ModalComponents } from '../../../components/Admin/RouteComponents';
+import {
+  TeamQuestionsView,
+  QuestionersResponsesSection,
+  NetworkDesignSection,
+  TeamsSection,
+  ModalComponents,
+  QuestionnaireSection,
+  AllocateTimeSection,
+  CustomScrollbarStyles
+} from '../../../components/Admin/RouteComponents';
 
 export default function AdminRouteSeekers() {
   // States for resources
@@ -291,88 +300,14 @@ export default function AdminRouteSeekers() {
         {/* Top row with main rectangles */}
         <div className="flex flex-wrap gap-6 mb-8">
           {/* First rectangle - Questionnaire */}
-          <AdminBox width="flex-1 min-w-[300px]" minHeight="320px">
-            <div className="flex flex-col space-y-4 mt-2">
-              {/* Heading */}
-              <div className="justify-start text-black/80 text-base font-semibold font-['Inter']">Questionnaire</div>
-              {/* Underline */}
-              <img src="/under-line.png" alt="underline" className="w-full h-1" />
-
-              {/* Upload Questions Section */}
-              <div className="mt-3 mb-3">
-                <div className="flex items-center">
-                  <div className="justify-start text-black/60 text-xs font-medium font-['Inter']">Upload Questions</div>
-                  <div className="ml-2">
-                    <input
-                      type="file"
-                      id="questionFile"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                    <label htmlFor="questionFile" className="cursor-pointer">
-                      <div className="w-11 h-5 bg-purple-800 rounded-sm flex items-center justify-center">
-                        <FaUpload size={10} className="text-white" />
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 mt-3">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleDeleteQuestions}
-                    className="w-32 h-8 bg-sky-600 rounded-[3px] text-white text-xs flex items-center justify-center"
-                    disabled={questions === 0}
-                  >
-                    Delete Question
-                  </motion.button>
-
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleViewQuestions}
-                    className="w-32 h-8 bg-sky-600 rounded-[3px] text-white text-xs flex items-center justify-center"
-                    disabled={questions === 0}
-                  >
-                    View Question
-                  </motion.button>
-                </div>
-              </div>
-
-              {/* Upload Resource File Section */}
-              <div className="mt-3">
-                <div className="flex items-center">
-                  <div className="justify-start text-black/60 text-xs font-medium font-['Inter']">Upload Resource File</div>
-                  <div className="ml-2">
-                    <input
-                      type="file"
-                      id="resourceFile"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                    <label htmlFor="resourceFile" className="cursor-pointer">
-                      <div className="w-11 h-5 bg-purple-800 rounded-sm flex items-center justify-center">
-                        <FaUpload size={10} className="text-white" />
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="mt-3">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleDeleteResources}
-                    className="w-32 h-8 bg-sky-600 rounded-[3px] text-white text-xs flex items-center justify-center"
-                    disabled={resources === 0}
-                  >
-                    Delete Resources
-                  </motion.button>
-                </div>
-              </div>
-            </div>
-          </AdminBox>
+          <QuestionnaireSection
+            handleFileChange={handleFileChange}
+            handleDeleteQuestions={handleDeleteQuestions}
+            handleViewQuestions={handleViewQuestions}
+            handleDeleteResources={handleDeleteResources}
+            questions={questions}
+            resources={resources}
+          />
 
           {/* Second rectangle - Network Design */}
           <NetworkDesignSection
@@ -392,44 +327,13 @@ export default function AdminRouteSeekers() {
           />
 
           {/* Fourth rectangle - Allocate Time */}
-          <AdminBox title="Allocate Time" width="w-48" minHeight="200px">
-            {/* Underline */}
-            <img src="/under-line.png" alt="underline" className="w-full h-1" />
-            <div className="flex flex-col gap-4 items-center mt-6">
-              <div className="w-32 h-10 bg-zinc-200 rounded-md flex items-center justify-center">
-                <select
-                  value={allocatedTime}
-                  onChange={handleTimeChange}
-                  className="w-full h-full px-2 bg-transparent border-none rounded-md focus:outline-none text-sm"
-                >
-                  {[15, 30, 45, 60, 90, 120].map((time) => (
-                    <option key={time} value={time}>{time} min</option>
-                  ))}
-                  <option value="custom">Custom</option>
-                </select>
-              </div>
-
-              {allocatedTime === 'custom' && (
-                <input
-                  type="number"
-                  value={customTime}
-                  onChange={handleCustomTimeChange}
-                  placeholder="Minutes"
-                  className="w-32 h-10 px-3 border border-gray-300 rounded-md focus:outline-none focus:border-purple-800 text-sm"
-                  min="1"
-                />
-              )}
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleConfirmTime}
-                className="w-32 h-10 bg-sky-600 rounded-[3px] text-white text-sm font-medium"
-              >
-                Confirm
-              </motion.button>
-            </div>
-          </AdminBox>
+          <AllocateTimeSection
+            allocatedTime={allocatedTime}
+            customTime={customTime}
+            handleTimeChange={handleTimeChange}
+            handleCustomTimeChange={handleCustomTimeChange}
+            handleConfirmTime={handleConfirmTime}
+          />
         </div>
 
         {/* Teams Section */}
@@ -461,24 +365,7 @@ export default function AdminRouteSeekers() {
         />
 
         {/* Custom scrollbar styles */}
-        <style dangerouslySetInnerHTML={{
-          __html: `
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #5b21b6;
-          border-radius: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #4c1d95;
-        }
-        `
-        }} />
+        <CustomScrollbarStyles />
       </>
     </AdminLayout>
   );
