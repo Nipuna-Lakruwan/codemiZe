@@ -15,6 +15,7 @@ import authRoutes from "./routes/Common/auth.routes.js";
 import adminRoutes from "./routes/Common/admin.routes.js";
 import gameRoutes from "./routes/Common/game.routes.js";
 import criteriaRoutes from "./routes/Common/criteria.routes.js";
+import routeSeekersQuestionRoutes from "./routes/Common/routeSeekersQuestion.routes.js";
 // Game import routes
 import battleBreakerRoutes from "./routes/Games/battleBreaker.routes.js";
 import quizHunterRoutes from "./routes/Games/quizHunter.routes.js";
@@ -70,6 +71,7 @@ app.use("/api/v1/code-crushers", codeCrusherRoutes);
 app.use("/api/v1/circuit-smashers", circuitSmashersRoutes);
 app.use("/api/v1/criteria", criteriaRoutes);
 app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/questions/route-seekers", routeSeekersQuestionRoutes);
 // Judge routes :)
 app.use("/api/v1/judge/circuit-smashers", judgeCircuitSmashersRoutes);
 app.use("/api/v1/judge/quiz-hunters", judgeQuizHuntersRoutes);

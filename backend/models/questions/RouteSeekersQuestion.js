@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 
 const routeSeekersQuestionSchema = new mongoose.Schema(
   {
-    question: String
+    question: String,
+    answer: String,
   },
   { timestamps: true }
 );
