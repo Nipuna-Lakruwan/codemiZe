@@ -48,7 +48,12 @@ const QuestionnaireResponses = ({
             {/* Answer section */}
             <div className="flex items-center justify-between flex-wrap">
               <div className="text-black/80 text-sm flex-1 min-w-[250px] mr-4">
-                <span className="font-medium">Answer:</span> {item.answer}
+                <div className="mb-2">
+                  <span className="font-medium">Submitted Answer:</span> {item.answer}
+                </div>
+                <div>
+                  <span className="font-medium">Correct Answer:</span> {item.correctAnswer}
+                </div>
               </div>
               {/* Marking buttons */}
               <div className="flex gap-2 mt-2 sm:mt-0">
