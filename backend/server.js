@@ -21,6 +21,7 @@ import battleBreakerRoutes from "./routes/Games/battleBreaker.routes.js";
 import quizHunterRoutes from "./routes/Games/quizHunter.routes.js";
 import codeCrusherRoutes from "./routes/Games/codeCrusher.routes.js";
 import circuitSmashersRoutes from "./routes/Games/circuitSmashers.routes.js";
+import routeSeekersRoutes from "./routes/Games/routeSeekers.route.js";
 // Judge import routes
 import judgeCircuitSmashersRoutes from "./routes/Judges/circuitSmashers.routes.js";
 import judgeCodeCrusherRoutes from "./routes/Judges/codeCrusher.routes.js";
@@ -69,6 +70,7 @@ app.use("/api/v1/battle-breakers", battleBreakerRoutes);
 app.use("/api/v1/quiz-hunters", quizHunterRoutes);
 app.use("/api/v1/code-crushers", codeCrusherRoutes);
 app.use("/api/v1/circuit-smashers", circuitSmashersRoutes);
+app.use("/api/v1/route-seekers", routeSeekersRoutes);
 app.use("/api/v1/criteria", criteriaRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/questions/route-seekers", routeSeekersQuestionRoutes);
