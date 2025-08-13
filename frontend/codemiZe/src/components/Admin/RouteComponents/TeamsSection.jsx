@@ -20,7 +20,7 @@ const TeamsSection = ({ teams, activeTab, setActiveTab, handleViewTeam, viewingT
   }
 
   return (
-    <AdminBox title="Teams" minHeight="auto">
+    <AdminBox minHeight="auto">
       <div className="mt-6 mb-6">
         {/* Tabs */}
         <div className="flex mb-6 justify-center">

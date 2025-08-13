@@ -988,6 +988,7 @@ export default function AdminBattleBreakers() {
             <div className="flex flex-col space-y-4 mt-2">
               {/* Underline */}
               <img src="/under-line.png" alt="underline" className="w-full h-1" />
+              
 
               <div className="bg-gray-100 p-4 rounded-lg mb-4">
                 <h3 className="text-xl font-semibold mb-2">Question:</h3>
