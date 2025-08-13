@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
 import GameNodeMini from '../../../components/Games/GameNodeMini';
+import QuestionnaireActivity from '../../../components/Student/QuestionnaireActivity';
+import ActivitySelection from '../../../components/Student/ActivitySelection';
 import axiosInstance from '../../../utils/axiosInstance';
 
 export default function RouteSeekers() {
@@ -107,8 +109,10 @@ export default function RouteSeekers() {
       const fetchQuestions = async () => {
         try {
           const response = await axiosInstance.get('/api/v1/route-seekers/questions');
-          setQuestions(response.data);
-          setAnswers(response.data.map(q => ({ questionId: q._id, answer: '' })));
+          const fetchedQuestions = response.data;
+          setQuestions(fetchedQuestions);
+          // Initialize answers once with empty strings
+          setAnswers(fetchedQuestions.map(q => ({ questionId: q._id, answer: '' })));
         } catch (error) {
           console.error("Error fetching questions:", error);
         }
@@ -160,15 +164,15 @@ export default function RouteSeekers() {
     }
   };
 
-    // Questionnaire handlers
-  const handleAnswerChange = (questionId, value) => {
-    const newAnswers = answers.map(a =>
-      a.questionId === questionId ? { ...a, answer: value } : a
+  // Questionnaire handlers - memoized to prevent recreation on each render
+  const handleAnswerChange = useCallback((questionId, value) => {
+    setAnswers(prevAnswers =>
+      prevAnswers.map(a => a.questionId === questionId ? { ...a, answer: value } : a)
     );
-    setAnswers(newAnswers);
-  };
+  }, []);
 
-  const handleSubmitQuestionnaire = async () => {
+  // Memoize the submission handler to prevent recreation
+  const handleSubmitQuestionnaire = useCallback(async () => {
     try {
       await axiosInstance.post('/api/v1/route-seekers/submit', { answers });
       setQuestionnaireCompleted(true);
@@ -178,7 +182,7 @@ export default function RouteSeekers() {
     } catch (error) {
       console.error("Error submitting answers:", error);
     }
-  };
+  }, [answers, networkCompleted, setQuestionnaireCompleted, setGameCompleted]);
 
   // Game end handler (time's up)
   const handleGameEnd = () => {
@@ -335,10 +339,10 @@ export default function RouteSeekers() {
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
-      transition: { 
+      transition: {
         duration: 0.4,
         ease: "easeOut"
       }
@@ -352,152 +356,37 @@ export default function RouteSeekers() {
     }
   };
 
-  // Activity Selection Screen
-  const ActivitySelection = () => (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 relative">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Route Seekers</h1>
-        <p className="text-white/80">Complete both activities to get full marks</p>
-      </div>
+  // Animation variants are defined once and passed to child components
+  const animationVariants = useMemo(() => ({
+    cardVariants,
+    pdfContainerVariants
+  }), []);
 
-      <div className="flex justify-center gap-10">
-        {/* Questionnaire Card */}
-        <motion.div
-          className="w-80 h-96 bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 cursor-pointer"
-          variants={cardVariants}
-          whileHover="hover"
-          onClick={() => setActivity('questionnaire')}
-        >
-          <div className="bg-violet-900/30 rounded-full p-4 mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold text-white mb-4">Questionnaire</h2>
-          <p className="text-white/70 text-center mb-6">
-            Answer network-related questions to test your knowledge
-          </p>
-          <div className={`px-4 py-1 rounded-full ${questionnaireCompleted ? 'bg-green-500/20 text-green-400' : 'bg-violet-500/20 text-violet-400'}`}>
-            {questionnaireCompleted ? 'Completed' : 'Not Started'}
-          </div>
-        </motion.div>
-
-        {/* Network Diagram Card */}
-        <motion.div
-          className="w-80 h-96 bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 cursor-pointer"
-          variants={cardVariants}
-          whileHover="hover"
-          onClick={() => setActivity('network')}
-        >
-          <div className="bg-violet-900/30 rounded-full p-4 mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16l2.879-2.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold text-white mb-4">Network Diagram</h2>
-          <p className="text-white/70 text-center mb-6">
-            Design and upload your network solution using Packet Tracer
-          </p>
-          <div className={`px-4 py-1 rounded-full ${networkCompleted ? 'bg-green-500/20 text-green-400' : 'bg-violet-500/20 text-violet-400'}`}>
-            {networkCompleted ? 'Completed' : 'Not Started'}
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Progress status */}
-      <div className="mt-10 text-center">
-        <div className="inline-flex items-center bg-stone-800/40 px-4 py-2 rounded-full">
-          <span className="text-white mr-4">Progress:</span>
-          <div className="flex items-center">
-            <div className={`w-6 h-6 rounded-full mr-2 ${questionnaireCompleted ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-            <span className="text-white">Questionnaire</span>
-          </div>
-          <div className="mx-4 text-white">+</div>
-          <div className="flex items-center">
-            <div className={`w-6 h-6 rounded-full mr-2 ${networkCompleted ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-            <span className="text-white">Network Diagram</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Questionnaire Activity
-  // Questionnaire Activity
-  const QuestionnaireActivity = () => (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      {/* Back to selection button */}
-      <button 
-        className="absolute top-4 left-4 text-white flex items-center"
-        onClick={() => setActivity(null)}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Back to Activities
-      </button>
-
-      {/* Main container */}
-      <motion.div
-        className="w-[1029px] h-[566px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 relative"
-        variants={pdfContainerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <h2 className="text-2xl font-bold text-white mb-6">Questionnaire</h2>
-        
-        <div className="w-[973px] h-[466px] bg-zinc-300 rounded-md flex flex-col p-6 overflow-auto">
-          {questions.map((question, index) => (
-            <div key={question._id} className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                Question {index + 1}: {question.question}
-              </h3>
-              <textarea
-                value={answers.find(a => a.questionId === question._id)?.answer || ''}
-                onChange={(e) => handleAnswerChange(question._id, e.target.value)}
-                className="w-full h-32 p-3 rounded-md bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
-                placeholder="Type your answer here..."
-                disabled={questionnaireCompleted}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Submit button */}
-        {!questionnaireCompleted ? (
-          <motion.button
-            className="mt-4 px-6 py-2 bg-violet-700 text-white rounded-md font-medium"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleSubmitQuestionnaire}
-            disabled={answers.some(a => a.answer.trim() === '')}
-          >
-            Submit Questionnaire
-          </motion.button>
-        ) : (
-          <div className="mt-4 px-6 py-2 bg-green-600 text-white rounded-md font-medium flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            Questionnaire Submitted
-          </div>
-        )}
-
-        {/* Network status */}
-        <div className="absolute bottom-6 right-6">
-          <div className="flex items-center">
-            <span className="text-white mr-2">Network Diagram:</span>
-            <div className={`px-3 py-1 rounded-full ${networkCompleted ? 'bg-green-500/20 text-green-400' : 'bg-violet-500/20 text-violet-400'}`}>
-              {networkCompleted ? 'Completed' : 'Pending'}
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
+  // Memoize the activity setter to prevent recreation
+  const handleSetActivity = useCallback((value) => {
+    setActivity(value);
+  }, []);  // Custom scrollbar styling
+  const scrollbarStyles = `
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(133, 94, 194, 0.5);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(133, 94, 194, 0.7);
+    }
+  `;
 
   return (
     <GameLayout gameName={isGameStarted && !gameCompleted ? "Route Seekers" : ""}>
+      <style>{scrollbarStyles}</style>
       {!isGameStarted ? (
         <StartGameComponent
           title="Route Seekers"
@@ -554,8 +443,8 @@ export default function RouteSeekers() {
                 Well Done!
               </h3>
               <p className="text-xl text-white/80">
-                {questionnaireCompleted && networkCompleted 
-                  ? "You've completed both activities and earned full marks!" 
+                {questionnaireCompleted && networkCompleted
+                  ? "You've completed both activities and earned full marks!"
                   : "You've completed one activity. Submit both for full marks next time!"}
               </p>
             </motion.div>
@@ -595,9 +484,23 @@ export default function RouteSeekers() {
           </div>
         </div>
       ) : !activity ? (
-        <ActivitySelection />
+        <ActivitySelection
+          setActivity={handleSetActivity}
+          questionnaireCompleted={questionnaireCompleted}
+          networkCompleted={networkCompleted}
+          cardVariants={cardVariants}
+        />
       ) : activity === 'questionnaire' ? (
-        <QuestionnaireActivity />
+        <QuestionnaireActivity
+          questions={questions}
+          answers={answers}
+          handleAnswerChange={handleAnswerChange}
+          questionnaireCompleted={questionnaireCompleted}
+          handleSubmitQuestionnaire={handleSubmitQuestionnaire}
+          setActivity={handleSetActivity}
+          networkCompleted={networkCompleted}
+          pdfContainerVariants={pdfContainerVariants}
+        />
       ) : (
         // Active game screen with Network Diagram
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -926,7 +829,7 @@ export default function RouteSeekers() {
           </div>
 
           {/* Back to selection button */}
-          <button 
+          <button
             className="absolute top-4 left-4 text-white flex items-center"
             onClick={() => setActivity(null)}
           >
