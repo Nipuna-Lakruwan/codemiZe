@@ -82,3 +82,44 @@ export const deleteAllStudentAnswers = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Update a single answer's status
+export const updateAnswerStatus = async (req, res) => {
+  try {
+    const { submissionId, questionId } = req.params;
+    const { status } = req.body;
+
+    if (!status || !['correct', 'incorrect'].includes(status)) {
+      return res.status(400).json({ message: "Valid status ('correct' or 'incorrect') is required" });
+    }
+
+    const submission = await RouteSeekersAnswer.findById(submissionId);
+
+    if (!submission) {
+      return res.status(404).json({ message: "Answer document not found" });
+    }
+
+    let answerUpdated = false;
+    submission.Answers.forEach(answer => {
+      if (answer.questionId.toString() === questionId) {
+        answer.status = status;
+        answerUpdated = true;
+      }
+    });
+
+    if (!answerUpdated) {
+        return res.status(404).json({ message: "Question answer not found in this submission" });
+    }
+
+    const correctAnswersCount = submission.Answers.filter(
+      (answer) => answer.status === 'correct'
+    ).length;
+    submission.score = correctAnswersCount * 5;
+
+    const savedSubmission = await submission.save();
+
+    res.status(200).json({ message: "Answer status updated successfully", result: savedSubmission });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

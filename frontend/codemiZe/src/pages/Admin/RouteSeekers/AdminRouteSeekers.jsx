@@ -20,6 +20,7 @@ export default function AdminRouteSeekers() {
   // States for team questions view
   const [viewingTeam, setViewingTeam] = useState(null);
   const [teamQuestions, setTeamQuestions] = useState([]);
+  const [activeSubmissionId, setActiveSubmissionId] = useState(null);
 
   // Data states
   const [schools, setSchools] = useState([]);
@@ -165,17 +166,21 @@ export default function AdminRouteSeekers() {
       showAlert(`${team.name} has not submitted their answers yet.`, 'No Submission', 'info');
       setTeamQuestions([]);
       setViewingTeam(team);
+      setActiveSubmissionId(null);
       return;
     }
+
+    setActiveSubmissionId(submission._id);
 
     const populatedQuestions = allQuestions.map(q => {
       const studentAnswer = submission.Answers.find(a => a.questionId === q._id);
       return {
         id: q._id,
+        questionId: q._id,
         question: q.question,
         correctAnswer: q.answer, // Correct answer from the question model
         answer: studentAnswer ? studentAnswer.answer : "Not Answered", // Student's submitted answer
-        status: null // Admin view doesn't mark, so status is neutral
+        status: studentAnswer ? (studentAnswer.isCorrect ? 'correct' : 'incorrect') : null
       };
     });
 
@@ -186,15 +191,42 @@ export default function AdminRouteSeekers() {
   const handleBackToTeams = () => {
     setViewingTeam(null);
     setTeamQuestions([]);
+    setActiveSubmissionId(null);
+  };
+
+  const updateMarks = async (updatedQuestions) => {
+    if (!activeSubmissionId) return;
+
+    const answersToUpdate = updatedQuestions.map(q => ({
+      questionId: q.questionId,
+      answer: q.answer,
+      isCorrect: q.status === 'correct'
+    }));
+
+    try {
+      await axiosInstance.put(`/api/v1/route-seekers/answers/${activeSubmissionId}`, { answers: answersToUpdate });
+      showAlert('Marks updated successfully!', 'Success', 'success');
+    } catch (error) {
+      console.error("Failed to update marks", error);
+      showAlert('Failed to update marks. Please try again.', 'Error', 'error');
+      // Optionally revert state here
+    }
   };
 
   const handleMarkCorrect = (questionIndex) => {
     setTeamQuestions(prevQuestions => {
       const newQuestions = [...prevQuestions];
+      const questionToUpdate = newQuestions[questionIndex];
+
+      if (questionToUpdate.status === 'correct') {
+        return prevQuestions;
+      }
+
       newQuestions[questionIndex] = {
-        ...newQuestions[questionIndex],
+        ...questionToUpdate,
         status: 'correct'
       };
+      updateMarks(newQuestions);
       return newQuestions;
     });
   };
@@ -202,10 +234,17 @@ export default function AdminRouteSeekers() {
   const handleMarkIncorrect = (questionIndex) => {
     setTeamQuestions(prevQuestions => {
       const newQuestions = [...prevQuestions];
+      const questionToUpdate = newQuestions[questionIndex];
+
+      if (questionToUpdate.status === 'incorrect') {
+        return prevQuestions;
+      }
+
       newQuestions[questionIndex] = {
-        ...newQuestions[questionIndex],
+        ...questionToUpdate,
         status: 'incorrect'
       };
+      updateMarks(newQuestions);
       return newQuestions;
     });
   };
