@@ -180,7 +180,7 @@ export default function AdminRouteSeekers() {
         question: q.question,
         correctAnswer: q.answer, // Correct answer from the question model
         answer: studentAnswer ? studentAnswer.answer : "Not Answered", // Student's submitted answer
-        status: studentAnswer ? (studentAnswer.isCorrect ? 'correct' : 'incorrect') : null
+        status: studentAnswer ? studentAnswer.status : null
       };
     });
 
@@ -194,59 +194,39 @@ export default function AdminRouteSeekers() {
     setActiveSubmissionId(null);
   };
 
-  const updateMarks = async (updatedQuestions) => {
-    if (!activeSubmissionId) return;
+  const updateQuestionStatus = async (questionIndex, newStatus) => {
+    const question = teamQuestions[questionIndex];
+    if (question.status === newStatus) return;
 
-    const answersToUpdate = updatedQuestions.map(q => ({
-      questionId: q.questionId,
-      answer: q.answer,
-      isCorrect: q.status === 'correct'
-    }));
+    const submissionId = activeSubmissionId;
+    const questionId = question.questionId;
+
+    const originalQuestions = teamQuestions;
+
+    setTeamQuestions(prevQuestions => {
+        const newQuestions = [...prevQuestions];
+        newQuestions[questionIndex] = {
+            ...newQuestions[questionIndex],
+            status: newStatus,
+        };
+        return newQuestions;
+    });
 
     try {
-      await axiosInstance.put(`/api/v1/route-seekers/answers/${activeSubmissionId}`, { answers: answersToUpdate });
-      showAlert('Marks updated successfully!', 'Success', 'success');
+      await axiosInstance.patch(`/api/v1/route-seekers/answers/${submissionId}/questions/${questionId}`, { status: newStatus });
     } catch (error) {
-      console.error("Failed to update marks", error);
-      showAlert('Failed to update marks. Please try again.', 'Error', 'error');
-      // Optionally revert state here
+      setTeamQuestions(originalQuestions);
+      console.error("Failed to update mark", error);
+      showAlert('Failed to update mark. Please try again.', 'Error', 'error');
     }
   };
 
   const handleMarkCorrect = (questionIndex) => {
-    setTeamQuestions(prevQuestions => {
-      const newQuestions = [...prevQuestions];
-      const questionToUpdate = newQuestions[questionIndex];
-
-      if (questionToUpdate.status === 'correct') {
-        return prevQuestions;
-      }
-
-      newQuestions[questionIndex] = {
-        ...questionToUpdate,
-        status: 'correct'
-      };
-      updateMarks(newQuestions);
-      return newQuestions;
-    });
+    updateQuestionStatus(questionIndex, 'correct');
   };
 
   const handleMarkIncorrect = (questionIndex) => {
-    setTeamQuestions(prevQuestions => {
-      const newQuestions = [...prevQuestions];
-      const questionToUpdate = newQuestions[questionIndex];
-
-      if (questionToUpdate.status === 'incorrect') {
-        return prevQuestions;
-      }
-
-      newQuestions[questionIndex] = {
-        ...questionToUpdate,
-        status: 'incorrect'
-      };
-      updateMarks(newQuestions);
-      return newQuestions;
-    });
+    updateQuestionStatus(questionIndex, 'incorrect');
   };
 
   const handleDownloadResources = () => {
