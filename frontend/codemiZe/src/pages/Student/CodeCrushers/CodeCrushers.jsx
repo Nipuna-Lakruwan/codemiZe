@@ -143,6 +143,10 @@ export default function CodeCrushers() {
         }
       });
 
+      socket.on('completed', () => {
+        handleGameEnd();
+      });
+
       // Request current state when component mounts (for reconnection)
       socket.emit('codeCrushers-requestCurrentState');
     }

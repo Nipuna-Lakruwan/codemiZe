@@ -123,21 +123,44 @@ export default function GamesRoadmap() {
     const { gameId, newStatus } = updateData;
 
     setGames(prevGames => {
-      return prevGames.map(game => {
-        const isTargetGame = game._id === gameId;
-        
-        if (isTargetGame) {
-          return {
-            ...game,
-            status: newStatus,
-            // Update boolean properties for GameNode component
-            isCompleted: newStatus === 'completed',
-            isAvailable: newStatus === 'active',
-            isInactive: newStatus === 'inactive',
-          };
-        }
-        return game;
-      });
+      // If activating a game, deactivate any other active game
+      if (newStatus === 'active') {
+        return prevGames.map(game => {
+          if (game._id === gameId) {
+            return {
+              ...game,
+              status: 'active',
+              isCompleted: false,
+              isAvailable: true,
+              isInactive: false,
+            };
+          } else if (game.status === 'active') {
+            // Deactivate previously active game
+            return {
+              ...game,
+              status: 'inactive',
+              isCompleted: false,
+              isAvailable: false,
+              isInactive: true,
+            };
+          }
+          return game;
+        });
+      } else {
+        // For other status changes, just update the target game
+        return prevGames.map(game => {
+          if (game._id === gameId) {
+            return {
+              ...game,
+              status: newStatus,
+              isCompleted: newStatus === 'completed',
+              isAvailable: newStatus === 'active',
+              isInactive: newStatus === 'inactive',
+            };
+          }
+          return game;
+        });
+      }
     });
 
     // Update path availability based on new game states

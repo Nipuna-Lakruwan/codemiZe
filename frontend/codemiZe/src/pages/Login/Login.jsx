@@ -30,7 +30,7 @@ function Login() {
   }
 
   // Mascot position class - can be adjusted to change position
-  const mascotPositionClass = "md:ml-12"; // Add margin-left on medium screens and up
+  const mascotPositionClass = "md:ml-4"; // Add margin-left on medium screens and up
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -76,7 +76,7 @@ function Login() {
         />
       </div>
 
-      <div className="container mx-auto px-4 max-w-7xl relative z-10">
+      <div className="container mx-auto px-1 max-w-7xl relative z-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           {/* Left Side - Title and Mascot */}
           <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left mb-8 md:mb-0">
@@ -84,7 +84,7 @@ function Login() {
             <img
               src="/login-title.png"
               alt="CodemiZe"
-              className="w-60 md:w-80 lg:w-200 h-auto mb-6"
+              className="w-60 md:w-80 lg:w-200 h-auto mb-8"
             />
             {/* Mascot image with animation */}
             <div className={`w-full flex justify-center md:justify-center ${mascotPositionClass}`}>
@@ -99,12 +99,12 @@ function Login() {
           {/* Right Side - Glass Effect Login Box */}
           <div className="w-full md:w-5/12 flex justify-center">
             <div className="w-full md:w-[420px] min-h-[450px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_8px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] p-8 flex flex-col">
-              <h2 className="text-2xl font-bold text-center text-white mb-10">Sign In</h2>
+              <h2 className="text-4xl font-bold text-center text-white mb-13">Sign In</h2>
 
               <form onSubmit={handleSubmit} className="flex flex-col flex-1">
-                <div className="space-y-6 flex-1">
+                <div className="space-y-4 flex-1">
                   <div>
-                    <label htmlFor="email" className="block text-white text-sm font-medium mb-2">
+                    <label htmlFor="email" className="block text-white text-1xl font-medium mb-2">
                       Email
                     </label>
                     <input
@@ -117,13 +117,10 @@ function Login() {
                       required
                       disabled={isLoading}
                     />
-                    {email === '' && (
-                      <p className="text-xs text-purple-300 mt-1 ml-1">Hint: test@coding.lk</p>
-                    )}
                   </div>
 
                   <div>
-                    <label htmlFor="password" className="block text-white text-sm font-medium mb-2">
+                    <label htmlFor="password" className="block text-white text-1xl font-medium mb-2">
                       Password
                     </label>
                     <input
@@ -136,13 +133,10 @@ function Login() {
                       required
                       disabled={isLoading}
                     />
-                    {password === '' && (
-                      <p className="text-xs text-purple-300 mt-1 ml-1">Hint: test@123</p>
-                    )}
                   </div>
 
                   {error && (
-                    <div className="bg-red-800/40 border border-red-500/50 rounded-md p-2 mt-2">
+                    <div className="bg-red-800/40 border border-red-500/50 rounded-md p-2 mt-3">
                       <p className="text-red-200 text-sm text-center">{error}</p>
                     </div>
                   )}
@@ -155,7 +149,7 @@ function Login() {
                     className={`w-full py-3 px-4 ${isLoading
                         ? 'bg-[rgba(62,5,128,0.6)] cursor-not-allowed'
                         : 'bg-[rgba(62,5,128,1)] hover:bg-[rgba(62,5,128,0.8)]'
-                      } text-white font-medium rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgba(62,5,128,0.2)] flex justify-center items-center`}
+                      } text-white font-medium rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgba(62,5,128,0.2)] flex justify-center items-center `}
                     disabled={isLoading}
                   >
                     {isLoading ? (
