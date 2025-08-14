@@ -5,28 +5,22 @@ import ScrollbarStyles from '../../../components/Admin/UserManagement/ScrollbarS
 import QuestionnaireSchoolList from '../../../components/Judge/RouteSeekers/QuestionnaireSchoolList';
 import QuestionnaireResponses from '../../../components/Judge/RouteSeekers/QuestionnaireResponses';
 import NetworkDesignMarking from '../../../components/Judge/RouteSeekers/NetworkDesignMarking';
+import axiosInstance from '../../../utils/axiosInstance';
 
 const RouteSeekersJudge = () => {
-  // State for loading spinner
   const [loading, setLoading] = useState(true);
-  // Game status: waiting, marking, completed
   const [gameStatus, setGameStatus] = useState('waiting');
-  // Which card is selected (questionnaire/network-design)
   const [selectedCard, setSelectedCard] = useState(null);
-  // Currently active school for questionnaire
   const [activeSchool, setActiveSchool] = useState(null);
-  // School/team list
   const [schools, setSchools] = useState([]);
-  // Marking criteria for network design
   const [criteria, setCriteria] = useState([]);
-  // Markings for network design
   const [markings, setMarkings] = useState({});
-  // Questionnaire view state
   const [viewingQuestions, setViewingQuestions] = useState(false);
-  // Questions for the selected school
   const [schoolQuestions, setSchoolQuestions] = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [studentAnswers, setStudentAnswers] = useState([]);
+  const [activeSubmissionId, setActiveSubmissionId] = useState(null);
 
-  // Mock data for criteria and schools
   const mockCriteria = [
     { id: 'c1', criteria: 'Network Topology' },
     { id: 'c2', criteria: 'IP Addressing Scheme' },
@@ -35,57 +29,42 @@ const RouteSeekersJudge = () => {
     { id: 'c5', criteria: 'Network Scalability' }
   ];
 
-  const mockSchools = [
-    { id: 's1', name: 'Royal College', nameInShort: 'RC', avatar: { url: '/c-logo.png' } },
-    { id: 's2', name: 'Ananda College', nameInShort: 'AC', avatar: { url: '/c-logo.png' } },
-    { id: 's3', name: 'St. Joseph\'s College', nameInShort: 'SJC', avatar: { url: '/c-logo.png' } },
-    { id: 's4', name: 'D.S. Senanayake College', nameInShort: 'DSC', avatar: { url: '/c-logo.png' } },
-    { id: 's5', name: 'Visakha Vidyalaya', nameInShort: 'VV', avatar: { url: '/c-logo.png' } },
-    { id: 's6', name: 'Nalanda College', nameInShort: 'NC', avatar: { url: '/c-logo.png' } },
-    { id: 's7', name: 'Mahanama College', nameInShort: 'MC', avatar: { url: '/c-logo.png' } },
-    { id: 's8', name: 'Isipathana College', nameInShort: 'IC', avatar: { url: '/c-logo.png' } },
-    { id: 's9', name: 'St. Thomas\' College', nameInShort: 'STC', avatar: { url: '/c-logo.png' } },
-    { id: 's10', name: 'Dharmaraja College', nameInShort: 'DRC', avatar: { url: '/c-logo.png' } }
-  ];
-
-  // Mock questions for questionnaire
-  const mockQuestionsList = [
-    { id: 1, question: "What is the primary protocol used for web communication?", answer: "HTTP protocol", status: 'incorrect' },
-    { id: 2, question: "What does DNS stand for?", answer: "Domain Name System", status: 'correct' },
-    { id: 3, question: "What is the default port for HTTP?", answer: "Port 80", status: 'correct' },
-    { id: 4, question: "What does IP stand for in IP Address?", answer: "Internet Protocol", status: 'correct' },
-    { id: 5, question: "What is a subnet mask used for?", answer: "It helps to identify which part of an IP address refers to the network", status: 'incorrect' },
-    { id: 6, question: "What is the purpose of a router in a network?", answer: "To connect different networks and forward data packets between them", status: 'correct' },
-    { id: 7, question: "What is the OSI model?", answer: "A 7-layer model that describes how networks function", status: 'incorrect' }
-  ];
-
-  // Simulate fetching data (API call)
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      setTimeout(() => {
-        const status = 'marking';
-        setGameStatus(status);
-        if (status === 'marking') {
-          setSchools(mockSchools);
-          setCriteria(mockCriteria);
-          // Initialize empty markings for all schools/criteria
-          const initialMarkings = {};
-          mockSchools.forEach(school => {
-            initialMarkings[school.id] = {};
-            mockCriteria.forEach(criterion => {
-              initialMarkings[school.id][criterion.id] = 0;
-            });
+      try {
+        const [schoolsRes, questionsRes, answersRes] = await Promise.all([
+          axiosInstance.get('/api/v1/admin/schools'),
+          axiosInstance.get('/api/v1/route-seekers/questions'),
+          axiosInstance.get('/api/v1/route-seekers/all-student-answers')
+        ]);
+
+        setSchools(schoolsRes.data.schools);
+        setQuestions(questionsRes.data);
+        setStudentAnswers(answersRes.data);
+        
+        setGameStatus('marking');
+        setCriteria(mockCriteria);
+
+        const initialMarkings = {};
+        schoolsRes.data.schools.forEach(school => {
+          initialMarkings[school._id] = {};
+          mockCriteria.forEach(criterion => {
+            initialMarkings[school._id][criterion.id] = 0;
           });
-          setMarkings(initialMarkings);
-        }
+        });
+        setMarkings(initialMarkings);
+
+      } catch (error) {
+        console.error("Error fetching data", error);
+        setGameStatus('waiting'); // Fallback to waiting on error
+      } finally {
         setLoading(false);
-      }, 1500);
+      }
     };
     fetchData();
   }, []);
 
-  // Card selection handler (questionnaire/network-design)
   const handleCardSelect = (card) => {
     setSelectedCard(card);
     if (card === 'questionnaire') {
@@ -94,7 +73,6 @@ const RouteSeekersJudge = () => {
     }
   };
 
-  // Update marks for network design
   const handleMarkUpdate = (schoolId, criteriaId, mark) => {
     setMarkings(prevMarkings => ({
       ...prevMarkings,
@@ -105,7 +83,6 @@ const RouteSeekersJudge = () => {
     }));
   };
 
-  // Only allow number input for marks
   const handleKeyDown = (e) => {
     if (
       ![8, 9, 13, 27, 46, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57].includes(e.keyCode) &&
@@ -116,27 +93,58 @@ const RouteSeekersJudge = () => {
     }
   };
 
-  // Open questionnaire for a school
   const handleViewSchoolQuestions = (school) => {
+    const submission = studentAnswers.find(answer => answer.userId.school === school._id);
+
+    if (!submission) {
+      alert(`${school.name} has not submitted their answers yet.`);
+      return;
+    }
+
+    const populatedQuestions = questions.map(q => {
+      const studentAnswer = submission.Answers.find(a => a.questionId === q._id);
+      return {
+        id: q._id,
+        questionId: q._id,
+        question: q.question,
+        answer: studentAnswer ? studentAnswer.answer : "Not Answered",
+        status: studentAnswer ? (studentAnswer.isCorrect ? 'correct' : 'incorrect') : 'incorrect',
+      };
+    });
+
     setActiveSchool(school);
+    setActiveSubmissionId(submission._id);
+    setSchoolQuestions(populatedQuestions);
     setViewingQuestions(true);
-    setSchoolQuestions(mockQuestionsList);
   };
 
-  // Mark a questionnaire answer as correct/incorrect
-  const handleMarkQuestion = (index, status) => {
+  const handleMarkQuestion = async (index, status) => {
     const updatedQuestions = [...schoolQuestions];
     updatedQuestions[index].status = status;
     setSchoolQuestions(updatedQuestions);
+
+    const answersToUpdate = updatedQuestions.map(q => ({
+      questionId: q.questionId,
+      answer: q.answer,
+      isCorrect: q.status === 'correct'
+    }));
+
+    try {
+      await axiosInstance.put(`/api/v1/games/route-seekers/answers/${activeSubmissionId}`, { answers: answersToUpdate });
+    } catch (error) {
+      console.error("Failed to update marks", error);
+      // Revert state on error
+      const revertedQuestions = [...schoolQuestions];
+      setSchoolQuestions(revertedQuestions);
+      alert("Failed to update marks. Please try again.");
+    }
   };
 
-  // Calculate total marks for a school (network design)
   const calculateTotal = (schoolId) => {
     if (!markings[schoolId]) return 0;
     return Object.values(markings[schoolId]).reduce((sum, mark) => sum + mark, 0);
   };
 
-  // Go back to school list from questionnaire
   const handleBackToSchools = () => {
     setViewingQuestions(false);
     setActiveSchool(null);
@@ -152,7 +160,6 @@ const RouteSeekersJudge = () => {
       ) : (
         <div className="text-gray-800 h-full">
           {gameStatus === 'waiting' ? (
-            // Waiting for submissions
             <div className="flex flex-col items-center justify-center h-full">
               <img src="/loading.gif" alt="Loading" className="h-20 w-auto mb-6" />
               <div className="justify-start text-sky-600 text-4xl font-bold font-['Oxanium']">
@@ -161,11 +168,9 @@ const RouteSeekersJudge = () => {
               <p className="text-gray-500 mt-4">Route Seekers game is waiting for submissions. The marking interface will appear once submissions are ready.</p>
             </div>
           ) : selectedCard === null ? (
-            // Card selection (Questionnaire/Network Design)
             <div className="flex flex-col items-center justify-center h-full">
               <h2 className="text-2xl font-semibold mb-8">Route Seekers Judging</h2>
               <div className="flex space-x-12">
-                {/* Questionnaire Card */}
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -182,7 +187,6 @@ const RouteSeekersJudge = () => {
                     Review and mark student responses to network-related questions
                   </p>
                 </motion.div>
-                {/* Network Design Card */}
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -202,7 +206,6 @@ const RouteSeekersJudge = () => {
               </div>
             </div>
           ) : selectedCard === 'questionnaire' ? (
-            // Questionnaire flow
             <div className="w-full">
               {!viewingQuestions ? (
                 <QuestionnaireSchoolList
@@ -220,7 +223,6 @@ const RouteSeekersJudge = () => {
               )}
             </div>
           ) : (
-            // Network Design marking table
             <NetworkDesignMarking
               schools={schools}
               criteria={criteria}
