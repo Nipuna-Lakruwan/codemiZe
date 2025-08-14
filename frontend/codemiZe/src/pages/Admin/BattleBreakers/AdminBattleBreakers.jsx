@@ -1155,13 +1155,13 @@ export default function AdminBattleBreakers() {
                           ) : (
                             <div className="truncate text-xs font-bold">Q{qIndex + 1}</div>
                           )}
-                          {answerHistory[question._id]?.correctSchool && qIndex !== currentQuestionIndex && (
+                          {/* {answerHistory[question._id]?.correctSchool && qIndex !== currentQuestionIndex && (
                             <div className="mt-1">
                               <span className="text-xs bg-green-100 text-green-800 px-1 py-0.5 rounded">
                                 By {schools.find(s => s._id === answerHistory[question._id]?.correctSchool)?.nameInShort || ''}
                               </span>
                             </div>
-                          )}
+                          )} */}
                           {qIndex === currentQuestionIndex && (
                             <div className="text-xs font-semibold text-purple-800">Current</div>
                           )}
