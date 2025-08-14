@@ -11,7 +11,7 @@ import axiosInstance from '../../../utils/axiosInstance';
 export default function AdminCodeCrushers() {
   // Resources state
   const [selectedFile, setSelectedFile] = useState(null);
-  const [resources, setResources] = useState(5); // Initial resources count
+  const [resources, setResources] = useState(0); // Start with 0, will be fetched
   const [allocatedTime, setAllocatedTime] = useState(30); // Default 30 minutes
   const [customTime, setCustomTime] = useState("");
 
@@ -32,6 +32,34 @@ export default function AdminCodeCrushers() {
       }
     };
     fetchTeams();
+  }, []);
+
+  // Fetch initial allocated time
+  useEffect(() => {
+    const fetchAllocatedTime = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.CODE_CRUSHERS.GET_TIME);
+        // Convert seconds to minutes for display
+        const timeInMinutes = Math.round(response.data.allocateTime / 60);
+        setAllocatedTime(timeInMinutes);
+      } catch (error) {
+        console.error('Error fetching allocated time:', error);
+      }
+    };
+    fetchAllocatedTime();
+  }, []);
+
+  // Fetch resource count
+  useEffect(() => {
+    const fetchResourceCount = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.CODE_CRUSHERS.GET_RESOURCE_COUNT);
+        setResources(response.data.count);
+      } catch (error) {
+        console.error('Error fetching resource count:', error);
+      }
+    };
+    fetchResourceCount();
   }, []);
 
   // Initialize criteria for marking
@@ -93,19 +121,27 @@ export default function AdminCodeCrushers() {
 
   const handleResourceUpload = async () => {
     if (selectedFile) {
-      // Here you would handle the resource upload to the backend
-      const formData = new FormData();
-      formData.append('slides', selectedFile);
+      try {
+        // Here you would handle the resource upload to the backend
+        const formData = new FormData();
+        formData.append('resource', selectedFile);
 
-      await axiosInstance.post(API_PATHS.CODE_CRUSHERS.UPLOAD_SLIDES, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      showAlert('Resource uploaded: ' + selectedFile.name, 'Upload Successful', 'success');
-      // Simulating new resources added
-      setResources(resources + 1);
-      setSelectedFile(null);
+        await axiosInstance.post(API_PATHS.CODE_CRUSHERS.UPLOAD_RESOURCE, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        // Refresh resource count after successful upload
+        const countResponse = await axiosInstance.get(API_PATHS.CODE_CRUSHERS.GET_RESOURCE_COUNT);
+        setResources(countResponse.data.count);
+
+        showAlert('Resource uploaded: ' + selectedFile.name, 'Upload Successful', 'success');
+        setSelectedFile(null);
+      } catch (error) {
+        console.error('Error uploading resource:', error);
+        showAlert('Failed to upload resource', 'Upload Error', 'error');
+      }
     } else {
       showAlert('Please select a file first', 'Upload Error', 'error');
     }
@@ -151,13 +187,22 @@ export default function AdminCodeCrushers() {
     setCustomTime(e.target.value);
   };
 
-  const handleConfirmTime = () => {
+  const handleConfirmTime = async () => {
     const timeToUse = allocatedTime === 'custom' ? parseInt(customTime) : allocatedTime;
     if (allocatedTime === 'custom' && (!customTime || isNaN(parseInt(customTime)))) {
       showAlert('Please enter a valid time in minutes', 'Time Allocation Error', 'error');
       return;
     }
-    showAlert(`Time allocated: ${timeToUse} minutes`, 'Time Allocation', 'success');
+
+    try {
+      // Convert minutes to seconds for backend storage
+      const timeInSeconds = timeToUse * 60;
+      await axiosInstance.post(API_PATHS.CODE_CRUSHERS.SET_TIME, { allocateTime: timeInSeconds });
+      showAlert(`Time allocated: ${timeToUse} minutes`, 'Time Allocation', 'success');
+    } catch (error) {
+      console.error('Error setting time:', error);
+      showAlert('Failed to set allocated time', 'Time Allocation Error', 'error');
+    }
   };
 
   // Helper function for showing alerts

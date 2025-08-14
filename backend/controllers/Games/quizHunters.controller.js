@@ -1,6 +1,7 @@
 import QuizHuntersQuestion from "../../models/questions/QuizHuntersQuestion.js";
 import QuizHuntersAnswer from "../../models/markings/QuizHuntersAnswer.js";
 import School from "../../models/School.js";
+import Game from "../../models/Game.js";
 import { parseCSVFile } from "../../utils/csvParser.js";
 
 export const getAllQuestions = async (req, res) => {
@@ -133,8 +134,6 @@ export const addQuestionsCSV = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
-
-export const setTime = async (req, res) => {};
 
 export const submitQuiz = async (req, res) => {
   try {
@@ -284,4 +283,51 @@ export const checkCurrentQuestion = async (req, res) => {
     console.error("Error checking current question:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
+};
+
+export const setTime = async (req, res) => {
+    const { time } = req.body;
+
+    if (!time || time <= 0) {
+        return res.status(400).json({ message: "Valid time is required" });
+    }
+
+    try {
+        // Update the allocated time for the Quiz Hunters game
+        const updatedGame = await Game.findOneAndUpdate(
+            { name: "Quiz Hunters" },
+            { allocateTime: parseInt(time) },
+            { new: true, upsert: false }
+        );
+
+        if (!updatedGame) {
+            return res.status(404).json({ message: "Quiz Hunters game not found" });
+        }
+
+        res.status(200).json({ 
+            message: "Time allocated successfully", 
+            game: updatedGame 
+        });
+    } catch (error) {
+        console.error("Error setting allocated time:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const getTime = async (req, res) => {
+    try {
+        const game = await Game.findOne({ name: "Quiz Hunters" });
+
+        if (!game) {
+            return res.status(404).json({ message: "Quiz Hunters game not found" });
+        }
+
+        res.status(200).json({ 
+            message: "Allocated time retrieved successfully",
+            allocateTime: game.allocateTime
+        });
+    } catch (error) {
+        console.error("Error retrieving allocated time:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
 };

@@ -10,7 +10,7 @@ import { API_PATHS } from '../../../utils/apiPaths';
 export default function AdminCircuitSmashers() {
   // Resources state
   const [selectedFile, setSelectedFile] = useState(null);
-  const [resources, setResources] = useState(5); // Initial resources count
+  const [resources, setResources] = useState(0); // Start with 0, will be fetched
   const [allocatedTime, setAllocatedTime] = useState(30); // Default 30 minutes
   const [customTime, setCustomTime] = useState("");
 
@@ -31,6 +31,34 @@ export default function AdminCircuitSmashers() {
       }
     };
     fetchTeams();
+  }, []);
+
+  // Fetch initial allocated time
+  useEffect(() => {
+    const fetchAllocatedTime = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.CIRCUIT_SMASHERS.GET_TIME);
+        // Convert seconds to minutes for display
+        const timeInMinutes = Math.round(response.data.allocateTime / 60);
+        setAllocatedTime(timeInMinutes);
+      } catch (error) {
+        console.error('Error fetching allocated time:', error);
+      }
+    };
+    fetchAllocatedTime();
+  }, []);
+
+  // Fetch resource count
+  useEffect(() => {
+    const fetchResourceCount = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.CIRCUIT_SMASHERS.GET_RESOURCE_COUNT);
+        setResources(response.data.count);
+      } catch (error) {
+        console.error('Error fetching resource count:', error);
+      }
+    };
+    fetchResourceCount();
   }, []);
 
   // Initialize criteria for marking
@@ -100,6 +128,11 @@ export default function AdminCircuitSmashers() {
             'Content-Type': 'multipart/form-data',
           },
         });
+
+        // Refresh resource count after successful upload
+        const countResponse = await axiosInstance.get(API_PATHS.CIRCUIT_SMASHERS.GET_RESOURCE_COUNT);
+        setResources(countResponse.data.count);
+
       } catch (error) {
         console.error('Error uploading resource:', error);
         showAlert('Failed to upload resource', 'Upload Error', 'error');
@@ -107,8 +140,6 @@ export default function AdminCircuitSmashers() {
       }
       console.log('Uploading resource:', selectedFile);
       showAlert('Resource uploaded: ' + selectedFile.name, 'Upload Successful', 'success');
-      // Simulating new resources added
-      setResources(resources + 1);
       setSelectedFile(null);
     } else {
       showAlert('Please select a file first', 'Upload Error', 'error');
@@ -153,13 +184,22 @@ export default function AdminCircuitSmashers() {
     setCustomTime(e.target.value);
   };
 
-  const handleConfirmTime = () => {
+  const handleConfirmTime = async () => {
     const timeToUse = allocatedTime === 'custom' ? parseInt(customTime) : allocatedTime;
     if (allocatedTime === 'custom' && (!customTime || isNaN(parseInt(customTime)))) {
       showAlert('Please enter a valid time in minutes', 'Time Allocation Error', 'error');
       return;
     }
-    showAlert(`Time allocated: ${timeToUse} minutes`, 'Time Allocation', 'success');
+
+    try {
+      // Convert minutes to seconds for backend storage
+      const timeInSeconds = timeToUse * 60;
+      await axiosInstance.post(API_PATHS.CIRCUIT_SMASHERS.SET_TIME, { time: timeInSeconds });
+      showAlert(`Time allocated: ${timeToUse} minutes`, 'Time Allocation', 'success');
+    } catch (error) {
+      console.error('Error setting time:', error);
+      showAlert('Failed to set allocated time', 'Time Allocation Error', 'error');
+    }
   };
 
   // Helper function for showing alerts

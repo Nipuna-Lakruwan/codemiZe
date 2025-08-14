@@ -5,6 +5,7 @@ import GameSlides from "../../models/GameSlides.js";
 import StudentUpload from "../../models/StudentUpload.js";
 import Criteria from "../../models/Criteria.js";
 import CircuitSmashersMarking from "../../models/markings/CircuitSmashersMarking.js";
+import Game from "../../models/Game.js";
 
 export const uploadSlides = async (req, res) => {
     const slides = req.files;
@@ -232,4 +233,60 @@ export const getFormattedCircuitSmashersMarkings = async (req, res) => {
   }
 };
 
-export const setTime = async (req, res) => {};
+export const setTime = async (req, res) => {
+    const { time } = req.body;
+
+    if (!time || time <= 0) {
+        return res.status(400).json({ message: "Valid time is required" });
+    }
+
+    try {
+        // Update the allocated time for the Circuit Smashers game
+        const updatedGame = await Game.findOneAndUpdate(
+            { name: "Circuit Smashers" },
+            { allocateTime: parseInt(time) },
+            { new: true, upsert: false }
+        );
+
+        if (!updatedGame) {
+            return res.status(404).json({ message: "Circuit Smashers game not found" });
+        }
+
+        res.status(200).json({ 
+            message: "Time allocated successfully", 
+            game: updatedGame 
+        });
+    } catch (error) {
+        console.error("Error setting allocated time:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const getTime = async (req, res) => {
+    try {
+        const game = await Game.findOne({ name: "Circuit Smashers" });
+
+        if (!game) {
+            return res.status(404).json({ message: "Circuit Smashers game not found" });
+        }
+
+        res.status(200).json({ 
+            message: "Allocated time retrieved successfully",
+            allocateTime: game.allocateTime
+        });
+    } catch (error) {
+        console.error("Error retrieving allocated time:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const getResourceCount = async (req, res) => {
+    try {
+        const uniqueStudents = await StudentUpload.distinct("userId", { gameName: "circuitSmashers" });
+        const count = uniqueStudents.length;
+        res.status(200).json({ count });
+    } catch (error) {
+        console.error("Error fetching resource count:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
