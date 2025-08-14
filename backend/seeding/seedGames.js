@@ -12,7 +12,7 @@ export const seedGames = async () => {
       name: "Quiz Hunters",
       allocateTime: 1200,
       icon: {
-        url: "uploads/gameIcons/QuizHunters.png",
+        url: "/uploads/gameIcons/QuizHunters.png",
         publicId: "QuizHunters.png"
       },
       status: 'inactive'
@@ -21,7 +21,7 @@ export const seedGames = async () => {
       name: "Code Crushers",
       allocateTime: 1800,
       icon: {
-        url: "uploads/gameIcons/CodeCrushers.png",
+        url: "/uploads/gameIcons/CodeCrushers.png",
         publicId: "CodeCrushers.png"
       },
       status: 'inactive'
@@ -30,7 +30,7 @@ export const seedGames = async () => {
       name: "Circuit Smashers",
       allocateTime: 1800,
       icon: {
-        url: "uploads/gameIcons/CircuitSmashers.png",
+        url: "/uploads/gameIcons/CircuitSmashers.png",
         publicId: "CircuitSmashers.png"
       },
       status: 'inactive'
@@ -39,7 +39,7 @@ export const seedGames = async () => {
       name: "Route Seekers",
       allocateTime: 2400,
       icon: {
-        url: "uploads/gameIcons/RouteSeekers.png",
+        url: "/uploads/gameIcons/RouteSeekers.png",
         publicId: "RouteSeekers.png"
       },
       status: 'inactive'
@@ -48,7 +48,7 @@ export const seedGames = async () => {
       name: "Battle Breakers",
       allocateTime: 30,
       icon: {
-        url: "uploads/gameIcons/BattleBreakers.png",
+        url: "/uploads/gameIcons/BattleBreakers.png",
         publicId: "BattleBreakers.png"
       },
       status: 'inactive'
