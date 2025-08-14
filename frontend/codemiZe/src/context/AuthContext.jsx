@@ -12,9 +12,8 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('jwtToken');
     const isLoginPage = window.location.pathname === '/';
-    if (!token || isLoginPage) {
+    if (isLoginPage) {
       setLoading(false);
       setIsAuthenticated(false);
       setUser(null);

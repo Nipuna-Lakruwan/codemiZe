@@ -69,6 +69,8 @@ export const deactivateGame = async (req, res) => {
       newStatus: 'inactive',
     });
 
+    io.emit('completed');
+
     res.status(200).json({ message: 'Game deactivated successfully' });
   } catch (error) {
     console.error('Error deactivating game:', error);
