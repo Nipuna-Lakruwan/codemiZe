@@ -143,6 +143,12 @@ export default function CircuitSmashers() {
         }
       });
 
+      socket.on('completed', (data) => {
+        setIsGameStarted(false);
+        setIsServerTimerActive(false);
+        handleGameEnd();
+      });
+
       // Request current state when component mounts (for reconnection)
       socket.emit('circuitSmashers-requestCurrentState');
     }
