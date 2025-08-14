@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { motion } from 'framer-motion';
 import { FaUpload, FaFileAlt, FaTrashAlt, FaDownload, FaEye } from 'react-icons/fa';
 import AdminBox from '../../../components/Admin/QuizComponents/AdminBox';
 {/* Alert and Confirmation modals are now imported via ModalComponents */ }
 import { TeamQuestionsView, QuestionersResponsesSection, NetworkDesignSection, TeamsSection, ModalComponents } from '../../../components/Admin/RouteComponents';
+import axiosInstance from '../../../utils/axiosInstance';
 
 export default function AdminRouteSeekers() {
   // States for resources
   const [selectedFile, setSelectedFile] = useState(null);
-  const [questions, setQuestions] = useState(8); // Initial questions count
+  const [questionsCount, setQuestionsCount] = useState(0); // Renamed from questions to avoid conflict
   const [resources, setResources] = useState(5); // Initial resources count
   const [responses, setResponses] = useState(12); // Initial responses count
   const [allocatedTime, setAllocatedTime] = useState(30); // Default 30 minutes
@@ -20,28 +21,53 @@ export default function AdminRouteSeekers() {
   const [viewingTeam, setViewingTeam] = useState(null);
   const [teamQuestions, setTeamQuestions] = useState([]);
 
-  // Team data
-  const [teams, setTeams] = useState([
-    { id: 1, name: 'Sri Sangabodhi Central College', city: 'Dankotuwa', logo: '/college-logos/sangabodhi.png', score: 85 },
-    { id: 2, name: 'Royal College', city: 'Colombo', logo: '/college-logos/royal.png', score: 92 },
-    { id: 3, name: 'Ananda College', city: 'Colombo', logo: '/college-logos/ananda.png', score: 88 },
-    { id: 4, name: 'Nalanda College', city: 'Colombo', logo: '/college-logos/nalanda.png', score: 90 },
-    { id: 5, name: 'D.S. Senanayake College', city: 'Colombo', logo: '/college-logos/ds.png', score: 82 },
-    { id: 6, name: 'Maliyadeva College', city: 'Kurunegala', logo: '/college-logos/maliyadeva.png', score: 79 },
-    { id: 7, name: 'St. Joseph\'s College', city: 'Colombo', logo: '/college-logos/stjoseph.png', score: 86 },
-    { id: 8, name: 'Rahula College', city: 'Matara', logo: '/college-logos/rahula.png', score: 81 }
-  ]);
+  // Data states
+  const [schools, setSchools] = useState([]);
+  const [allQuestions, setAllQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Modal states
   const [alertModal, setAlertModal] = useState({
     isOpen: false,
     title: '',
     message: '',
-    type: 'info', // 'info', 'success', 'warning', or 'error'
+    type: 'info',
   });
   const [showDeleteQuestionsModal, setShowDeleteQuestionsModal] = useState(false);
   const [showDeleteResourcesModal, setShowDeleteResourcesModal] = useState(false);
   const [showDeleteNetworkResourceModal, setShowDeleteNetworkResourceModal] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [schoolsRes, questionsRes, answersRes] = await Promise.all([
+          axiosInstance.get('/api/v1/admin/schools'),
+          axiosInstance.get('/api/v1/questions/route-seekers'),
+          axiosInstance.get('/api/v1/route-seekers/all-student-answers')
+        ]);
+
+        const schoolsData = schoolsRes.data.schools;
+        const answersData = answersRes.data;
+
+        const schoolsWithSubmissions = schoolsData.map(school => {
+          const submission = answersData.find(answer => (answer.userId?._id || answer.userId) === school._id);
+          return { ...school, submission: submission || null };
+        });
+
+        setSchools(schoolsWithSubmissions);
+        setAllQuestions(questionsRes.data);
+        setQuestionsCount(questionsRes.data.length);
+
+      } catch (error) {
+        console.error("Error fetching data", error);
+        showAlert('Failed to fetch data from the server.', 'Error', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   // File handling functions
   const handleFileChange = (e) => {
@@ -54,7 +80,7 @@ export default function AdminRouteSeekers() {
     if (selectedFile) {
       console.log('Uploading questions:', selectedFile);
       showAlert('Questions uploaded: ' + selectedFile.name, 'Upload Successful', 'success');
-      setQuestions(questions + 5); // Simulate adding 5 new questions
+      setQuestionsCount(questionsCount + 5); // Simulate adding 5 new questions
       setSelectedFile(null);
     } else {
       showAlert('Please select a file first', 'Upload Error', 'error');
@@ -100,7 +126,8 @@ export default function AdminRouteSeekers() {
   };
 
   const confirmDeleteQuestions = () => {
-    setQuestions(0);
+    setQuestionsCount(0); // This should ideally trigger a backend call
+    setAllQuestions([]);
     setShowDeleteQuestionsModal(false);
     showAlert('All questions have been deleted', 'Delete Successful', 'success');
   };
@@ -125,89 +152,34 @@ export default function AdminRouteSeekers() {
     showAlert('All network resources have been deleted', 'Delete Successful', 'success');
   };
 
-  // Sample questions data - in a real app, this would come from an API or database
-  const sampleQuestions = [
-    {
-      id: 1,
-      question: "What is the primary protocol used for web communication?",
-      correctAnswer: "HTTP/HTTPS",
-      answer: "HTTP protocol",
-      status: null // null, 'correct', or 'incorrect'
-    },
-    {
-      id: 2,
-      question: "What does DNS stand for?",
-      correctAnswer: "Domain Name System",
-      answer: "Domain Name System",
-      status: null
-    },
-    {
-      id: 3,
-      question: "What is the default port for HTTP?",
-      correctAnswer: "80",
-      answer: "Port 80",
-      status: null
-    },
-    {
-      id: 4,
-      question: "What does IP stand for in IP Address?",
-      correctAnswer: "Internet Protocol",
-      answer: "Internet Protocol",
-      status: null
-    },
-    {
-      id: 5,
-      question: "What is a subnet mask used for?",
-      correctAnswer: "To divide an IP address into network and host portions",
-      answer: "It helps to identify which part of an IP address refers to the network",
-      status: null
-    },
-    {
-      id: 6,
-      question: "What is the purpose of a router in a network?",
-      correctAnswer: "To forward data packets between computer networks",
-      answer: "To connect different networks and forward data packets between them",
-      status: null
-    },
-    {
-      id: 7,
-      question: "What is the OSI model?",
-      correctAnswer: "A conceptual framework used to describe network communication functions",
-      answer: "A 7-layer model that describes how networks function",
-      status: null
-    },
-    {
-      id: 8,
-      question: "What protocol is used for secure web browsing?",
-      correctAnswer: "HTTPS",
-      answer: "HTTPS (HTTP Secure)",
-      status: null
-    },
-    {
-      id: 9,
-      question: "What does LAN stand for?",
-      correctAnswer: "Local Area Network",
-      answer: "Local Area Network",
-      status: null
-    },
-    {
-      id: 10,
-      question: "What does TCP/IP stand for?",
-      correctAnswer: "Transmission Control Protocol/Internet Protocol",
-      answer: "Transmission Control Protocol/Internet Protocol",
-      status: null
-    }
-  ];
-
   // View functions
   const handleViewQuestions = () => {
     showAlert('Viewing all questions', 'Questions View', 'info');
+    // In a real implementation, this would open a modal to display `allQuestions`
   };
 
   const handleViewTeam = (team) => {
-    // Load questions for this team
-    // In a real app, you would fetch the team's specific answers from your backend
-    setTeamQuestions(sampleQuestions.map(q => ({ ...q, status: null })));
+    const { submission } = team;
+
+    if (!submission) {
+      showAlert(`${team.name} has not submitted their answers yet.`, 'No Submission', 'info');
+      setTeamQuestions([]);
+      setViewingTeam(team);
+      return;
+    }
+
+    const populatedQuestions = allQuestions.map(q => {
+      const studentAnswer = submission.Answers.find(a => a.questionId === q._id);
+      return {
+        id: q._id,
+        question: q.question,
+        correctAnswer: q.answer, // Correct answer from the question model
+        answer: studentAnswer ? studentAnswer.answer : "Not Answered", // Student's submitted answer
+        status: null // Admin view doesn't mark, so status is neutral
+      };
+    });
+
+    setTeamQuestions(populatedQuestions);
     setViewingTeam(team);
   };
 
@@ -284,6 +256,16 @@ export default function AdminRouteSeekers() {
     });
   };
 
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-full">
+          <div className="animate-pulse text-gray-400">Loading...</div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       {/* Main Admin Dashboard */}
@@ -323,7 +305,7 @@ export default function AdminRouteSeekers() {
                     whileTap={{ scale: 0.95 }}
                     onClick={handleDeleteQuestions}
                     className="w-32 h-8 bg-sky-600 rounded-[3px] text-white text-xs flex items-center justify-center"
-                    disabled={questions === 0}
+                    disabled={questionsCount === 0}
                   >
                     Delete Question
                   </motion.button>
@@ -333,7 +315,7 @@ export default function AdminRouteSeekers() {
                     whileTap={{ scale: 0.95 }}
                     onClick={handleViewQuestions}
                     className="w-32 h-8 bg-sky-600 rounded-[3px] text-white text-xs flex items-center justify-center"
-                    disabled={questions === 0}
+                    disabled={questionsCount === 0}
                   >
                     View Question
                   </motion.button>
@@ -436,7 +418,7 @@ export default function AdminRouteSeekers() {
         <TeamsSection
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          teams={teams}
+          teams={schools}
           handleViewTeam={handleViewTeam}
           viewingTeam={viewingTeam}
           teamQuestions={teamQuestions}
