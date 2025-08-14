@@ -5,6 +5,7 @@ import {
   getRouteSeekersQuestionById,
   updateRouteSeekersQuestion,
   deleteRouteSeekersQuestion,
+  deleteManyRouteSeekersQuestions,
 } from "../../controllers/Common/routeSeekersQuestion.controller.js";
 import { protect } from "../../middleware/authMiddleware.js";
 
@@ -16,5 +17,6 @@ router.get("/", protect, getAllRouteSeekersQuestions);
 router.get("/:id", protect, getRouteSeekersQuestionById);
 router.put("/:id", protect, updateRouteSeekersQuestion);
 router.delete("/:id", protect, deleteRouteSeekersQuestion);
+router.post("/delete-many", protect, deleteManyRouteSeekersQuestions);
 
 export default router;
