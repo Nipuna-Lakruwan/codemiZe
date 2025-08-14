@@ -50,13 +50,13 @@ const RouteSeekersJudge = () => {
 
   // Mock questions for questionnaire
   const mockQuestionsList = [
-    { id: 1, question: "What is the primary protocol used for web communication?", correctAnswer: "HTTP/HTTPS", answer: "HTTP protocol", status: null },
-    { id: 2, question: "What does DNS stand for?", correctAnswer: "Domain Name System", answer: "Domain Name System", status: null },
-    { id: 3, question: "What is the default port for HTTP?", correctAnswer: "80", answer: "Port 80", status: null },
-    { id: 4, question: "What does IP stand for in IP Address?", correctAnswer: "Internet Protocol", answer: "Internet Protocol", status: null },
-    { id: 5, question: "What is a subnet mask used for?", correctAnswer: "To divide an IP address into network and host portions", answer: "It helps to identify which part of an IP address refers to the network", status: null },
-    { id: 6, question: "What is the purpose of a router in a network?", correctAnswer: "To forward data packets between computer networks", answer: "To connect different networks and forward data packets between them", status: null },
-    { id: 7, question: "What is the OSI model?", correctAnswer: "A conceptual framework used to describe network communication functions", answer: "A 7-layer model that describes how networks function", status: null }
+    { id: 1, question: "What is the primary protocol used for web communication?", answer: "HTTP protocol", status: 'incorrect' },
+    { id: 2, question: "What does DNS stand for?", answer: "Domain Name System", status: 'correct' },
+    { id: 3, question: "What is the default port for HTTP?", answer: "Port 80", status: 'correct' },
+    { id: 4, question: "What does IP stand for in IP Address?", answer: "Internet Protocol", status: 'correct' },
+    { id: 5, question: "What is a subnet mask used for?", answer: "It helps to identify which part of an IP address refers to the network", status: 'incorrect' },
+    { id: 6, question: "What is the purpose of a router in a network?", answer: "To connect different networks and forward data packets between them", status: 'correct' },
+    { id: 7, question: "What is the OSI model?", answer: "A 7-layer model that describes how networks function", status: 'incorrect' }
   ];
 
   // Simulate fetching data (API call)

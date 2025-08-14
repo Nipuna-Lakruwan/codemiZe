@@ -51,30 +51,25 @@ const QuestionnaireResponses = ({
                 <div className="mb-2">
                   <span className="font-medium">Submitted Answer:</span> {item.answer}
                 </div>
-                <div>
-                  <span className="font-medium">Correct Answer:</span> {item.correctAnswer}
-                </div>
               </div>
               {/* Marking buttons */}
-              <div className="flex gap-2 mt-2 sm:mt-0">
-                <button
-                  onClick={() => handleMarkQuestion(index, 'correct')}
-                  className={`${item.status === 'correct' ? 'bg-green-100' : ''} p-2 rounded-md hover:bg-green-50`}
-                  title="Mark as correct"
-                >
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => handleMarkQuestion(index, 'incorrect')}
-                  className={`${item.status === 'incorrect' ? 'bg-red-100' : ''} p-2 rounded-md hover:bg-red-50`}
-                  title="Mark as incorrect"
-                >
-                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+              <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                {item.status === 'correct' && (
+                  <div className="flex items-center gap-1 text-green-600 bg-green-100 p-2 rounded-md">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Correct</span>
+                  </div>
+                )}
+                {item.status === 'incorrect' && (
+                  <div className="flex items-center gap-1 text-red-600 bg-red-100 p-2 rounded-md">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>Incorrect</span>
+                  </div>
+                )}
               </div>
             </div>
             {/* Divider */}
@@ -83,15 +78,6 @@ const QuestionnaireResponses = ({
             )}
           </div>
         ))}
-      </div>
-      <div className="mt-6 flex justify-end">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="px-4 py-2 bg-sky-600 text-white rounded-md text-sm font-medium"
-        >
-          Submit Marks
-        </motion.button>
       </div>
     </div>
   </div>
