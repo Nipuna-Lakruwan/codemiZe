@@ -7,7 +7,7 @@ import {
   requireSchool 
 } from "../../middleware/roleMiddleware.js";
 import { resourceUpload, slidesUpload } from "../../middleware/uploadMiddleware.js";
-import { deleteAllSlides, getAllResources, getCriteria, getFormattedCircuitSmashersMarkings, getResource, getSlides, setTime, uploadResource, uploadSlides } from "../../controllers/Games/circuitSmashers.controller.js";
+import { deleteAllSlides, getAllResources, getCriteria, getFormattedCircuitSmashersMarkings, getResource, getResourceCount, getSlides, getTime, setTime, uploadResource, uploadSlides } from "../../controllers/Games/circuitSmashers.controller.js";
 
 const router = express.Router();
 
@@ -17,8 +17,10 @@ router.post("/slides", protect, requireAdmin, slidesUpload.array('slides', 10), 
 router.delete("/slides/delete", protect, requireAdmin, deleteAllSlides);
 router.post("/upload", protect, requireSchool, resourceUpload.single('resource'), uploadResource);
 router.get("/resources", protect, requireAdmin, getAllResources);
+router.get("/resources/count", protect, requireAdmin, getResourceCount);
 router.get("/resources/:id", protect, requireAdminorJudge, getResource);
 router.get("/markings", protect, requireAdminorJudge, getFormattedCircuitSmashersMarkings);
+router.get("/time", protect, requireAdmin, getTime);
 router.post("/time", protect, requireAdmin, setTime);
 
 export default router;

@@ -47,6 +47,21 @@ export default function AdminQuizHunters() {
     getQnA();
   }, []);
 
+  // Fetch initial allocated time
+  useEffect(() => {
+    const fetchAllocatedTime = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.QUIZ_HUNTERS.GET_TIME);
+        // Convert seconds to minutes for display
+        const timeInMinutes = Math.round(response.data.allocateTime / 60);
+        setAllocatedTime(timeInMinutes);
+      } catch (error) {
+        console.error('Error fetching allocated time:', error);
+      }
+    };
+    fetchAllocatedTime();
+  }, []);
+
   // Modal states
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
@@ -375,24 +390,22 @@ export default function AdminQuizHunters() {
     showAlert(`${questions.length} questions exported to CSV`, 'Export Successful', 'success');
   };
 
-  const handleConfirmTime = () => {
+  const handleConfirmTime = async () => {
     const timeToUse = allocatedTime === 'custom' ? parseInt(customTime) : allocatedTime;
     if (allocatedTime === 'custom' && (!customTime || isNaN(parseInt(customTime)))) {
       showAlert('Please enter a valid time in minutes', 'Time Allocation Error', 'error');
       return;
     }
 
-    // In a real implementation, you would:
-    // axios.post('/api/quizhunters/setTime', { time: timeToUse })
-    //   .then(() => {
-    //     showAlert(`Time allocated: ${timeToUse} minutes`, 'Time Allocation', 'success');
-    //   })
-    //   .catch(error => {
-    //     console.error('Error setting time:', error);
-    //     showAlert('Failed to set time', 'Error', 'error');
-    //   });
-
-    showAlert(`Time allocated: ${timeToUse} minutes`, 'Time Allocation', 'success');
+    try {
+      // Convert minutes to seconds for backend storage
+      const timeInSeconds = timeToUse * 60;
+      await axiosInstance.post(API_PATHS.QUIZ_HUNTERS.SET_TIME, { time: timeInSeconds });
+      showAlert(`Time allocated: ${timeToUse} minutes`, 'Time Allocation', 'success');
+    } catch (error) {
+      console.error('Error setting time:', error);
+      showAlert('Failed to set allocated time', 'Time Allocation Error', 'error');
+    }
   };
 
   return (
