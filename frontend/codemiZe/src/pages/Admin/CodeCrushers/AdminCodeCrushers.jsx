@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { motion } from 'framer-motion';
 import { FaUpload, FaFileAlt, FaDownload, FaFilePdf } from 'react-icons/fa';
@@ -16,66 +16,64 @@ export default function AdminCodeCrushers() {
   const [customTime, setCustomTime] = useState("");
 
   // Marking state
-  const [activeJudge, setActiveJudge] = useState('Overall Score');
-  const [teams, setTeams] = useState([
-    'Team 1', 'Team 2', 'Team 3', 'Team 4', 'Team 5',
-    'Team 6', 'Team 7', 'Team 8', 'Team 9', 'Team 10'
-  ]);
-  const [criteria, setCriteria] = useState([
-    'Code Quality', 'Functionality', 'Efficiency', 'Innovation', 'UI/UX', 'Documentation', 'Total'
-  ]);
+  const [activeJudge, setActiveJudge] = useState('');
+  const [teams, setTeams] = useState([]);
+  const [criteria, setCriteria] = useState([]);
+
+  // Initiate teams
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.ADMIN.GET_ALL_SCHOOLS);
+        const schools = response.data.schools.map(item => item.nameInShort);
+        setTeams(schools);
+      } catch (error) {
+        console.error('Error fetching teams:', error);
+      }
+    };
+    fetchTeams();
+  }, []);
+
+  // Initialize criteria for marking
+  useEffect(() => {
+    const getCriteria = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.CODE_CRUSHERS.GET_CRITERIA);
+        const criteriaStrings = response.data.criteria.map(item => item.criteria);
+        setCriteria(criteriaStrings);
+      } catch (error) {
+        console.error('Error fetching criteria:', error);
+      }
+    };
+    getCriteria();
+  }, []);
 
   // Sample marking data
-  const [markings, setMarkings] = useState({
-    'Overall Score': {
-      'Team 1': [8, 7, 9, 6, 8, 7, 45],
-      'Team 2': [9, 8, 7, 8, 9, 8, 49],
-      'Team 3': [7, 8, 6, 7, 6, 7, 41],
-      'Team 4': [8, 9, 7, 8, 7, 8, 47],
-      'Team 5': [9, 8, 8, 9, 8, 9, 51],
-      'Team 6': [7, 7, 6, 8, 7, 6, 41],
-      'Team 7': [8, 7, 8, 7, 8, 8, 46],
-      'Team 8': [6, 7, 8, 6, 7, 7, 41],
-      'Team 9': [9, 8, 9, 9, 8, 9, 52],
-      'Team 10': [8, 7, 8, 7, 8, 7, 45]
-    },
-    'Nipuna': {
-      'Team 1': [8, 7, 8, 6, 7, 7, 43],
-      'Team 2': [9, 8, 8, 8, 9, 8, 50],
-      'Team 3': [7, 7, 6, 7, 6, 7, 40],
-      'Team 4': [8, 9, 7, 8, 7, 8, 47],
-      'Team 5': [9, 8, 8, 9, 8, 9, 51],
-      'Team 6': [7, 7, 6, 7, 7, 7, 41],
-      'Team 7': [8, 8, 8, 7, 8, 7, 46],
-      'Team 8': [6, 7, 7, 7, 7, 7, 41],
-      'Team 9': [9, 9, 9, 9, 8, 9, 53],
-      'Team 10': [8, 7, 8, 7, 8, 7, 45]
-    },
-    'Sohan': {
-      'Team 1': [9, 7, 9, 7, 8, 8, 48],
-      'Team 2': [8, 8, 7, 8, 9, 8, 48],
-      'Team 3': [6, 8, 7, 6, 7, 7, 41],
-      'Team 4': [8, 8, 7, 8, 8, 8, 47],
-      'Team 5': [9, 8, 9, 8, 8, 9, 51],
-      'Team 6': [7, 7, 6, 8, 7, 6, 41],
-      'Team 7': [8, 7, 7, 7, 8, 8, 45],
-      'Team 8': [7, 7, 8, 6, 7, 7, 42],
-      'Team 9': [9, 8, 8, 9, 8, 8, 50],
-      'Team 10': [7, 7, 8, 8, 7, 7, 44]
-    },
-    'Waruna': {
-      'Team 1': [8, 7, 9, 6, 8, 7, 45],
-      'Team 2': [9, 8, 7, 8, 9, 8, 49],
-      'Team 3': [7, 8, 6, 7, 6, 7, 41],
-      'Team 4': [8, 9, 7, 8, 7, 8, 47],
-      'Team 5': [8, 8, 8, 9, 7, 9, 49],
-      'Team 6': [7, 7, 6, 8, 7, 6, 41],
-      'Team 7': [8, 7, 8, 7, 8, 8, 46],
-      'Team 8': [6, 7, 8, 6, 7, 7, 41],
-      'Team 9': [9, 8, 9, 9, 8, 9, 52],
-      'Team 10': [8, 7, 8, 7, 8, 7, 45]
-    }
-  });
+  const [markings, setMarkings] = useState();
+  const [judgeNames, setJudgeNames] = useState([]);
+
+  useEffect(() => {
+    const fetchMarkings = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.CODE_CRUSHERS.GET_MARKINGS);
+        // If response is in the format { Judge: {...} }, extract accordingly
+        let data = response.data;
+        let judgeKeys = Object.keys(data || {});
+        setMarkings(data);
+        setJudgeNames(judgeKeys);
+        
+        // Set default active judge to Overall if it exists, otherwise first judge
+        if (judgeKeys.includes('Overall')) {
+          setActiveJudge('Overall');
+        } else if (judgeKeys.length > 0) {
+          setActiveJudge(judgeKeys[0]);
+        }
+      } catch (error) {
+        console.error('Error fetching markings:', error);
+      }
+    };
+    fetchMarkings();
+  }, []);
 
   // Alert modal state
   const [alertModal, setAlertModal] = useState({
@@ -293,42 +291,40 @@ export default function AdminCodeCrushers() {
       <AdminBox title="Marking Sheet" minHeight="auto">
         <div className="mt-6 mb-6">
           <div className="flex justify-between items-center mb-6">
-            {/* Tab Rectangle */}
-            <div className="relative w-[604px] h-10 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+            {/* Tab Rectangle - dynamic judge names */}
+            <div className="relative bg-white rounded-lg border-2 border-gray-300 shadow-sm" style={{ width: `${(judgeNames.filter(j => j !== 'Overall').length + 1) * 151}px`, minWidth: '302px', height: '40px' }}>
               <div
                 className="absolute left-0 top-0 h-full bg-sky-600 rounded-lg transition-all duration-300"
                 style={{
                   width: '151px',
-                  transform: activeJudge === 'Overall Score' ? 'translateX(0)' :
-                    activeJudge === 'Nipuna' ? 'translateX(151px)' :
-                      activeJudge === 'Sohan' ? 'translateX(302px)' : 'translateX(453px)'
+                  transform: `translateX(${(() => {
+                    if (activeJudge === 'Overall') return 0;
+                    const judgeIndex = judgeNames.filter(j => j !== 'Overall').findIndex(j => j === activeJudge);
+                    return (judgeIndex + 1) * 151;
+                  })()}px)`
                 }}
               />
-              <div className="absolute inset-0 flex items-center justify-between px-4">
-                <span
-                  className={`text-sm font-semibold cursor-pointer transition-colors duration-200 ${activeJudge === 'Overall Score' ? 'text-white' : 'text-gray-700'}`}
-                  onClick={() => handleJudgeChange('Overall Score')}
-                >
-                  Overall Score
-                </span>
-                <span
-                  className={`text-sm font-semibold cursor-pointer transition-colors duration-200 ${activeJudge === 'Nipuna' ? 'text-white' : 'text-gray-700'}`}
-                  onClick={() => handleJudgeChange('Nipuna')}
-                >
-                  Nipuna
-                </span>
-                <span
-                  className={`text-sm font-semibold cursor-pointer transition-colors duration-200 ${activeJudge === 'Sohan' ? 'text-white' : 'text-gray-700'}`}
-                  onClick={() => handleJudgeChange('Sohan')}
-                >
-                  Sohan
-                </span>
-                <span
-                  className={`text-sm font-semibold cursor-pointer transition-colors duration-200 ${activeJudge === 'Waruna' ? 'text-white' : 'text-gray-700'}`}
-                  onClick={() => handleJudgeChange('Waruna')}
-                >
-                  Waruna
-                </span>
+              <div className="absolute inset-0 flex items-center">
+                <div className="flex w-full">
+                  <div className="w-[151px] flex items-center justify-center">
+                    <span
+                      className={`text-sm font-semibold cursor-pointer transition-colors duration-200 ${activeJudge === 'Overall' ? 'text-white' : 'text-gray-700'}`}
+                      onClick={() => handleJudgeChange('Overall')}
+                    >
+                      Overall
+                    </span>
+                  </div>
+                  {judgeNames.filter(judge => judge !== 'Overall').map((judge) => (
+                    <div key={judge} className="w-[151px] flex items-center justify-center">
+                      <span
+                        className={`text-sm font-semibold cursor-pointer transition-colors duration-200 ${activeJudge === judge ? 'text-white' : 'text-gray-700'}`}
+                        onClick={() => handleJudgeChange(judge)}
+                      >
+                        {judge}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -366,11 +362,48 @@ export default function AdminCodeCrushers() {
                       </td>
                       {teams.map((team) => (
                         <td key={`${team}-${criterion}`} className={`py-2 px-4 border-b border-r text-center text-sm ${index === criteria.length - 1 ? "font-bold text-purple-800" : "text-gray-700"}`}>
-                          {markings[activeJudge][team][index]}
+                          {(() => {
+                            if (!markings) return "-";
+                            let judgeData = markings[activeJudge];
+                            
+                            if (!judgeData && Object.keys(markings).length === 1) {
+                              judgeData = markings[Object.keys(markings)[0]];
+                            }
+                            
+                            if (judgeData && judgeData[team] && judgeData[team][index] !== undefined) {
+                              return judgeData[team][index];
+                            }
+                            return "-";
+                          })()}
                         </td>
                       ))}
                     </tr>
                   ))}
+                  {/* Total Row */}
+                  <tr className="bg-purple-100 border-t-2 border-purple-800">
+                    <td className="py-2 px-4 border-b border-r text-left text-sm font-bold text-purple-800">
+                      Total
+                    </td>
+                    {teams.map((team) => (
+                      <td key={`${team}-total`} className="py-2 px-4 border-b border-r text-center text-sm font-bold text-purple-800">
+                        {(() => {
+                          if (!markings) return "-";
+                          let judgeData = markings[activeJudge];
+                          
+                          if (!judgeData && Object.keys(markings).length === 1) {
+                            judgeData = markings[Object.keys(markings)[0]];
+                          }
+                          
+                          if (judgeData && judgeData[team]) {
+                            // Get the last element which is the total
+                            const totalIndex = judgeData[team].length - 1;
+                            return judgeData[team][totalIndex] || "-";
+                          }
+                          return "-";
+                        })()}
+                      </td>
+                    ))}
+                  </tr>
                 </tbody>
               </table>
             </div>
