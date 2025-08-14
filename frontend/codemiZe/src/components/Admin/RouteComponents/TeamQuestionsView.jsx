@@ -51,7 +51,8 @@ const TeamQuestionsView = ({ team, questions, onBack, onMarkCorrect, onMarkIncor
               {/* Answer section */}
               <div className="flex items-center justify-between">
                 <div className="justify-start text-black/80 text-sm font-['Inter'] flex-1">
-                  <span className="font-medium">Answer:</span> {item.answer}
+                  <span className="font-medium">Answer:</span> {item.answer} <br />
+                  <span className="font-medium">Correct Answer:</span> {item.correctAnswer}
                 </div>
 
                 {/* Marking buttons */}
