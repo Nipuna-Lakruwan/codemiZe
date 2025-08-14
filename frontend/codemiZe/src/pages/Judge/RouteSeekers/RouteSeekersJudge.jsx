@@ -18,7 +18,6 @@ const RouteSeekersJudge = () => {
   const [viewingQuestions, setViewingQuestions] = useState(false);
   const [schoolQuestions, setSchoolQuestions] = useState([]);
   const [questions, setQuestions] = useState([]);
-  const [studentAnswers, setStudentAnswers] = useState([]);
   const [activeSubmissionId, setActiveSubmissionId] = useState(null);
 
   const mockCriteria = [
@@ -39,9 +38,16 @@ const RouteSeekersJudge = () => {
           axiosInstance.get('/api/v1/route-seekers/all-student-answers')
         ]);
 
-        setSchools(schoolsRes.data.schools);
+        const schoolsData = schoolsRes.data.schools;
+        const answersData = answersRes.data;
+
+        const schoolsWithSubmissions = schoolsData.map(school => {
+          const submission = answersData.find(answer => (answer.userId?._id || answer.userId) === school._id);
+          return { ...school, submission: submission || null };
+        });
+
+        setSchools(schoolsWithSubmissions);
         setQuestions(questionsRes.data);
-        setStudentAnswers(answersRes.data);
         
         setGameStatus('marking');
         setCriteria(mockCriteria);
@@ -94,7 +100,7 @@ const RouteSeekersJudge = () => {
   };
 
   const handleViewSchoolQuestions = (school) => {
-    const submission = studentAnswers.find(answer => answer.userId.school === school._id);
+    const { submission } = school;
 
     if (!submission) {
       alert(`${school.name} has not submitted their answers yet.`);
