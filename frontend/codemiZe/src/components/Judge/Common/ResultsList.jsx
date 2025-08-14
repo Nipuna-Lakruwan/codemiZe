@@ -11,7 +11,7 @@ const ResultsList = ({ results, isLoading = false }) => {
   }
 
   return (
-    <div className="flex flex-col space-y-3 flex-grow overflow-y-auto custom-scrollbar">
+    <div className="flex flex-col space-y-4 flex-grow overflow-y-auto custom-scrollbar mt-7 mr-0.5 pb-6 p-3.5">
 
       {results.length === 0 ? (
         <div className="text-center text-gray-500 py-10">No results available yet</div>
@@ -19,7 +19,7 @@ const ResultsList = ({ results, isLoading = false }) => {
         results.map((school, index) => (
           <div
             key={school.id}
-            className="w-[860px] h-16 bg-white rounded-md shadow-[3px_6px_14.2px_-2px_rgba(0,0,0,0.25)] border-l-[15px] border-sky-400 flex items-center relative overflow-hidden"
+            className="w-[980px] h-16 bg-white rounded-md shadow-[3px_6px_14.2px_-2px_rgba(0,0,0,0.25)] border-l-[15px] border-sky-400 flex items-center relative overflow-hidden"
           >
             {/* Position number */}
             <div className="ml-6 flex items-center">
@@ -28,7 +28,7 @@ const ResultsList = ({ results, isLoading = false }) => {
               </div>
             </div>
             {/* School logo rectangle */}
-            <div className="ml-6 w-14 h-16 bg-neutral-500 rounded-md flex items-center justify-center overflow-hidden">
+            <div className="ml-6 w-14 h-16  rounded-md flex items-center justify-center overflow-hidden">
               <img src={imagePath(school.avatar.url)} alt={school.name} className="w-12 h-12 object-cover rounded" />
             </div>
             {/* School info */}

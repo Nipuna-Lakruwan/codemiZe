@@ -127,13 +127,13 @@ const BattleBreakersJudge = () => {
     <JudgeLayout gameName="Battle Breakers">
       <div className="w-full h-full flex flex-col relative">
         {/* Heading styled like Circuit Smashers */}
-        <div className="absolute left-8 top-8">
+        <div className="absolute left-20 top-10">
           <div className="justify-start text-purple-900 text-4xl font-normal font-['Jersey_25']" style={{ fontFamily: 'Jersey_25' }}>
             Battle Breakers
           </div>
         </div>
         <div className="h-24" />
-        <div className="flex flex-col items-center w-full h-[calc(100%-6rem)] justify-center">
+        <div className="flex flex-col items-center w-full h-[calc(100%-20rem)] justify-center">
           <BattleBreakersTable
             questions={questions}
             schools={schools}

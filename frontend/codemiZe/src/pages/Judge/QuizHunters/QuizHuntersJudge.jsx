@@ -33,7 +33,12 @@ const QuizHuntersJudge = () => {
   }, []);
 
   return (
-    <JudgeLayout gameName="Quiz Hunters">
+    <JudgeLayout>
+      <div className="absolute left-20 top-10">
+        <div className="justify-start text-purple-900 text-4xl font-normal font-['Jersey_25']" style={{ fontFamily: 'Jersey_25' }}>
+            Quiz Hunters
+        </div>
+      </div>
       {/* Show loading or running state */}
       {loading || gameStatus === 'running' ? (
         <LoadingScreen />

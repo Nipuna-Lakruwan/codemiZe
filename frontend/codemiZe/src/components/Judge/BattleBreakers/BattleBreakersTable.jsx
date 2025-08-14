@@ -58,7 +58,7 @@ const BattleBreakersTable = ({
 
   return (
     <div className="w-full flex justify-center items-center">
-      <div className="w-[1020px] h-[500px] bg-white rounded-[5px] border border-black/90 mx-auto flex flex-col">
+      <div className="w-[1010px] h-[450px] bg-white rounded-[5px] mx-auto flex flex-col">
         <div className="flex justify-between items-center mb-4 px-6 pt-6">
           <div className="flex gap-2 items-center">
             <button
