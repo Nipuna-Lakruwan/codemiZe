@@ -161,14 +161,14 @@ export const getResource = async (req, res) => {
 export const getFormattedCircuitSmashersMarkings = async (req, res) => {
   try {
     const rawMarkings = await CircuitSmashersMarking.find()
-      .populate("schoolId", "name")
+      .populate("schoolId", "name nameInShort")
       .populate("judgeId", "name");
 
     const formatted = {};
 
     rawMarkings.forEach((entry) => {
       const judgeName = entry.judgeId?.name || "Unknown Judge";
-      const schoolName = entry.schoolId?.name || "Unknown Team";
+      const schoolName = entry.schoolId?.nameInShort || "Unknown Team";
       const marksArray = entry.marks.map((m) => m.mark);
       marksArray.push(entry.totalMarks);
 
@@ -178,6 +178,52 @@ export const getFormattedCircuitSmashersMarkings = async (req, res) => {
 
       formatted[judgeName][schoolName] = marksArray;
     });
+
+    // Calculate overall averages
+    const overallData = {};
+    const schoolNames = new Set();
+    
+    // Collect all school names
+    Object.values(formatted).forEach(judgeData => {
+      Object.keys(judgeData).forEach(schoolName => {
+        schoolNames.add(schoolName);
+      });
+    });
+
+    // Calculate averages for each school
+    schoolNames.forEach(schoolName => {
+      const allMarksForSchool = [];
+      const judgeCount = Object.keys(formatted).length;
+      
+      // Get marks from all judges for this school
+      Object.values(formatted).forEach(judgeData => {
+        if (judgeData[schoolName]) {
+          allMarksForSchool.push(judgeData[schoolName]);
+        }
+      });
+
+      if (allMarksForSchool.length > 0) {
+        // Calculate average for each criterion
+        const criteriaCount = allMarksForSchool[0].length - 1; // Exclude total
+        const averages = [];
+        
+        for (let i = 0; i < criteriaCount; i++) {
+          const sum = allMarksForSchool.reduce((acc, marks) => acc + marks[i], 0);
+          averages.push(Math.round(sum / allMarksForSchool.length));
+        }
+        
+        // Calculate total average
+        const totalSum = averages.reduce((acc, mark) => acc + mark, 0);
+        averages.push(totalSum);
+        
+        overallData[schoolName] = averages;
+      }
+    });
+
+    // Add overall data to formatted response
+    if (Object.keys(overallData).length > 0) {
+      formatted["Overall"] = overallData;
+    }
 
     res.status(200).json(formatted);
   } catch (error) {
