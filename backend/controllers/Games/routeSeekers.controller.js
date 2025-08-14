@@ -14,7 +14,7 @@ export const getQuestions = async (req, res) => {
 // Submit answers
 export const submitAnswers = async (req, res) => {
   try {
-    const { id: userId } = req.user; 
+    const userId = req.user.id;
     const { answers } = req.body;
 
     const answerDetails = answers.map(answer => ({
@@ -54,9 +54,12 @@ export const updateStudentAnswers = async (req, res) => {
       return res.status(400).json({ message: "Answers array is required" });
     }
 
+    const correctAnswersCount = answers.filter(answer => answer.isCorrect).length;
+    const score = correctAnswersCount * 5;
+
     const updatedAnswer = await RouteSeekersAnswer.findByIdAndUpdate(
       id,
-      { Answers: answers },
+      { Answers: answers, score: score },
       { new: true, runValidators: true }
     );
 

@@ -68,3 +68,23 @@ export const deleteRouteSeekersQuestion = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Delete many questions
+export const deleteManyRouteSeekersQuestions = async (req, res) => {
+  try {
+    const { ids } = req.body; // Expecting an array of IDs
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "An array of question IDs is required" });
+    }
+
+    const result = await RouteSeekersQuestion.deleteMany({ _id: { $in: ids } });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "No questions found with the provided IDs" });
+    }
+
+    res.status(200).json({ message: `${result.deletedCount} questions deleted successfully` });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

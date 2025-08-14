@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const routeSeekersAnswerSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "School" },
     Answers: [{
       questionId: { type: mongoose.Schema.Types.ObjectId, ref: "RouteSeekersQuestion" },
       answer: String,
