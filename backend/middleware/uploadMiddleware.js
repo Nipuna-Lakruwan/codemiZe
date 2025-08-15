@@ -65,7 +65,7 @@ const CSVUpload = createUploadMiddleware({
 // Pre-configured upload middleware for documents
 const resourceUpload = createUploadMiddleware({
   destination: 'resources',
-  allowedMimeTypes: ['application/zip'],
+  allowedMimeTypes: ['application/zip', 'application/pdf'],
   maxFileSize: 10 * 1024 * 1024 // 10MB
 });
 

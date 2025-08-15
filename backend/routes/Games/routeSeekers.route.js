@@ -1,5 +1,12 @@
 import express from "express";
-import { getQuestions, submitAnswers, getallstudentanswers, updateStudentAnswers, deleteAllStudentAnswers, updateAnswerStatus } from "../../controllers/Games/routeSeekers.controller.js";
+import { 
+    getQuestions, 
+    submitAnswers, 
+    getallstudentanswers, 
+    updateStudentAnswers, 
+    deleteAllStudentAnswers, 
+    updateAnswerStatus
+} from "../../controllers/Games/routeSeekers.controller.js";
 import { protect } from "../../middleware/authMiddleware.js";
 
 const router = express.Router();

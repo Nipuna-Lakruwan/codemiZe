@@ -3,6 +3,7 @@ import ResourceFile from "../../models/ResourceFile.js";
 import { parseCSVFile } from "../../utils/csvParser.js";
 import path from "path";
 import { fileURLToPath } from 'url';
+import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -170,4 +171,116 @@ export const downloadQuestionnaireResourceFile = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+// Get all uploaded resource files
+export const getAllUploadedQuestionnaireResourceFiles = async (req, res) => {
+  try {
+    const resourceFiles = await ResourceFile.find({});
+    res.status(200).json(resourceFiles);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Delete a resource file
+export const deleteQuestionnaireResourceFile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const resourceFile = await ResourceFile.findById(id);
+
+    if (!resourceFile) {
+      return res.status(404).json({ message: "Resource file not found" });
+    }
+
+    const filePath = path.join(__dirname, `../../uploads/resources/${resourceFile.file}`);
+    
+    fs.unlink(filePath, async (err) => {
+      if (err) {
+        console.error("File deletion error:", err);
+        return res.status(500).json({ message: "Error deleting the file" });
+      }
+
+      await ResourceFile.findByIdAndDelete(id);
+      res.status(200).json({ message: "Resource file deleted successfully" });
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Upload network design PDF
+export const uploadNetworkDesignPDF = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).send({ message: "No file uploaded." });
+        }
+
+        const existingFile = await ResourceFile.findOne({
+            gameName: "RouteSeekers",
+            fileType: "NetworkDesign",
+        });
+
+        if (existingFile) {
+            const filePath = path.join(__dirname, "../..", existingFile.path);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+            await ResourceFile.findByIdAndDelete(existingFile._id);
+        }
+
+        const newFile = new ResourceFile({
+            gameName: "RouteSeekers",
+            fileType: "NetworkDesign",
+            path: req.file.path,
+            filename: req.file.filename,
+            originalname: req.file.originalname,
+        });
+
+        await newFile.save();
+        res.status(201).send(newFile);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+// Get network design PDF
+export const getNetworkDesignPDF = async (req, res) => {
+    try {
+        const file = await ResourceFile.findOne({
+            gameName: "RouteSeekers",
+            fileType: "NetworkDesign",
+        });
+        if (!file) {
+            return res.status(404).send({ message: "File not found." });
+        }
+        res.status(200).send(file);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+// Delete network design PDF
+export const deleteNetworkDesignPDF = async (req, res) => {
+    try {
+        const file = await ResourceFile.findOne({
+            gameName: "RouteSeekers",
+            fileType: "NetworkDesign",
+        });
+
+        if (!file) {
+            return res.status(404).send({ message: "File not found." });
+        }
+
+        const filePath = path.join(__dirname, "../..", file.path);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+
+        await ResourceFile.findByIdAndDelete(file._id);
+
+        res.status(200).send({ message: "File deleted successfully." });
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
 };
