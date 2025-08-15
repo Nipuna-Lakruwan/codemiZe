@@ -20,6 +20,7 @@ export default function AdminRouteSeekers() {
   // States for team questions view
   const [viewingTeam, setViewingTeam] = useState(null);
   const [teamQuestions, setTeamQuestions] = useState([]);
+  const [activeSubmissionId, setActiveSubmissionId] = useState(null);
 
   // Data states
   const [schools, setSchools] = useState([]);
@@ -165,17 +166,21 @@ export default function AdminRouteSeekers() {
       showAlert(`${team.name} has not submitted their answers yet.`, 'No Submission', 'info');
       setTeamQuestions([]);
       setViewingTeam(team);
+      setActiveSubmissionId(null);
       return;
     }
+
+    setActiveSubmissionId(submission._id);
 
     const populatedQuestions = allQuestions.map(q => {
       const studentAnswer = submission.Answers.find(a => a.questionId === q._id);
       return {
         id: q._id,
+        questionId: q._id,
         question: q.question,
         correctAnswer: q.answer, // Correct answer from the question model
         answer: studentAnswer ? studentAnswer.answer : "Not Answered", // Student's submitted answer
-        status: null // Admin view doesn't mark, so status is neutral
+        status: studentAnswer ? studentAnswer.status : null
       };
     });
 
@@ -186,28 +191,42 @@ export default function AdminRouteSeekers() {
   const handleBackToTeams = () => {
     setViewingTeam(null);
     setTeamQuestions([]);
+    setActiveSubmissionId(null);
+  };
+
+  const updateQuestionStatus = async (questionIndex, newStatus) => {
+    const question = teamQuestions[questionIndex];
+    if (question.status === newStatus) return;
+
+    const submissionId = activeSubmissionId;
+    const questionId = question.questionId;
+
+    const originalQuestions = teamQuestions;
+
+    setTeamQuestions(prevQuestions => {
+        const newQuestions = [...prevQuestions];
+        newQuestions[questionIndex] = {
+            ...newQuestions[questionIndex],
+            status: newStatus,
+        };
+        return newQuestions;
+    });
+
+    try {
+      await axiosInstance.patch(`/api/v1/route-seekers/answers/${submissionId}/questions/${questionId}`, { status: newStatus });
+    } catch (error) {
+      setTeamQuestions(originalQuestions);
+      console.error("Failed to update mark", error);
+      showAlert('Failed to update mark. Please try again.', 'Error', 'error');
+    }
   };
 
   const handleMarkCorrect = (questionIndex) => {
-    setTeamQuestions(prevQuestions => {
-      const newQuestions = [...prevQuestions];
-      newQuestions[questionIndex] = {
-        ...newQuestions[questionIndex],
-        status: 'correct'
-      };
-      return newQuestions;
-    });
+    updateQuestionStatus(questionIndex, 'correct');
   };
 
   const handleMarkIncorrect = (questionIndex) => {
-    setTeamQuestions(prevQuestions => {
-      const newQuestions = [...prevQuestions];
-      newQuestions[questionIndex] = {
-        ...newQuestions[questionIndex],
-        status: 'incorrect'
-      };
-      return newQuestions;
-    });
+    updateQuestionStatus(questionIndex, 'incorrect');
   };
 
   const handleDownloadResources = () => {

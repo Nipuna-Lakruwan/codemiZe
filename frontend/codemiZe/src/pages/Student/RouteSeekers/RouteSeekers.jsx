@@ -508,21 +508,8 @@ export default function RouteSeekers() {
           networkCompleted={networkCompleted}
           cardVariants={cardVariants}
         />
-      ) : activity === 'questionnaire' ? (
-        <QuestionnaireActivity
-          questions={questions}
-          answers={answers}
-          handleAnswerChange={handleAnswerChange}
-          questionnaireCompleted={questionnaireCompleted}
-          handleSubmitQuestionnaire={handleSubmitQuestionnaire}
-          setActivity={handleSetActivity}
-          networkCompleted={networkCompleted}
-          pdfContainerVariants={pdfContainerVariants}
-        />
       ) : (
-        // Active game screen with Network Diagram
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
-          {/* Time warning popup */}
           <AnimatePresence>
             {showTimeWarning && (
               <motion.div
@@ -545,308 +532,6 @@ export default function RouteSeekers() {
             )}
           </AnimatePresence>
 
-          {/* Time's up popup */}
-          <AnimatePresence>
-            {timeIsUp && !gameCompleted && (
-              <motion.div
-                className="fixed inset-0 bg-black/70 flex items-center justify-center z-40 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-              >
-                <motion.div
-                  className="bg-red-900/80 px-8 py-6 rounded-lg border border-red-500/30 max-w-md text-center"
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", delay: 0.2 }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <h2 className="text-3xl font-bold text-red-100 mb-2">Time's Up!</h2>
-                  <p className="text-red-200 mb-6">
-                    {uploadedFile
-                      ? `Your uploaded file "${uploadedFile.name}" will be submitted.`
-                      : "Time's up! You haven't uploaded any file yet."}
-                  </p>
-                  <div className="flex space-x-4 justify-center">
-                    {uploadedFile ? (
-                      <motion.button
-                        className="px-6 py-2 bg-green-800 text-white rounded-md border border-green-600/30"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleSubmitPacketTracer}
-                      >
-                        View Results
-                      </motion.button>
-                    ) : (
-                      <motion.button
-                        className="px-6 py-2 bg-amber-800 text-white rounded-md border border-amber-600/30"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => {
-                          setTimeIsUp(false);
-                          setShowUploadModal(true);
-                        }}
-                      >
-                        Upload File
-                      </motion.button>
-                    )}
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* File upload modal */}
-          <AnimatePresence>
-            {showUploadModal && (
-              <motion.div
-                className="fixed inset-0 bg-black/70 flex items-center justify-center z-40 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowUploadModal(false)}
-              >
-                <motion.div
-                  className="bg-stone-900/90 rounded-lg border border-white/10 p-6 max-w-md w-full"
-                  variants={modalVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <h3 className="text-2xl font-bold text-white mb-4">Upload Packet Tracer Solution</h3>
-                  <p className="text-white/70 mb-4">Please upload your solution:</p>
-                  <ul className="text-white/70 mb-6 list-disc list-inside space-y-1 text-sm">
-                    <li>Upload a single .pkt file directly</li>
-                    <li>For multiple files, create a .zip archive</li>
-                    <li>Files with the same name will be overwritten</li>
-                  </ul>
-
-                  <div className="mb-6">
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileUpload}
-                      accept=".pkt,.zip"
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <label
-                      htmlFor="file-upload"
-                      className="flex flex-col items-center justify-center w-full h-32 bg-stone-800/50 border-2 border-dashed border-violet-500/30 rounded-lg cursor-pointer hover:bg-stone-800/70 transition-colors"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-violet-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      <span className="text-sm text-violet-300">Click to select a file</span>
-                      <span className="text-xs text-violet-400/70 mt-1">(Packet Tracer .pkt or .zip files only)</span>
-                    </label>
-                  </div>
-
-                  {uploadedFile && (
-                    <div className="mb-6 p-3 bg-stone-800/50 rounded border border-stone-700/50">
-                      <p className="text-white flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-violet-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        {uploadedFile.name}
-                        {!isFileValid && (
-                          <span className="ml-auto text-red-400 text-sm">
-                            Invalid file type (must be .pkt or .zip)
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="flex justify-end space-x-3">
-                    <button
-                      className="px-4 py-2 bg-stone-700 text-white rounded hover:bg-stone-600 transition-colors"
-                      onClick={() => setShowUploadModal(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className={`px-4 py-2 rounded ${isFileValid
-                        ? 'bg-violet-700 text-white hover:bg-violet-600'
-                        : 'bg-violet-900/40 text-white/50 cursor-not-allowed'} transition-colors`}
-                      onClick={() => {
-                        if (isFileValid) {
-                          setShowUploadModal(false);
-                        }
-                      }}
-                      disabled={!isFileValid}
-                    >
-                      Save File
-                    </button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Resources modal */}
-          <AnimatePresence>
-            {showResourcesModal && (
-              <motion.div
-                className="fixed inset-0 bg-black/70 flex items-center justify-center z-40 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowResourcesModal(false)}
-              >
-                <motion.div
-                  className="bg-stone-900/90 rounded-lg border border-white/10 p-6 max-w-md w-full"
-                  variants={modalVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <h3 className="text-2xl font-bold text-white mb-4">Download Resources</h3>
-                  <p className="text-white/70 mb-6">The following resources are available to help you complete this networking challenge:</p>
-
-                  <div className="mb-6 space-y-2">
-                    {resources.map((resource, index) => (
-                      <div key={index} className="flex justify-between items-center p-3 bg-stone-800/50 rounded border border-stone-700/50 hover:bg-stone-700/50 transition-colors">
-                        <div className="flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-violet-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          <span className="text-white">{resource.name}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-white/50 text-sm mr-3">{resource.size}</span>
-                          <button className="p-1 bg-violet-700/50 hover:bg-violet-700 rounded transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex justify-end">
-                    <button
-                      className="px-4 py-2 bg-stone-700 text-white rounded hover:bg-stone-600 transition-colors"
-                      onClick={() => setShowResourcesModal(false)}
-                    >
-                      Close
-                    </button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Fullscreen PDF Modal */}
-          <AnimatePresence>
-            {showFullscreenPDF && (
-              <motion.div
-                className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <div className="w-full flex justify-between items-center p-4 bg-gray-900/80 border-b border-gray-700">
-                  <h2 className="text-xl font-semibold text-white">Route Seekers - Network Challenge</h2>
-                  <button
-                    className="text-white bg-gray-700 hover:bg-gray-600 p-2 rounded-full"
-                    onClick={() => setShowFullscreenPDF(false)}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="flex-grow w-full overflow-auto p-8 flex items-center justify-center">
-                  <div className="w-full max-w-5xl h-[80vh] bg-zinc-300 rounded-md flex items-center justify-center">
-                    <div className="text-center">
-                      <p className="text-3xl text-gray-600 font-semibold">Network Topology Challenge (Fullscreen)</p>
-                      <p className="text-gray-500 text-xl">Page {currentPage} of {totalPages}</p>
-                      <p className="text-gray-400 mt-4">Network scenario and requirements would appear here</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="w-full flex justify-center space-x-8 p-4 bg-gray-900/80 border-t border-gray-700">
-                  <button
-                    className={`px-6 py-3 rounded-md ${currentPage === 1 ? 'bg-gray-600 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
-                    onClick={handlePreviousPage}
-                    disabled={currentPage === 1}
-                  >
-                    Previous Page
-                  </button>
-
-                  <div className="text-white/80 flex items-center text-xl">
-                    Page {currentPage} of {totalPages}
-                  </div>
-
-                  <button
-                    className={`px-6 py-3 rounded-md ${currentPage === totalPages ? 'bg-gray-600 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next Page
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Game node mini in the bottom left corner - only shown during active game */}
-          {!gameCompleted && (
-            <div className="absolute bottom-8 left-8 z-10">
-              <GameNodeMini
-                title="Route Seekers"
-                icon="/circuit samshers logo 1.png"
-                linkTo="/student/games-roadmap"
-              />
-            </div>
-          )}
-
-          {/* File upload buttons positioned at the top left outside the box */}
-          <div className="absolute top-32 left-110 flex space-x-3 z-10">
-            <motion.button
-              className="w-36 h-9 bg-purple-950 rounded-[3px] border border-slate-500/40 text-white font-medium flex items-center justify-center gap-1"
-              whileHover={{ scale: 1.05, boxShadow: "0px 0px 8px rgba(140, 20, 252, 0.6)" }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowUploadModal(true)}
-              disabled={timeIsUp}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-              Upload File
-            </motion.button>
-
-            {uploadedFile && (
-              <div className="w-36 h-9 relative">
-                <div className="w-36 h-9 left-0 top-0 absolute bg-white/0 rounded-[3px] border border-white" />
-                <motion.button
-                  className="w-36 h-9 absolute top-0 left-0 text-white font-medium flex items-center justify-center gap-1"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setUploadedFile(null);
-                    setIsFileValid(false);
-                  }}
-                  disabled={timeIsUp}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  Remove
-                </motion.button>
-              </div>
-            )}
-          </div>
-
-          {/* Back to selection button */}
           <button
             className="absolute top-4 left-4 text-white flex items-center"
             onClick={() => setActivity(null)}
@@ -857,46 +542,86 @@ export default function RouteSeekers() {
             Back to Activities
           </button>
 
-          {/* Questionnaire status */}
-          <div className="absolute top-4 right-4 flex items-center">
-            <span className="text-white mr-2">Questionnaire:</span>
-            <div className={`px-3 py-1 rounded-full ${questionnaireCompleted ? 'bg-green-500/20 text-green-400' : 'bg-violet-500/20 text-violet-400'}`}>
-              {questionnaireCompleted ? 'Completed' : 'Pending'}
-            </div>
-          </div>
+          {activity === 'questionnaire' ? (
+            <QuestionnaireActivity
+              questions={questions}
+              answers={answers}
+              handleAnswerChange={handleAnswerChange}
+              questionnaireCompleted={questionnaireCompleted}
+              handleSubmitQuestionnaire={handleSubmitQuestionnaire}
+              networkCompleted={networkCompleted}
+              pdfContainerVariants={pdfContainerVariants}
+              setShowResourcesModal={setShowResourcesModal}
+            />
+          ) : (
+            <>
+              {/* Network Diagram specific UI */}
+              <div className="absolute top-32 left-110 flex space-x-3 z-10">
+                <motion.button
+                  className="w-36 h-9 bg-purple-950 rounded-[3px] border border-slate-500/40 text-white font-medium flex items-center justify-center gap-1"
+                  whileHover={{ scale: 1.05, boxShadow: "0px 0px 8px rgba(140, 20, 252, 0.6)" }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowUploadModal(true)}
+                  disabled={timeIsUp}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  Upload File
+                </motion.button>
 
-          {/* Main PDF viewer container */}
-          <motion.div
-            className="w-[1029px] h-[566px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 relative"
-            variants={pdfContainerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            {/* Download Resources Button (positioned at the bottom left inside transparent box) */}
-            <div className="absolute bottom-6 left-6 z-10">
-              <motion.button
-                className="w-56 h-9 bg-sky-600 rounded-[3px] border border-slate-500/40 text-white font-medium flex items-center justify-center gap-1"
-                whileHover={{ scale: 1.05, boxShadow: "0px 0px 8px rgba(14, 165, 233, 0.6)" }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowResourcesModal(true)}
+                {uploadedFile && (
+                  <div className="w-36 h-9 relative">
+                    <div className="w-36 h-9 left-0 top-0 absolute bg-white/0 rounded-[3px] border border-white" />
+                    <motion.button
+                      className="w-36 h-9 absolute top-0 left-0 text-white font-medium flex items-center justify-center gap-1"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        setUploadedFile(null);
+                        setIsFileValid(false);
+                      }}
+                      disabled={timeIsUp}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Remove
+                    </motion.button>
+                  </div>
+                )}
+              </div>
+              <motion.div
+                className="w-[1029px] h-[566px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 relative"
+                variants={pdfContainerVariants}
+                initial="hidden"
+                animate="visible"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download Resources
-              </motion.button>
-            </div>
+                {/* Download Resources Button (positioned at the bottom left inside transparent box) */}
+                <div className="absolute bottom-6 left-6 z-10">
+                  <motion.button
+                    className="w-56 h-9 bg-sky-600 rounded-[3px] border border-slate-500/40 text-white font-medium flex items-center justify-center gap-1"
+                    whileHover={{ scale: 1.05, boxShadow: "0px 0px 8px rgba(14, 165, 233, 0.6)" }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowResourcesModal(true)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download Resources
+                  </motion.button>
+                </div>
 
-            {/* PDF content area with fullscreen option */}
-            <div className="w-[973px] h-[466px] bg-zinc-300 rounded-md flex flex-col relative mb-4">
-              {/* PDF Viewer Controls - Top right */}
-              <div className="absolute top-2 right-2 flex space-x-2 z-10">
-                <button
-                  className="bg-violet-800/80 hover:bg-violet-700 text-white px-3 py-1 rounded flex items-center text-sm"
-                  onClick={() => {
-                    // Open a new window/tab with the PDF viewer
-                    const pdfWindow = window.open('', '_blank');
-                    pdfWindow.document.write(`
+                {/* PDF content area with fullscreen option */}
+                <div className="w-[973px] h-[466px] bg-zinc-300 rounded-md flex flex-col relative mb-4">
+                  {/* PDF Viewer Controls - Top right */}
+                  <div className="absolute top-2 right-2 flex space-x-2 z-10">
+                    <button
+                      className="bg-violet-800/80 hover:bg-violet-700 text-white px-3 py-1 rounded flex items-center text-sm"
+                      onClick={() => {
+                        // Open a new window/tab with the PDF viewer
+                        const pdfWindow = window.open('', '_blank');
+                        pdfWindow.document.write(`
                       <html>
                         <head>
                           <title>Route Seekers - Network Challenge</title>
@@ -991,62 +716,62 @@ export default function RouteSeekers() {
                         </body>
                       </html>
                     `);
-                    pdfWindow.document.close();
-                  }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  Open in New Tab
-                </button>
-                <button
-                  className="bg-violet-800/80 hover:bg-violet-700 text-white px-3 py-1 rounded flex items-center text-sm"
-                  onClick={() => setShowFullscreenPDF(true)}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
-                  </svg>
-                  Fullscreen
-                </button>
-              </div>
-              <div className="flex-grow flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-2xl text-gray-600 font-semibold">Network Topology Challenge</p>
-                  <p className="text-gray-500">Page {currentPage} of {totalPages}</p>
-                  <p className="text-sm text-gray-400 mt-4">Network scenario and requirements would appear here</p>
-                  {/* This would be an embedded PDF viewer in a real implementation */}
+                        pdfWindow.document.close();
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      Open in New Tab
+                    </button>
+                    <button
+                      className="bg-violet-800/80 hover:bg-violet-700 text-white px-3 py-1 rounded flex items-center text-sm"
+                      onClick={() => setShowFullscreenPDF(true)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                      </svg>
+                      Fullscreen
+                    </button>
+                  </div>
+                  <div className="flex-grow flex items-center justify-center">
+                    <div className="text-center">
+                      <p className="text-2xl text-gray-600 font-semibold">Network Topology Challenge</p>
+                      <p className="text-gray-500">Page ${currentPage} of ${totalPages}</p>
+                      <p className="text-sm text-gray-400 mt-4">Network scenario and requirements would appear here</p>
+                      {/* This would be an embedded PDF viewer in a real implementation */}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Page navigation controls */}
-            <div className="flex items-center justify-center space-x-6">
-              <button
-                className={`px-4 py-2 rounded-md ${currentPage === 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1}
-              >
-                Back
-              </button>
+                {/* Page navigation controls */}
+                <div className="flex items-center justify-center space-x-6">
+                  <button
+                    className={`px-4 py-2 rounded-md ${currentPage === 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1}
+                  >
+                    Back
+                  </button>
 
-              <div className="text-white/80">
-                Page {currentPage} of {totalPages}
-              </div>
+                  <div className="text-white/80">
+                    Page ${currentPage} of ${totalPages}
+                  </div>
 
-              <button
-                className={`px-4 py-2 rounded-md ${currentPage === totalPages ? 'bg-gray-400 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </button>
-            </div>
-          </motion.div>
+                  <button
+                    className={`px-4 py-2 rounded-md ${currentPage === totalPages ? 'bg-gray-400 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
 
-          {/* Spacer between PDF viewer and progress bar */}
+          {/* Common Timer UI */}
           <div className="h-6"></div>
-
-          {/* Progress bar for timer */}
           <motion.div
             className="mt-4 mb-4 w-[720px]"
             initial={{ opacity: 0 }}
@@ -1063,8 +788,6 @@ export default function RouteSeekers() {
               />
             </div>
           </motion.div>
-
-          {/* Time remaining display */}
           <motion.div
             className="flex justify-center w-full mb-6"
             initial={{ opacity: 0 }}
@@ -1088,8 +811,6 @@ export default function RouteSeekers() {
               )}
             </div>
           </motion.div>
-
-          {/* Time remaining display positioned at the bottom */}
         </div>
       )}
 
@@ -1211,6 +932,117 @@ export default function RouteSeekers() {
                 </button>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Resources modal */}
+      <AnimatePresence>
+        {showResourcesModal && (
+          <motion.div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-40 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowResourcesModal(false)}
+          >
+            <motion.div
+              className="bg-stone-900/90 rounded-lg border border-white/10 p-6 max-w-md w-full"
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-2xl font-bold text-white mb-4">Download Resources</h3>
+              <p className="text-white/70 mb-6">The following resources are available to help you complete this networking challenge:</p>
+
+              <div className="mb-6 space-y-2">
+                {resources.map((resource, index) => (
+                  <div key={index} className="flex justify-between items-center p-3 bg-stone-800/50 rounded border border-stone-700/50 hover:bg-stone-700/50 transition-colors">
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-violet-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span className="text-white">{resource.name}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-white/50 text-sm mr-3">{resource.size}</span>
+                      <button className="p-1 bg-violet-700/50 hover:bg-violet-700 rounded transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  className="px-4 py-2 bg-stone-700 text-white rounded hover:bg-stone-600 transition-colors"
+                  onClick={() => setShowResourcesModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Fullscreen PDF Modal */}
+      <AnimatePresence>
+        {showFullscreenPDF && (
+          <motion.div
+            className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="w-full flex justify-between items-center p-4 bg-gray-900/80 border-b border-gray-700">
+              <h2 className="text-xl font-semibold text-white">Route Seekers - Network Challenge</h2>
+              <button
+                className="text-white bg-gray-700 hover:bg-gray-600 p-2 rounded-full"
+                onClick={() => setShowFullscreenPDF(false)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-grow w-full overflow-auto p-8 flex items-center justify-center">
+              <div className="w-full max-w-5xl h-[80vh] bg-zinc-300 rounded-md flex items-center justify-center">
+                <div className="text-center">
+                  <p className="text-3xl text-gray-600 font-semibold">Network Topology Challenge (Fullscreen)</p>
+                  <p className="text-gray-500 text-xl">Page {currentPage} of {totalPages}</p>
+                  <p className="text-gray-400 mt-4">Network scenario and requirements would appear here</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="w-full flex justify-center space-x-8 p-4 bg-gray-900/80 border-t border-gray-700">
+              <button
+                className={`px-6 py-3 rounded-md ${currentPage === 1 ? 'bg-gray-600 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+              >
+                Previous Page
+              </button>
+
+              <div className="text-white/80 flex items-center text-xl">
+                Page {currentPage} of {totalPages}
+              </div>
+
+              <button
+                className={`px-6 py-3 rounded-md ${currentPage === totalPages ? 'bg-gray-600 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+              >
+                Next Page
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
