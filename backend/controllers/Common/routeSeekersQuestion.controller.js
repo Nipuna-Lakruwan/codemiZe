@@ -128,7 +128,7 @@ export const deleteAllRouteSeekersQuestions = async (req, res) => {
 };
 
 // Upload a resource file
-export const uploadResourceFile = async (req, res) => {
+export const uploadQuestionnaireResourceFile = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
@@ -151,7 +151,7 @@ export const uploadResourceFile = async (req, res) => {
 };
 
 // Download a resource file
-export const downloadResourceFile = async (req, res) => {
+export const downloadQuestionnaireResourceFile = async (req, res) => {
   try {
     const { id } = req.params;
     const resourceFile = await ResourceFile.findById(id);
