@@ -1,5 +1,11 @@
 import RouteSeekersQuestion from "../../models/questions/RouteSeekersQuestion.js";
+import ResourceFile from "../../models/ResourceFile.js";
 import { parseCSVFile } from "../../utils/csvParser.js";
+import path from "path";
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Add questions from CSV
 export const addRouteSeekersQuestionsFromCSV = async (req, res) => {
@@ -116,6 +122,51 @@ export const deleteAllRouteSeekersQuestions = async (req, res) => {
   try {
     await RouteSeekersQuestion.deleteMany({});
     res.status(200).json({ message: "All questions deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Upload a resource file
+export const uploadQuestionnaireResourceFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // Assuming the file is uploaded to the 'resources' directory
+    const resourceFile = new ResourceFile({
+      file: req.file.filename, // Save the filename
+    });
+
+    await resourceFile.save();
+
+    res.status(201).json({
+      message: "Resource file uploaded successfully",
+      file: resourceFile,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Download a resource file
+export const downloadQuestionnaireResourceFile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const resourceFile = await ResourceFile.findById(id);
+
+    if (!resourceFile) {
+      return res.status(404).json({ message: "Resource file not found" });
+    }
+
+    const filePath = path.join(__dirname, `../../uploads/resources/${resourceFile.file}`);
+    res.download(filePath, resourceFile.file, (err) => {
+      if (err) {
+        console.error("File download error:", err);
+        res.status(500).json({ message: "Error downloading the file" });
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -8,9 +8,11 @@ import {
   deleteManyRouteSeekersQuestions,
   addRouteSeekersQuestionsFromCSV,
   deleteAllRouteSeekersQuestions,
+  uploadQuestionnaireResourceFile,
+  downloadQuestionnaireResourceFile,
 } from "../../controllers/Common/routeSeekersQuestion.controller.js";
 import { protect } from "../../middleware/authMiddleware.js";
-import { CSVUpload } from "../../middleware/uploadMiddleware.js";
+import { CSVUpload, resourceUpload } from "../../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
@@ -22,6 +24,8 @@ router.post(
   CSVUpload.single("csv"),
   addRouteSeekersQuestionsFromCSV
 );
+router.post("/upload-resource", protect, resourceUpload.single('file'), uploadQuestionnaireResourceFile);
+router.get("/download-resource/:id", protect, downloadQuestionnaireResourceFile);
 router.get("/", protect, getAllRouteSeekersQuestions);
 router.get("/:id", protect, getRouteSeekersQuestionById);
 router.put("/:id", protect, updateRouteSeekersQuestion);
