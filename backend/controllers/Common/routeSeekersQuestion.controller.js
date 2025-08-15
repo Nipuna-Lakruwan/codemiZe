@@ -1,4 +1,26 @@
 import RouteSeekersQuestion from "../../models/questions/RouteSeekersQuestion.js";
+import { parseCSVFile } from "../../utils/csvParser.js";
+
+// Add questions from CSV
+export const addRouteSeekersQuestionsFromCSV = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const questions = await parseCSVFile(req.file, "route-seekers");
+    if (!questions || questions.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No questions found in the CSV file" });
+    }
+
+    const newQuestions = await RouteSeekersQuestion.insertMany(questions);
+    res.status(201).json(newQuestions);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // Add a new question
 export const addRouteSeekersQuestion = async (req, res) => {
