@@ -7,6 +7,7 @@ import {
   deleteRouteSeekersQuestion,
   deleteManyRouteSeekersQuestions,
   addRouteSeekersQuestionsFromCSV,
+  deleteAllRouteSeekersQuestions,
 } from "../../controllers/Common/routeSeekersQuestion.controller.js";
 import { protect } from "../../middleware/authMiddleware.js";
 import { CSVUpload } from "../../middleware/uploadMiddleware.js";
@@ -26,5 +27,6 @@ router.get("/:id", protect, getRouteSeekersQuestionById);
 router.put("/:id", protect, updateRouteSeekersQuestion);
 router.delete("/:id", protect, deleteRouteSeekersQuestion);
 router.post("/delete-many", protect, deleteManyRouteSeekersQuestions);
+router.delete("/", protect, deleteAllRouteSeekersQuestions);
 
 export default router;
