@@ -232,8 +232,8 @@ export default function BattleBreakers() {
   const handleBuzzerPress = async () => {
     setIsPressedBuzzer(true);
     setIsTimerRunning(false);
-    // Calculate response time based on server-managed timer
-    const responseTime = (allocatedTime - timeRemaining);
+    // Calculate response time based on actual elapsed time since question started
+    const responseTime = ((Date.now() - questionStartTime) / 1000).toFixed(2);
     await axiosInstance.post(API_PATHS.BATTLE_BREAKERS.BUZZER_PRESS, { questionId: questions[currentQuestion]._id, responseTime: responseTime });
 
     playBuzzerSound();

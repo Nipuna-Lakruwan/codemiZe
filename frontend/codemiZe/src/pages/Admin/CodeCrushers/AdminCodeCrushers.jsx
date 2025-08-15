@@ -124,9 +124,9 @@ export default function AdminCodeCrushers() {
       try {
         // Here you would handle the resource upload to the backend
         const formData = new FormData();
-        formData.append('resource', selectedFile);
+        formData.append('slides', selectedFile);
 
-        await axiosInstance.post(API_PATHS.CODE_CRUSHERS.UPLOAD_RESOURCE, formData, {
+        await axiosInstance.post(API_PATHS.CODE_CRUSHERS.UPLOAD_SLIDES, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },

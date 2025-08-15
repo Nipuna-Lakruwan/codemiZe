@@ -8,9 +8,11 @@ import { API_PATHS } from '../../../utils/apiPaths';
 import { imagePath } from '../../../utils/helper';
 import PdfViewer from '../../../components/Student/PDFViewer/PdfViewer';
 import { SocketContext } from '../../../context/SocketContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function CircuitSmashers() {
   const socket = useContext(SocketContext);
+  const navigate = useNavigate();
   // Game state
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -147,6 +149,7 @@ export default function CircuitSmashers() {
         setIsGameStarted(false);
         setIsServerTimerActive(false);
         handleGameEnd();
+        navigate('/student/games-roadmap');
       });
 
       // Request current state when component mounts (for reconnection)
