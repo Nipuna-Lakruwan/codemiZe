@@ -24,18 +24,20 @@ export const activateGame = async (req, res) => {
   const { gameId } = req.params;
 
   try {
-    const games = await Game.find();
+    // First, deactivate all currently active games (but leave completed games unchanged)
+    await Game.updateMany(
+      { status: 'active' },
+      { status: 'inactive' }
+    );
 
-    // Update each game's isActive flag
-    for (const g of games) {
-      if(g._id.equals(gameId)) {
-        g.status = 'active';
-      }
-      else {
-        g.status = 'inactive';
-      }
-      await g.save(); // Save each update
+    // Then activate the requested game
+    const gameToActivate = await Game.findById(gameId);
+    if (!gameToActivate) {
+      return res.status(404).json({ error: 'Game not found' });
     }
+
+    gameToActivate.status = 'active';
+    await gameToActivate.save();
 
     //Here
     const io = req.app.get("io");

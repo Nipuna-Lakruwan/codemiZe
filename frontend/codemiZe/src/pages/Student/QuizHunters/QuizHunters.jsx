@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 // Framer Motion removed to fix animation warnings
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
@@ -10,6 +11,7 @@ import { API_PATHS } from '../../../utils/apiPaths';
 import './quizHuntersAnimations.css';
 
 export default function QuizHunters() {
+  const navigate = useNavigate();
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +28,7 @@ export default function QuizHunters() {
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quizStartTime, setQuizStartTime] = useState(null); // Track when quiz started
+  const [redirectCountdown, setRedirectCountdown] = useState(10); // 10 second countdown
 
   // Initialize quiz on component mount - restore state if quiz was in progress
   useEffect(() => {
@@ -161,6 +164,26 @@ export default function QuizHunters() {
     };
   }, [isGameStarted, quizCompleted, timeRemaining, quizStartTime]);
 
+  // Countdown timer for redirect to roadmap after quiz ends
+  useEffect(() => {
+    let redirectTimer;
+    if (quizEnded && redirectCountdown > 0) {
+      redirectTimer = setInterval(() => {
+        setRedirectCountdown(prev => {
+          if (prev <= 1) {
+            navigate('/student/games-roadmap');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (redirectTimer) clearInterval(redirectTimer);
+    };
+  }, [quizEnded, redirectCountdown, navigate]);
+
   // Handle when time runs out
   const handleTimeUp = async () => {
     // Submit current answer if any is selected
@@ -185,6 +208,7 @@ export default function QuizHunters() {
     } finally {
       setQuizCompleted(true);
       setQuizEnded(true);
+      setRedirectCountdown(10); // Reset countdown to 10 seconds
       clearQuizState(); // Clear saved state when quiz ends
     }
   };
@@ -394,17 +418,26 @@ export default function QuizHunters() {
               </div>
             </div>
 
-            {/* Road Map button with map icon */}
+            {/* Road Map button with map icon and countdown */}
             <button
               className="px-8 py-3 bg-purple-950 rounded-[3px] border border-slate-500/40 text-white font-medium flex items-center gap-2 transition-all duration-200 hover:scale-105 hover:shadow-[0px_0px_8px_rgba(140,20,252,0.6)] active:scale-95 animate-fade-in"
               style={{ animationDelay: "0.6s" }}
-              onClick={() => window.location.href = "/student/games-roadmap"}
+              onClick={() => navigate('/student/games-roadmap')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6-3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
-              Road Map
+              Road Map {redirectCountdown > 0 && `(${redirectCountdown}s)`}
             </button>
+
+            {/* Countdown message */}
+            {redirectCountdown > 0 && (
+              <div className="text-center mt-4 animate-fade-in">
+                <p className="text-white/70 text-sm">
+                  Automatically redirecting to roadmap in {redirectCountdown} second{redirectCountdown !== 1 ? 's' : ''}...
+                </p>
+              </div>
+            )}
           </div>
         </div>
       ) : (
