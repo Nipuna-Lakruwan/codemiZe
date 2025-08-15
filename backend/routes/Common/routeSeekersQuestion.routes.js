@@ -10,6 +10,7 @@ import {
   deleteAllRouteSeekersQuestions,
   uploadQuestionnaireResourceFile,
   downloadQuestionnaireResourceFile,
+  getAllUploadedQuestionnaireResourceFiles,
 } from "../../controllers/Common/routeSeekersQuestion.controller.js";
 import { protect } from "../../middleware/authMiddleware.js";
 import { CSVUpload, resourceUpload } from "../../middleware/uploadMiddleware.js";
@@ -26,6 +27,7 @@ router.post(
 );
 router.post("/upload-resource", protect, resourceUpload.single('file'), uploadQuestionnaireResourceFile);
 router.get("/download-resource/:id", protect, downloadQuestionnaireResourceFile);
+router.get("/resource-files", protect, getAllUploadedQuestionnaireResourceFiles);
 router.get("/", protect, getAllRouteSeekersQuestions);
 router.get("/:id", protect, getRouteSeekersQuestionById);
 router.put("/:id", protect, updateRouteSeekersQuestion);

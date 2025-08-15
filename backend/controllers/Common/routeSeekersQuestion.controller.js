@@ -171,3 +171,13 @@ export const downloadQuestionnaireResourceFile = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Get all uploaded resource files
+export const getAllUploadedQuestionnaireResourceFiles = async (req, res) => {
+  try {
+    const resourceFiles = await ResourceFile.find({});
+    res.status(200).json(resourceFiles);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
