@@ -114,7 +114,7 @@ const RouteSeekersJudge = () => {
         questionId: q._id,
         question: q.question,
         answer: studentAnswer ? studentAnswer.answer : "Not Answered",
-        status: studentAnswer ? (studentAnswer.isCorrect ? 'correct' : 'incorrect') : 'incorrect',
+        status: studentAnswer ? studentAnswer.status : 'incorrect',
       };
     });
 
@@ -132,7 +132,7 @@ const RouteSeekersJudge = () => {
     const answersToUpdate = updatedQuestions.map(q => ({
       questionId: q.questionId,
       answer: q.answer,
-      isCorrect: q.status === 'correct'
+      status: q.status
     }));
 
     try {
