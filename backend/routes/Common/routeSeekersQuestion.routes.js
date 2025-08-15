@@ -13,7 +13,13 @@ import {
   getAllUploadedQuestionnaireResourceFiles,
   deleteQuestionnaireResourceFile,
 } from "../../controllers/Common/routeSeekersQuestion.controller.js";
+import {
+  uploadNetworkDesignPDF,
+  getNetworkDesignPDF,
+  deleteNetworkDesignPDF,
+} from "../../controllers/Common/routeSeekersQuestion.controller.js";
 import { protect } from "../../middleware/authMiddleware.js";
+import { requireAdmin } from "../../middleware/roleMiddleware.js";
 import { CSVUpload, resourceUpload } from "../../middleware/uploadMiddleware.js";
 
 const router = express.Router();
@@ -36,5 +42,10 @@ router.put("/:id", protect, updateRouteSeekersQuestion);
 router.delete("/:id", protect, deleteRouteSeekersQuestion);
 router.post("/delete-many", protect, deleteManyRouteSeekersQuestions);
 router.delete("/", protect, deleteAllRouteSeekersQuestions);
+
+// Routes for Network Design PDF
+router.post("/upload-network-design-pdf", protect, requireAdmin, resourceUpload.single("file"), uploadNetworkDesignPDF);
+router.get("/get-network-design-pdf", protect, getNetworkDesignPDF);
+router.delete("/delete-network-design-pdf", protect, requireAdmin, deleteNetworkDesignPDF);
 
 export default router;

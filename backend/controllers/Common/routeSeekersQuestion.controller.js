@@ -208,3 +208,79 @@ export const deleteQuestionnaireResourceFile = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Upload network design PDF
+export const uploadNetworkDesignPDF = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).send({ message: "No file uploaded." });
+        }
+
+        const existingFile = await ResourceFile.findOne({
+            gameName: "RouteSeekers",
+            fileType: "NetworkDesign",
+        });
+
+        if (existingFile) {
+            const filePath = path.join(__dirname, "../..", existingFile.path);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+            await ResourceFile.findByIdAndDelete(existingFile._id);
+        }
+
+        const newFile = new ResourceFile({
+            gameName: "RouteSeekers",
+            fileType: "NetworkDesign",
+            path: req.file.path,
+            filename: req.file.filename,
+            originalname: req.file.originalname,
+        });
+
+        await newFile.save();
+        res.status(201).send(newFile);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+// Get network design PDF
+export const getNetworkDesignPDF = async (req, res) => {
+    try {
+        const file = await ResourceFile.findOne({
+            gameName: "RouteSeekers",
+            fileType: "NetworkDesign",
+        });
+        if (!file) {
+            return res.status(404).send({ message: "File not found." });
+        }
+        res.status(200).send(file);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+// Delete network design PDF
+export const deleteNetworkDesignPDF = async (req, res) => {
+    try {
+        const file = await ResourceFile.findOne({
+            gameName: "RouteSeekers",
+            fileType: "NetworkDesign",
+        });
+
+        if (!file) {
+            return res.status(404).send({ message: "File not found." });
+        }
+
+        const filePath = path.join(__dirname, "../..", file.path);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+
+        await ResourceFile.findByIdAndDelete(file._id);
+
+        res.status(200).send({ message: "File deleted successfully." });
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
