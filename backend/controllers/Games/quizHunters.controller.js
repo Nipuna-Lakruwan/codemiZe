@@ -198,8 +198,7 @@ export const calculateAndUpdateScore = async (req, res) => {
 
     // Calculate score
     const correctAnswers = userAnswers.filter(answer => answer.status === "Correct").length;
-    const totalAnswers = userAnswers.length;
-    const finalScore = (correctAnswers / totalAnswers) * 100;
+    const finalScore = correctAnswers * 4;
 
     // Prevent overwriting if a score already exists
     if (school.score.QuizHunters > 0) {
