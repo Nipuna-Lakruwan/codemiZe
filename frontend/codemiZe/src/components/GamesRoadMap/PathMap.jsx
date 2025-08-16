@@ -1,9 +1,66 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import line1Image from '/line1.png'; // Import the line image from public folder
+import line2Image from '/line2.png'; // Import the second line image
+import line3Image from '/line3.png'; // Import the third line image
+import line4Image from '/line4.png'; // Import the fourth line image
+import line5Image from '/line5.png'; // Import the fifth line image
 
-const PathMap = ({ paths, visiblePaths, containerSize, themeColorLight }) => {
+// Define a component for the custom line image
+const LineImage = ({ path, position, rotation, scale, isVisible, imageName }) => {
+  // Calculate the midpoint of the path to position the line image
+  const midX = position?.x || (path.start.x + path.end.x) / 2;
+  const midY = position?.y || (path.start.y + path.end.y) / 2;
+
+  // Calculate angle for rotation if not provided
+  const autoRotation = Math.atan2(path.end.y - path.start.y, path.end.x - path.start.x) * (180 / Math.PI);
+  const imageRotation = rotation !== undefined ? rotation : autoRotation;
+
+  // Default scale or custom scale
+  const imageScale = scale || { width: 100, height: 90 };
+
+  // Select the appropriate image based on imageName
+  const getImage = () => {
+    switch (imageName) {
+      case 'line2':
+        return line2Image;
+      case 'line5':
+        return line5Image;
+      case 'line3':
+        return line3Image;
+      case 'line4':
+        return line4Image;
+      case 'line1':
+      default:
+        return line1Image;
+    }
+  };
+
   return (
-    <div className="absolute inset-0 w-full h-full z-[8]">
+    <g transform={`rotate(${imageRotation}, ${midX}, ${midY})`}>
+      <motion.image
+        xlinkHref={getImage()}
+        x={midX - imageScale.width / 2}
+        y={midY - imageScale.height / 2}
+        width={imageScale.width}
+        height={imageScale.height}
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{
+          opacity: isVisible ? 0.8 : 0,
+          scale: isVisible ? 1 : 0,
+          transition: { duration: 0.7, ease: "easeInOut" }
+        }}
+        style={{
+          filter: 'brightness(0.9)'
+        }}
+      />
+    </g>
+  );
+};
+
+const PathMap = ({ paths, visiblePaths, containerSize, themeColorLight, lineImages = [] }) => {
+  return (
+    <div className="absolute inset-0 w-full h-full z-[1]">
       <svg
         width="100%"
         height="100%"
@@ -14,94 +71,17 @@ const PathMap = ({ paths, visiblePaths, containerSize, themeColorLight }) => {
           <AnimatePresence key={`path-${index}`}>
             {visiblePaths.includes(index) && (
               <g>
-                {/* Path glow effect */}
-                <motion.path
-                  d={`M ${path.start.x} ${path.start.y} Q ${path.control.x} ${path.control.y} ${path.end.x} ${path.end.y}`}
-                  stroke={path.isAvailable ? "rgba(140, 20, 252, 0.2)" : "rgba(255,255,255,0.15)"}
-                  strokeWidth="20" // Thicker for better glow
-                  fill="none"
-                  strokeLinecap="round"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{
-                    pathLength: 1,
-                    opacity: 1,
-                    transition: {
-                      duration: 1.2,
-                      ease: "easeInOut",
-                    }
-                  }}
-                />
-
-                {/* Main path with stronger visibility and animation */}
-                <motion.path
-                  d={`M ${path.start.x} ${path.start.y} Q ${path.control.x} ${path.control.y} ${path.end.x} ${path.end.y}`}
-                  stroke={path.isAvailable ? themeColorLight : "rgba(255,255,255,0.5)"}
-                  strokeWidth="4"
-                  fill="none"
-                  strokeDasharray="12,12"
-                  strokeLinecap="round"
-                  style={{
-                    filter: path.isAvailable
-                      ? 'drop-shadow(0 0 10px rgba(140, 20, 252, 0.6))'
-                      : 'drop-shadow(0 0 8px rgba(255,255,255,0.2))'
-                  }}
-                  className="animate-dash"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{
-                    pathLength: 1,
-                    opacity: 1,
-                    transition: {
-                      duration: 1,
-                      ease: "easeInOut",
-                      delay: 0.1
-                    }
-                  }}
-                />
-
-                {/* Start point circle */}
-                <motion.circle
-                  cx={path.start.x}
-                  cy={path.start.y}
-                  r="10" // Larger dots
-                  fill={path.isAvailable ? themeColorLight : "rgba(255,255,255,0.5)"}
-                  style={{
-                    filter: path.isAvailable
-                      ? 'drop-shadow(0 0 12px rgba(140, 20, 252, 0.8))'
-                      : 'drop-shadow(0 0 8px rgba(255,255,255,0.3))'
-                  }}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{
-                    scale: 1,
-                    opacity: 1,
-                    transition: {
-                      duration: 0.4,
-                      ease: "backOut"
-                    }
-                  }}
-                />
-
-                {/* End point circle */}
-                <motion.circle
-                  cx={path.end.x}
-                  cy={path.end.y}
-                  r="10" // Larger dots
-                  fill={path.isAvailable ? themeColorLight : "rgba(255,255,255,0.5)"}
-                  style={{
-                    filter: path.isAvailable
-                      ? 'drop-shadow(0 0 12px rgba(140, 20, 252, 0.8))'
-                      : 'drop-shadow(0 0 8px rgba(255,255,255,0.3))'
-                  }}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{
-                    scale: 1,
-                    opacity: 1,
-                    transition: {
-                      duration: 0.4,
-                      ease: "backOut",
-                      delay: 0.7
-                    }
-                  }}
-                />
+                {/* Custom line image if specified for this path */}
+                {(path.useLineImage || lineImages.some(img => img.pathIndex === index)) && (
+                  <LineImage
+                    path={path}
+                    position={lineImages.find(img => img.pathIndex === index)?.position}
+                    rotation={lineImages.find(img => img.pathIndex === index)?.rotation}
+                    scale={lineImages.find(img => img.pathIndex === index)?.scale}
+                    imageName={lineImages.find(img => img.pathIndex === index)?.imageName || 'line1'}
+                    isVisible={visiblePaths.includes(index)}
+                  />
+                )}
               </g>
             )}
           </AnimatePresence>

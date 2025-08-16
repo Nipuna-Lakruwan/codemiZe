@@ -41,7 +41,7 @@ const GameNode = ({ game, idx, visibleGames }) => {
     <AnimatePresence key={game.id}>
       {visibleGames.includes(idx) && (
         <div
-          className="absolute transform -translate-x-1/2 -translate-y-1/2"
+          className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20"
           style={{
             left: game.pos.left,
             top: game.pos.top,
@@ -64,7 +64,7 @@ const GameNode = ({ game, idx, visibleGames }) => {
             >
               {/* Triangle gradient with game icon */}
               <div
-                className="absolute left-1/2 transform -translate-x-1/2 z-30 flex items-center justify-center"
+                className="absolute left-1/2 transform -translate-x-1/2 z-40 flex items-center justify-center"
                 style={{
                   top: '-160px',
                   width: '500px',
@@ -100,7 +100,7 @@ const GameNode = ({ game, idx, visibleGames }) => {
                 <motion.img
                   src={game.icon}
                   alt={game.title}
-                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 object-contain z-40"
+                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 object-contain z-50"
                   style={{
                     width: '300px',
                     height: '300px',
@@ -154,7 +154,7 @@ const GameButton = ({ game, buttonAnimation, navigate }) => {
 
   return (
     <div
-      className={`relative w-32 h-32 ${(game.isAvailable && !game.isCompleted) ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+      className={`relative w-32 h-32 z-50 ${(game.isAvailable && !game.isCompleted) ? 'cursor-pointer' : 'cursor-not-allowed'}`}
       onClick={() => {
         if (game.isAvailable && !game.isCompleted && gameRoutes[game.title]) {
           navigate(gameRoutes[game.title]);
@@ -163,12 +163,23 @@ const GameButton = ({ game, buttonAnimation, navigate }) => {
     >
       {/* Invisible click area that covers the entire button */}
       <div
-        className="absolute inset-0 z-30 rounded-full"
+        className="absolute inset-0 z-60 rounded-full"
         style={{
           background: 'transparent',
           cursor: (game.isAvailable && !game.isCompleted) ? 'pointer' : 'not-allowed'
         }}
       ></div>
+
+      {/* Background blocker for locked buttons */}
+      {!game.isAvailable && (
+        <div
+          className="absolute inset-0 rounded-full z-40"
+          style={{
+            background: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(3px)'
+          }}
+        ></div>
+      )}
 
       {/* Button visual with animation */}
       <motion.div
@@ -182,14 +193,16 @@ const GameButton = ({ game, buttonAnimation, navigate }) => {
         <motion.img
           src="/btn.svg"
           alt="Game Button"
-          className="w-full h-full object-contain"
+          className="w-full h-full object-contain "
           style={{
             filter: game.isCompleted
               ? 'drop-shadow(0 0 12px rgba(34, 197, 94, 0.7)) hue-rotate(80deg) saturate(1.5) brightness(1.2)'
               : (game.isAvailable && !game.isCompleted)
                 ? 'drop-shadow(0 0 10px rgba(140, 20, 252, 0.5))'
-                : 'grayscale(1) opacity(0.5) brightness(0.6)',
-            pointerEvents: 'none' // Make sure image doesn't capture clicks
+                : 'grayscale(1) opacity(0.8) brightness(0.4)',
+            pointerEvents: 'none', // Make sure image doesn't capture clicks
+            backgroundColor: (!game.isAvailable) ? 'rgba(0, 0, 0, 0.6)' : 'transparent',
+            borderRadius: '50%'
           }}
           initial={{ opacity: 0, rotateY: 90 }}
           animate={{
@@ -207,7 +220,7 @@ const GameButton = ({ game, buttonAnimation, navigate }) => {
       {/* Locked indicator for unavailable games or completed games */}
       {(!game.isAvailable || game.isCompleted) && (
         <motion.div
-          className="absolute inset-0 flex items-center justify-center z-40"
+          className="absolute inset-0 flex items-center justify-center z-70"
           initial={{ opacity: 0 }}
           animate={{
             opacity: 1,
@@ -218,11 +231,10 @@ const GameButton = ({ game, buttonAnimation, navigate }) => {
           }}
           style={{ pointerEvents: 'none' }} // Prevent lock icon from blocking clicks
         >
-          <div className={`backdrop-blur-sm w-12 h-12 rounded-full flex items-center justify-center border ${
-            game.isCompleted 
-              ? 'bg-green-900/60 border-green-500'
-              : 'bg-black/60 border-gray-500'
-          }`}>
+          <div className={`backdrop-blur-md w-16 h-16 rounded-full flex items-center justify-center border-2 shadow-lg ${game.isCompleted
+              ? 'bg-green-900/80 border-green-500'
+              : 'bg-black/80 border-gray-600'
+            }`}>
             {game.isCompleted ? (
               <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

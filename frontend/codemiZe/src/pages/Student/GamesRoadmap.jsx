@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
+
 // Import new components
 import GameNode from '../../components/GamesRoadMap/GameNode';
 import PathMap from '../../components/GamesRoadMap/PathMap';
@@ -18,14 +19,14 @@ const mockGames = [
     id: 1,
     title: 'Quiz Hunters',
     icon: '/quiz_hunters_logo-removebg 1.png',
-    pos: { left: '15%', top: '75%' },
+    pos: { left: '15%', top: '65%' },
     status: 'inactive',
   },
   {
     id: 2,
     title: 'Code Crushers',
     icon: '/code crushers logo 1.png',
-    pos: { left: '32%', top: '40%' },
+    pos: { left: '25%', top: '35%' },
     status: 'active',
   },
   {
@@ -60,30 +61,32 @@ const generatePaths = (width, height) => {
   return [
     {
       // Quiz Hunters to Code Crushers
-      start: { x: getX('15'), y: getY('80') },
-      end: { x: getX('32'), y: getY('45') },
-      control: { x: getX('20'), y: getY('65') },
-      isAvailable: true // This path is available
+      start: { x: getX('15'), y: getY('65') },
+      end: { x: getX('25'), y: getY('35') },
+      control: { x: getX('20'), y: getY('50') },
+      isAvailable: true, // This path is available
+      useLineImage: true // Use custom line image for this path
     },
     {
       // Code Crushers to Circuit Smashers
-      start: { x: getX('32'), y: getY('45') },
-      end: { x: getX('50'), y: getY('80') },
-      control: { x: getX('41'), y: getY('60') },
+      start: { x: getX('25'), y: getY('35') },
+      end: { x: getX('50'), y: getY('75') },
+      control: { x: getX('37'), y: getY('55') },
       isAvailable: false // This path is not available yet
     },
     {
       // Circuit Smashers to Route Seekers
-      start: { x: getX('50'), y: getY('80') },
-      end: { x: getX('68'), y: getY('45') },
-      control: { x: getX('65'), y: getY('85') },
-      isAvailable: false // This path is not available yet
+      start: { x: getX('50'), y: getY('75') },
+      end: { x: getX('68'), y: getY('40') },
+      control: { x: getX('60'), y: getY('65') },
+      isAvailable: false, // This path is not available yet
+      useLineImage: true // Use custom line image for this path
     },
     {
       // Route Seekers to Battle Breakers
-      start: { x: getX('68'), y: getY('45') },
-      end: { x: getX('85'), y: getY('76') },
-      control: { x: getX('80'), y: getY('50') },
+      start: { x: getX('68'), y: getY('40') },
+      end: { x: getX('85'), y: getY('70') },
+      control: { x: getX('77'), y: getY('50') },
       isAvailable: false // This path is not available yet
     },
   ];
@@ -96,6 +99,38 @@ export default function GamesRoadmap() {
   const [games, setGames] = useState([]);
   const socket = useContext(SocketContext);
   const navigate = useNavigate();
+
+  // Define line image configurations
+  const [lineImages, setLineImages] = useState([
+    {
+      pathIndex: 0, // First path (Quiz Hunters to Code Crushers)
+      position: { x: 400, y: 600 }, // Repositioned for better visibility
+      rotation: 0, // Custom rotation angle (degrees) - 90 degrees for clear visibility
+      scale: { width: 250, height: 300 }, // Custom size - equal dimensions for clearer rotation visibility
+      imageName: 'line1' // Using line1.png image
+    },
+    {
+      pathIndex: 3, // Second path (Code Crushers to Circuit Smashers)
+      position: { x: 1470, y: 660 }, // Strategic position for this path
+      rotation: -3, // Custom rotation angle (degrees)
+      scale: { width: 400, height: 600 }, // Custom size for this image
+      imageName: 'line5' // Using line5.png image
+    },
+    {
+      pathIndex: 1, // Third path (Circuit Smashers to Route Seekers)
+      position: { x: 740, y: 670 }, // Repositioned for better visibility
+      rotation: 190, // Custom rotation angle (degrees) - 180 degrees for clear visibility
+      scale: { width: 600, height: 700 }, // Custom size - equal dimensions for clearer rotation visibility
+      imageName: 'line2' // Using line2.png image
+    },
+    {
+      pathIndex: 2, // Fourth path (Route Seekers to Battle Breakers)
+      position: { x: 1100, y: 700 }, // Explicit position for better visibility
+      rotation: 0, // Custom rotation angle (degrees) - 270 degrees for clear visibility
+      scale: { width: 300, height: 500 }, // Custom size - equal dimensions for clearer rotation visibility
+      imageName: 'line4' // Using line4.png image
+    },
+  ]);
 
   useEffect(() => {
     if (socket) {
@@ -118,7 +153,7 @@ export default function GamesRoadmap() {
     }
   }, [socket]);
 
-    // Function to update game state based on socket data
+  // Function to update game state based on socket data
   const updateGameState = (updateData) => {
     const { gameId, newStatus } = updateData;
 
@@ -185,6 +220,11 @@ export default function GamesRoadmap() {
             icon: imagePath(backendGame?.icon?.url) || mockGame.icon,
             allocateTime: backendGame?.allocateTime || 0,
             status: gameStatus,
+            // Make sure position values are used properly as percentages
+            pos: {
+              left: mockGame.pos.left,
+              top: mockGame.pos.top,
+            },
             // Map status to boolean properties for GameNode component
             isCompleted: gameStatus === 'completed',
             isAvailable: gameStatus === 'active',
@@ -219,7 +259,38 @@ export default function GamesRoadmap() {
         const width = containerRef.current.clientWidth;
         const height = containerRef.current.clientHeight;
         setContainerSize({ width, height });
-        setPaths(generatePaths(width, height));
+
+        // Generate updated paths
+        const newPaths = generatePaths(width, height);
+        setPaths(newPaths);
+
+        // Only update positions for items that have null coordinates
+        setLineImages(prev => prev.map(img => {
+          const path = newPaths[img.pathIndex];
+          if (!path) return img;
+
+          // If both x and y have valid values, preserve the position exactly
+          if (img.position &&
+            img.position.x !== null &&
+            img.position.x !== undefined &&
+            img.position.y !== null &&
+            img.position.y !== undefined) {
+            return img;
+          }
+
+          // Otherwise, calculate any missing coordinates
+          const newPosition = {
+            x: img.position?.x !== null && img.position?.x !== undefined ?
+              img.position.x : (path.start.x + path.end.x) / 2,
+            y: img.position?.y !== null && img.position?.y !== undefined ?
+              img.position.y : (path.start.y + path.end.y) / 2
+          };
+
+          return {
+            ...img,
+            position: newPosition
+          };
+        }));
       }
     }
 
@@ -276,12 +347,13 @@ export default function GamesRoadmap() {
       {/* Header */}
       <Header />
 
-      {/* SVG paths with color-coded availability */}
+      {/* SVG paths with color-coded availability and custom line images */}
       <PathMap
         paths={paths}
         visiblePaths={visiblePaths}
         containerSize={containerSize}
         themeColorLight={themeColorLight}
+        lineImages={lineImages}
       />
 
       {/* Game stations */}
