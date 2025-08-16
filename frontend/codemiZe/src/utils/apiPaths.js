@@ -44,6 +44,7 @@ export const API_PATHS = {
     GET_DASHBOARD: (questionId) => `/api/v1/battle-breakers/school/${questionId}`,
     SUBMIT_ANSWERS: "/api/v1/battle-breakers/submit",
     FINISH_GAME: "/api/v1/battle-breakers/finishGame",
+    GET_ALLOCATED_TIME: "/api/v1/battle-breakers/allocatedTime",
   },
   QUIZ_HUNTERS: {
     GET_ALL_QUESTIONS: "/api/v1/quiz-hunters/",

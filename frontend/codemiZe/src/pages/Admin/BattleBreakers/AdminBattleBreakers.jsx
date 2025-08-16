@@ -43,6 +43,9 @@ export default function AdminBattleBreakers() {
       const response = await axiosInstance.get(API_PATHS.BATTLE_BREAKERS.GET_QUESTIONS);
       setQuestions(response.data);
       setFilteredQuestions(response.data);
+
+      const time = await axiosInstance.get(API_PATHS.BATTLE_BREAKERS.GET_ALLOCATED_TIME);
+      setAllocatedTime(time.data.allocatedTime || 20);
     };
     fetchQuestions();
   }, []);
