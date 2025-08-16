@@ -176,7 +176,10 @@ export const downloadQuestionnaireResourceFile = async (req, res) => {
 // Get all uploaded resource files
 export const getAllUploadedQuestionnaireResourceFiles = async (req, res) => {
   try {
-    const resourceFiles = await ResourceFile.find({});
+    // Filter for files that have a .zip extension, case-insensitive
+    const resourceFiles = await ResourceFile.find({
+      file: { $regex: "\\.zip$", $options: "i" },
+    });
     res.status(200).json(resourceFiles);
   } catch (error) {
     res.status(500).json({ message: error.message });
