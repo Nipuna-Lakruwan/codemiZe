@@ -145,10 +145,20 @@ export default function CircuitSmashers() {
         }
       });
 
-      socket.on('completed', (data) => {
+      socket.on('completed', async () => {
         setIsGameStarted(false);
         setIsServerTimerActive(false);
-        handleSubmitCode();
+
+        // Try to submit code if there's a valid file uploaded
+        if (isFileValid && uploadedFile) {
+          try {
+            await handleSubmitCode();
+          } catch (error) {
+            console.error('Failed to submit code before navigation:', error);
+          }
+        }
+        
+        // Navigate to games roadmap
         navigate('/student/games-roadmap');
       });
 

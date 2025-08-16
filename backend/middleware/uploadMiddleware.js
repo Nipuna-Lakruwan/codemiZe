@@ -7,6 +7,7 @@ const createUploadMiddleware = (options = {}) => {
   const {
     destination = 'general',
     allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'],
+    allowedExtensions = [], // New option for file extensions
     maxFileSize = 5 * 1024 * 1024, // 5MB default
   } = options;
 
@@ -19,16 +20,27 @@ const createUploadMiddleware = (options = {}) => {
     filename: function (req, file, cb) {
       // Generate unique filename with timestamp
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+      if (destination === 'resources') {
+        cb(null, req.user.name + path.extname(file.originalname));
+      } else {
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+      }
     }
   });
 
-  // File filter based on allowed mime types
+  // Enhanced file filter based on mime types and file extensions
   const fileFilter = (req, file, cb) => {
-    if (allowedMimeTypes.includes(file.mimetype)) {
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+    
+    // Check both MIME type and file extension
+    const isMimeTypeAllowed = allowedMimeTypes.includes(file.mimetype);
+    const isExtensionAllowed = allowedExtensions.length === 0 || allowedExtensions.includes(fileExtension);
+    
+    if (isMimeTypeAllowed || isExtensionAllowed) {
       cb(null, true);
     } else {
-      cb(new Error(`Only ${allowedMimeTypes.join(', ')} files are allowed!`), false);
+      const allowedFormats = [...allowedMimeTypes, ...allowedExtensions].join(', ');
+      cb(new Error(`Only ${allowedFormats} files are allowed!`), false);
     }
   };
 
@@ -65,8 +77,28 @@ const CSVUpload = createUploadMiddleware({
 // Pre-configured upload middleware for documents
 const resourceUpload = createUploadMiddleware({
   destination: 'resources',
-  allowedMimeTypes: ['application/zip', 'application/pdf'],
-  maxFileSize: 10 * 1024 * 1024 // 10MB
+  allowedMimeTypes: [
+    'application/zip', 
+    'application/pdf',
+    'text/x-python',        // Python files (.py)
+    'text/plain',           // Arduino files (.ino) and text files
+    'text/x-c',
+    'text/x-c++',
+    'application/octet-stream', // Arduino files (.ino) and Packet Tracer files (.pkt)
+    'application/x-packet-tracer' // Packet Tracer files (.pkt) - specific MIME type
+  ],
+  allowedExtensions: [
+    '.py',      // Python files
+    '.ino',     // Arduino sketch files
+    '.pkt',     // Cisco Packet Tracer files
+    '.c',       // C source files
+    '.cpp',     // C++ source files
+    '.h',       // Header files
+    '.js',      // JavaScript files
+    '.txt',     // Text files
+    '.zip'      // Zip archives for multiple files
+  ],
+  maxFileSize: 50 * 1024 * 1024 // 50MB (increased for larger project files)
 });
 
 // Pre-configured upload middleware for general files
@@ -76,4 +108,30 @@ const generalUpload = createUploadMiddleware({
   maxFileSize: 10 * 1024 * 1024 // 10MB
 });
 
-export { createUploadMiddleware, avatarUpload, slidesUpload, generalUpload, CSVUpload, resourceUpload };
+// Pre-configured upload middleware specifically for code files
+const codeUpload = createUploadMiddleware({
+  destination: 'resources',
+  allowedMimeTypes: [
+    'text/x-python',
+    'text/plain',
+    'application/octet-stream',
+    'text/x-c',
+    'text/x-c++',
+    'application/javascript',
+    'text/javascript'
+  ],
+  allowedExtensions: [
+    '.py',      // Python files
+    '.ino',     // Arduino sketch files
+    '.pkt',     // Cisco Packet Tracer files
+    '.c',       // C source files
+    '.cpp',     // C++ source files
+    '.h',       // Header files
+    '.js',      // JavaScript files
+    '.txt',     // Text files
+    '.zip'      // Zip archives for multiple files
+  ],
+  maxFileSize: 50 * 1024 * 1024 // 50MB
+});
+
+export { createUploadMiddleware, avatarUpload, slidesUpload, generalUpload, CSVUpload, resourceUpload, codeUpload };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
 import GameNodeMini from '../../../components/Games/GameNodeMini';
@@ -11,6 +12,7 @@ import { SocketContext } from '../../../context/SocketContext';
 
 export default function CodeCrushers() {
   const socket = useContext(SocketContext);
+  const navigate = useNavigate();
   // Game state
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -143,8 +145,21 @@ export default function CodeCrushers() {
         }
       });
 
-      socket.on('completed', () => {
-        handleGameEnd();
+      socket.on('completed', async () => {
+        setIsGameStarted(false);
+        setIsServerTimerActive(false);
+        
+        // Try to submit code if there's a valid file uploaded
+        if (isFileValid && uploadedFile) {
+          try {
+            await handleSubmitCode();
+          } catch (error) {
+            console.error('Failed to submit code before navigation:', error);
+          }
+        }
+        
+        // Navigate to games roadmap
+        navigate('/student/games-roadmap');
       });
 
       // Request current state when component mounts (for reconnection)
@@ -161,9 +176,10 @@ export default function CodeCrushers() {
         socket.off('codeCrushers-roundPaused');
         socket.off('codeCrushers-roundResumed');
         socket.off('codeCrushers-syncTimer');
+        socket.off('completed');
       }
     };
-  }, [socket]);
+  }, [socket, navigate, isFileValid, uploadedFile]);
 
   // Start game handler
   const handleStartGame = () => {
