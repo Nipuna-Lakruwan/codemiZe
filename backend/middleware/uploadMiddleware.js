@@ -69,6 +69,12 @@ const resourceUpload = createUploadMiddleware({
   maxFileSize: 10 * 1024 * 1024 // 10MB
 });
 
+const routeSeekersNetworkDesignUpload = createUploadMiddleware({
+  destination: 'resources/routeSeekersNetworkDesign',
+  allowedMimeTypes: ['application/zip'],
+  maxFileSize: 10 * 1024 * 1024 // 10MB
+});
+
 // Pre-configured upload middleware for general files
 const generalUpload = createUploadMiddleware({
   destination: 'general',
@@ -76,4 +82,4 @@ const generalUpload = createUploadMiddleware({
   maxFileSize: 10 * 1024 * 1024 // 10MB
 });
 
-export { createUploadMiddleware, avatarUpload, slidesUpload, generalUpload, CSVUpload, resourceUpload };
+export { createUploadMiddleware, avatarUpload, slidesUpload, generalUpload, CSVUpload, resourceUpload, routeSeekersNetworkDesignUpload };

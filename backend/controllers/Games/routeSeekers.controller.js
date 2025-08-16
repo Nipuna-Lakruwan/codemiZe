@@ -1,5 +1,6 @@
 import RouteSeekersQuestion from "../../models/questions/RouteSeekersQuestion.js";
 import RouteSeekersAnswer from "../../models/markings/RouteSeekersAnswer.js";
+import StudentUpload from "../../models/StudentUpload.js";
 
 // Get all questions for students
 export const getQuestions = async (req, res) => {
@@ -122,4 +123,28 @@ export const updateAnswerStatus = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+export const uploadNetworkDesign = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
+
+        const newUpload = new StudentUpload({
+            userId: req.user.id,
+            gameName: "RouteSeekers",
+            fileUrl: req.file.path,
+            originalName: req.file.originalname,
+        });
+
+        await newUpload.save();
+
+        res.status(201).json({
+            message: "File uploaded successfully",
+            file: newUpload,
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
