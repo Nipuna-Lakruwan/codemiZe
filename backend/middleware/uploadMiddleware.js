@@ -101,6 +101,12 @@ const resourceUpload = createUploadMiddleware({
   maxFileSize: 50 * 1024 * 1024 // 50MB (increased for larger project files)
 });
 
+const routeSeekersNetworkDesignUpload = createUploadMiddleware({
+  destination: 'resources/routeSeekersNetworkDesign',
+  allowedMimeTypes: ['application/zip'],
+  maxFileSize: 10 * 1024 * 1024 // 10MB
+});
+
 // Pre-configured upload middleware for general files
 const generalUpload = createUploadMiddleware({
   destination: 'general',
@@ -108,30 +114,4 @@ const generalUpload = createUploadMiddleware({
   maxFileSize: 10 * 1024 * 1024 // 10MB
 });
 
-// Pre-configured upload middleware specifically for code files
-const codeUpload = createUploadMiddleware({
-  destination: 'resources',
-  allowedMimeTypes: [
-    'text/x-python',
-    'text/plain',
-    'application/octet-stream',
-    'text/x-c',
-    'text/x-c++',
-    'application/javascript',
-    'text/javascript'
-  ],
-  allowedExtensions: [
-    '.py',      // Python files
-    '.ino',     // Arduino sketch files
-    '.pkt',     // Cisco Packet Tracer files
-    '.c',       // C source files
-    '.cpp',     // C++ source files
-    '.h',       // Header files
-    '.js',      // JavaScript files
-    '.txt',     // Text files
-    '.zip'      // Zip archives for multiple files
-  ],
-  maxFileSize: 50 * 1024 * 1024 // 50MB
-});
-
-export { createUploadMiddleware, avatarUpload, slidesUpload, generalUpload, CSVUpload, resourceUpload, codeUpload };
+export { createUploadMiddleware, avatarUpload, slidesUpload, generalUpload, CSVUpload, resourceUpload, routeSeekersNetworkDesignUpload };
