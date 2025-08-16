@@ -216,19 +216,6 @@ export const uploadNetworkDesignPDF = async (req, res) => {
             return res.status(400).send({ message: "No file uploaded." });
         }
 
-        const existingFile = await ResourceFile.findOne({
-            gameName: "RouteSeekers",
-            fileType: "NetworkDesign",
-        });
-
-        if (existingFile) {
-            const filePath = path.join(__dirname, "../..", existingFile.path);
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
-            await ResourceFile.findByIdAndDelete(existingFile._id);
-        }
-
         const newFile = new ResourceFile({
             gameName: "RouteSeekers",
             fileType: "NetworkDesign",
@@ -244,13 +231,26 @@ export const uploadNetworkDesignPDF = async (req, res) => {
     }
 };
 
-// Get network design PDF
-export const getNetworkDesignPDF = async (req, res) => {
+// Get all network design PDFs
+export const getAllNetworkDesignPDFs = async (req, res) => {
     try {
-        const file = await ResourceFile.findOne({
+        const files = await ResourceFile.find({
             gameName: "RouteSeekers",
             fileType: "NetworkDesign",
         });
+        if (!files || files.length === 0) {
+            return res.status(404).send({ message: "No files found." });
+        }
+        res.status(200).send(files);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+// Get network design PDF by ID
+export const getNetworkDesignPDFById = async (req, res) => {
+    try {
+        const file = await ResourceFile.findById(req.params.id);
         if (!file) {
             return res.status(404).send({ message: "File not found." });
         }
@@ -263,10 +263,7 @@ export const getNetworkDesignPDF = async (req, res) => {
 // Delete network design PDF
 export const deleteNetworkDesignPDF = async (req, res) => {
     try {
-        const file = await ResourceFile.findOne({
-            gameName: "RouteSeekers",
-            fileType: "NetworkDesign",
-        });
+        const file = await ResourceFile.findById(req.params.id);
 
         if (!file) {
             return res.status(404).send({ message: "File not found." });

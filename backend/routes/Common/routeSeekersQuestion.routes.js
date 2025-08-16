@@ -12,11 +12,10 @@ import {
   downloadQuestionnaireResourceFile,
   getAllUploadedQuestionnaireResourceFiles,
   deleteQuestionnaireResourceFile,
-} from "../../controllers/Common/routeSeekersQuestion.controller.js";
-import {
   uploadNetworkDesignPDF,
-  getNetworkDesignPDF,
   deleteNetworkDesignPDF,
+  getAllNetworkDesignPDFs,
+  getNetworkDesignPDFById,
 } from "../../controllers/Common/routeSeekersQuestion.controller.js";
 import { protect } from "../../middleware/authMiddleware.js";
 import { requireAdmin } from "../../middleware/roleMiddleware.js";
@@ -33,19 +32,24 @@ router.post(
   addRouteSeekersQuestionsFromCSV
 );
 router.post("/upload-resource", protect, resourceUpload.single('file'), uploadQuestionnaireResourceFile);
+
+// Routes for Network Design PDF
+router.post("/network-design/upload", protect, requireAdmin, resourceUpload.single("file"), uploadNetworkDesignPDF);
+router.get("/network-designs", protect, getAllNetworkDesignPDFs);
+router.get("/network-design/:id", protect, getNetworkDesignPDFById);
+router.delete("/network-design/:id", protect, requireAdmin, deleteNetworkDesignPDF);
+
 router.get("/download-resource/:id", protect, downloadQuestionnaireResourceFile);
 router.get("/resource-files", protect, getAllUploadedQuestionnaireResourceFiles);
 router.delete("/resource-file/:id", protect, deleteQuestionnaireResourceFile);
 router.get("/", protect, getAllRouteSeekersQuestions);
-router.get("/:id", protect, getRouteSeekersQuestionById);
-router.put("/:id", protect, updateRouteSeekersQuestion);
-router.delete("/:id", protect, deleteRouteSeekersQuestion);
 router.post("/delete-many", protect, deleteManyRouteSeekersQuestions);
 router.delete("/", protect, deleteAllRouteSeekersQuestions);
 
-// Routes for Network Design PDF
-router.post("/upload-network-design-pdf", protect, requireAdmin, resourceUpload.single("file"), uploadNetworkDesignPDF);
-router.get("/get-network-design-pdf", protect, getNetworkDesignPDF);
-router.delete("/delete-network-design-pdf", protect, requireAdmin, deleteNetworkDesignPDF);
+// These routes with dynamic :id should be last
+router.get("/:id", protect, getRouteSeekersQuestionById);
+router.put("/:id", protect, updateRouteSeekersQuestion);
+router.delete("/:id", protect, deleteRouteSeekersQuestion);
+
 
 export default router;

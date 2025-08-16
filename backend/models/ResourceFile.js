@@ -2,7 +2,12 @@ import mongoose from "mongoose";
 
 const resourceFileSchema = new mongoose.Schema(
   {
-    file: String
+    file: { type: String },
+    gameName: { type: String },
+    fileType: { type: String },
+    path: { type: String },
+    filename: { type: String },
+    originalname: { type: String },
   },
   { timestamps: true }
 );
