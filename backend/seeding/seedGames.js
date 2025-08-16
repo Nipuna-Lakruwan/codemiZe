@@ -46,7 +46,7 @@ export const seedGames = async () => {
     },
     {
       name: "Battle Breakers",
-      allocateTime: 30,
+      allocateTime: 20,
       icon: {
         url: "/uploads/gameIcons/BattleBreakers.png",
         publicId: "BattleBreakers.png"
