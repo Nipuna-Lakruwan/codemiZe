@@ -299,3 +299,18 @@ export const deleteNetworkDesignPDF = async (req, res) => {
         res.status(500).send({ message: error.message });
     }
 };
+
+export const getFirstNetworkDesignPDF = async (req, res) => {
+    try {
+        const file = await ResourceFile.findOne({
+            gameName: "RouteSeekers",
+            fileType: "NetworkDesign",
+        });
+        if (!file) {
+            return res.status(404).send({ message: "File not found." });
+        }
+        res.status(200).send(file);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
