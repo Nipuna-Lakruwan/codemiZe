@@ -332,4 +332,47 @@ export const getFirstNetworkDesignPDF = async (req, res) => {
     } catch (error) {
         res.status(500).send({ message: error.message });
     }
+};
+
+export const downloadFirstQuestionnaireResourceFile = async (req, res) => {
+    try {
+      const resourceFile = await ResourceFile.findOne({ gameName: { $exists: false } });
+  
+      if (!resourceFile) {
+        return res.status(404).json({ message: "Resource file not found" });
+      }
+  
+      const filePath = path.join(__dirname, `../../uploads/resources/${resourceFile.file}`);
+      res.download(filePath, resourceFile.originalname, (err) => {
+        if (err) {
+          console.error("File download error:", err);
+          res.status(500).json({ message: "Error downloading the file" });
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+};
+
+export const deleteAllResourceFiles = async (req, res) => {
+  try {
+    const resourceFiles = await ResourceFile.find({});
+
+    if (!resourceFiles || resourceFiles.length === 0) {
+      return res.status(404).json({ message: "No resource files found to delete." });
+    }
+
+    for (const file of resourceFiles) {
+      const filePath = path.join(__dirname, `../../uploads/resources/${file.file}`);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    await ResourceFile.deleteMany({});
+
+    res.status(200).json({ message: "All resource files have been deleted successfully." });
+  } catch (error) {
+    res.status(500).json({ message: `Error deleting resource files: ${error.message}` });
+  }
 };""
