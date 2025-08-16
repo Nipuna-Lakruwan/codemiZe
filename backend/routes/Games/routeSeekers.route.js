@@ -9,7 +9,8 @@ import {
     uploadNetworkDesign,
     getAllNetworkDesigns,
     deleteNetworkDesign,
-    downloadAllNetworkDesigns
+    downloadAllNetworkDesigns,
+    downloadNetworkDesign
 } from "../../controllers/Games/routeSeekers.controller.js";
 import { protect } from "../../middleware/authMiddleware.js";
 import { routeSeekersNetworkDesignUpload } from "../../middleware/uploadMiddleware.js";
@@ -22,6 +23,7 @@ router.post("/upload-network-design", protect, routeSeekersNetworkDesignUpload.s
 router.get("/network-designs", protect, getAllNetworkDesigns);
 router.delete("/network-designs/:id", protect, deleteNetworkDesign);
 router.get("/download-all-network-designs", protect, downloadAllNetworkDesigns);
+router.get("/network-designs/:id/download", protect, downloadNetworkDesign);
 router.get("/all-student-answers", protect, getallstudentanswers);
 router.put("/answers/:id", protect, updateStudentAnswers);
 router.patch("/answers/:submissionId/questions/:questionId", protect, updateAnswerStatus);

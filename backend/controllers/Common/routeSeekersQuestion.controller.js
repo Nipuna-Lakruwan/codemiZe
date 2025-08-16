@@ -135,9 +135,15 @@ export const uploadQuestionnaireResourceFile = async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
+    const existingFile = await ResourceFile.findOne({ gameName: { $exists: false } });
+    if (existingFile) {
+        return res.status(400).json({ message: "A questionnaire resource file already exists. Please delete the existing file before uploading a new one." });
+    }
+
     // Assuming the file is uploaded to the 'resources' directory
     const resourceFile = new ResourceFile({
       file: req.file.filename, // Save the filename
+      originalname: req.file.originalname,
     });
 
     await resourceFile.save();
@@ -217,6 +223,15 @@ export const uploadNetworkDesignPDF = async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).send({ message: "No file uploaded." });
+        }
+
+        const existingFile = await ResourceFile.findOne({
+            gameName: "RouteSeekers",
+            fileType: "NetworkDesign",
+        });
+
+        if (existingFile) {
+            return res.status(400).send({ message: "A network design PDF already exists. Please delete the existing file before uploading a new one." });
         }
 
         const newFile = new ResourceFile({
