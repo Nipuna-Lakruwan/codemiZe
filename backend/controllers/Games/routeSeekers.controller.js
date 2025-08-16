@@ -206,3 +206,23 @@ export const downloadAllNetworkDesigns = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+export const downloadNetworkDesign = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const file = await StudentUpload.findById(id);
+
+        if (!file) {
+            return res.status(404).json({ message: "File not found" });
+        }
+
+        res.download(file.fileUrl, file.originalName, (err) => {
+            if (err) {
+                console.error("File download error:", err);
+                res.status(500).json({ message: "Error downloading the file" });
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
