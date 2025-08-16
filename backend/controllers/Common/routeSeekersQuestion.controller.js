@@ -332,4 +332,24 @@ export const getFirstNetworkDesignPDF = async (req, res) => {
     } catch (error) {
         res.status(500).send({ message: error.message });
     }
+};
+
+export const downloadFirstQuestionnaireResourceFile = async (req, res) => {
+    try {
+      const resourceFile = await ResourceFile.findOne({ gameName: { $exists: false } });
+  
+      if (!resourceFile) {
+        return res.status(404).json({ message: "Resource file not found" });
+      }
+  
+      const filePath = path.join(__dirname, `../../uploads/resources/${resourceFile.file}`);
+      res.download(filePath, resourceFile.originalname, (err) => {
+        if (err) {
+          console.error("File download error:", err);
+          res.status(500).json({ message: "Error downloading the file" });
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
 };""
