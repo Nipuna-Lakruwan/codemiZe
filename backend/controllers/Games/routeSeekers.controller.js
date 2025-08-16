@@ -138,6 +138,15 @@ export const uploadNetworkDesign = async (req, res) => {
             return res.status(400).json({ message: "No file uploaded" });
         }
 
+        const existingUpload = await StudentUpload.findOne({
+            userId: req.user.id,
+            gameName: "RouteSeekers",
+        });
+
+        if (existingUpload) {
+            return res.status(400).json({ message: "Answer already uploaded" });
+        }
+
         const newUpload = new StudentUpload({
             userId: req.user.id,
             gameName: "RouteSeekers",
