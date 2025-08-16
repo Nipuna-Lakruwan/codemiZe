@@ -1017,10 +1017,9 @@ export default function AdminBattleBreakers() {
                   </button>
                   <button
                     onClick={finishGame}
-                    className="px-4 py-2 bg-gray-200 rounded flex items-center gap-1"
+                    className="px-4 py-2 bg-green-500 rounded flex items-center gap-1"
                   >
                     Finish Game
-                    <FaChevronRight />
                   </button>
                   {isQuestionActive && (
                     <button
