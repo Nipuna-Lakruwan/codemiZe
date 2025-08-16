@@ -148,7 +148,7 @@ export default function CircuitSmashers() {
       socket.on('completed', (data) => {
         setIsGameStarted(false);
         setIsServerTimerActive(false);
-        handleGameEnd();
+        handleSubmitCode();
         navigate('/student/games-roadmap');
       });
 
