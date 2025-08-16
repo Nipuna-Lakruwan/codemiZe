@@ -156,7 +156,7 @@ export default function RouteSeekers() {
   // File upload handlers
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
-    if (file && (file.name.endsWith('.pkt') || file.name.endsWith('.zip'))) {
+    if (file && file.name.endsWith('.zip')) {
       setUploadedFile(file);
       setIsFileValid(true);
     } else {
@@ -165,12 +165,26 @@ export default function RouteSeekers() {
     }
   };
 
-  const handleSubmitPacketTracer = () => {
-    if (isFileValid) {
+  const handleNetworkDesignUpload = async () => {
+    if (!isFileValid || !uploadedFile) return;
+
+    const formData = new FormData();
+    formData.append('file', uploadedFile);
+
+    try {
+      await axiosInstance.post('/api/v1/route-seekers/upload-network-design', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       setNetworkCompleted(true);
       if (questionnaireCompleted) {
         setGameCompleted(true);
       }
+      setShowUploadModal(false);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      // You might want to show an error to the user here
     }
   };
 
@@ -621,10 +635,9 @@ export default function RouteSeekers() {
               exit="exit"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-2xl font-bold text-white mb-4">Upload Packet Tracer Solution</h3>
+              <h3 className="text-2xl font-bold text-white mb-4">Upload Network Design Solution</h3>
               <p className="text-white/70 mb-4">Please upload your solution:</p>
               <ul className="text-white/70 mb-6 list-disc list-inside space-y-1 text-sm">
-                <li>Upload a single .pkt file directly</li>
                 <li>For multiple files, create a .zip archive</li>
                 <li>Files with the same name will be overwritten</li>
               </ul>
@@ -634,7 +647,7 @@ export default function RouteSeekers() {
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileUpload}
-                  accept=".pkt,.zip"
+                  accept=".zip"
                   className="hidden"
                   id="file-upload"
                 />
@@ -646,7 +659,7 @@ export default function RouteSeekers() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                   <span className="text-sm text-violet-300">Click to select a file</span>
-                  <span className="text-xs text-violet-400/70 mt-1">(Packet Tracer .pkt or .zip files only)</span>
+                  <span className="text-xs text-violet-400/70 mt-1">(.zip files only)</span>
                 </label>
               </div>
 
@@ -659,7 +672,7 @@ export default function RouteSeekers() {
                     {uploadedFile.name}
                     {!isFileValid && (
                       <span className="ml-auto text-red-400 text-sm">
-                        Invalid file type (must be .pkt or .zip)
+                        Invalid file type (must be .zip)
                       </span>
                     )}
                   </p>
@@ -677,11 +690,7 @@ export default function RouteSeekers() {
                   className={`px-4 py-2 rounded ${isFileValid
                     ? 'bg-violet-700 text-white hover:bg-violet-600'
                     : 'bg-violet-900/40 text-white/50 cursor-not-allowed'} transition-colors`}
-                  onClick={() => {
-                    if (isFileValid) {
-                      setShowUploadModal(false);
-                    }
-                  }}
+                  onClick={handleNetworkDesignUpload}
                   disabled={!isFileValid}
                 >
                   Save File
