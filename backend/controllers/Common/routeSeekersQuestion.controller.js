@@ -300,6 +300,25 @@ export const deleteNetworkDesignPDF = async (req, res) => {
     }
 };
 
+export const viewNetworkDesignPDF = async (req, res) => {
+    try {
+        const file = await ResourceFile.findById(req.params.id);
+        if (!file || !file.path) {
+            return res.status(404).send({ message: "File not found." });
+        }
+
+        if (fs.existsSync(file.path)) {
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `inline; filename="${file.originalname}"`);
+            fs.createReadStream(file.path).pipe(res);
+        } else {
+            res.status(404).send({ message: "File not found on disk." });
+        }
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
 export const getFirstNetworkDesignPDF = async (req, res) => {
     try {
         const file = await ResourceFile.findOne({
@@ -313,4 +332,4 @@ export const getFirstNetworkDesignPDF = async (req, res) => {
     } catch (error) {
         res.status(500).send({ message: error.message });
     }
-};
+};""
