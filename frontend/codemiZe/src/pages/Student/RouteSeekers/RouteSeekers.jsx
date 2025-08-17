@@ -260,6 +260,21 @@ export default function RouteSeekers() {
     }
   }, [showResourcesModal]);
 
+  useEffect(() => {
+    const checkUploadStatus = async () => {
+      try {
+        const response = await axiosInstance.get('/api/v1/route-seekers/check-network-design');
+        setNetworkCompleted(response.data.hasUploaded);
+      } catch (error) {
+        console.error("Error checking network design upload status:", error);
+      }
+    };
+
+    if (isGameStarted) {
+      checkUploadStatus();
+    }
+  }, [isGameStarted]);
+
   const handleDownload = async (fileId, filename) => {
     try {
       const response = await axiosInstance.get(
@@ -539,7 +554,7 @@ export default function RouteSeekers() {
                   whileHover={{ scale: 1.05, boxShadow: "0px 0px 8px rgba(140, 20, 252, 0.6)" }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setShowUploadModal(true)}
-                  disabled={timeIsUp}
+                  disabled={timeIsUp || networkCompleted}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
