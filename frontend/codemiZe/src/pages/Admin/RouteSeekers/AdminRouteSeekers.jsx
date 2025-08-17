@@ -165,7 +165,7 @@ export default function AdminRouteSeekers() {
 
   const confirmDeleteQuestions = async () => {
     try {
-      await axiosInstance.delete('/api/v1/route-seekers/questions');
+      await axiosInstance.delete('/api/v1/questions/route-seekers');
       setQuestionsCount(0);
       setAllQuestions([]);
       showAlert('All questions and answers have been deleted successfully.', 'Delete Successful', 'success');
@@ -181,10 +181,17 @@ export default function AdminRouteSeekers() {
     setShowDeleteResourcesModal(true);
   };
 
-  const confirmDeleteResources = () => {
-    setResources(0);
-    setShowDeleteResourcesModal(false);
-    showAlert('All resources have been deleted', 'Delete Successful', 'success');
+  const confirmDeleteResources = async () => {
+    try {
+      await axiosInstance.delete('/api/v1/questions/route-seekers/resource-files');
+      setResources(0);
+      showAlert('All resources have been deleted', 'Delete Successful', 'success');
+    } catch (error) {
+      console.error("Error deleting resources", error);
+      showAlert(error.response?.data?.message || 'Failed to delete resources.', 'Delete Error', 'error');
+    } finally {
+      setShowDeleteResourcesModal(false);
+    }
   };
 
   const handleDeleteNetworkResources = () => {
