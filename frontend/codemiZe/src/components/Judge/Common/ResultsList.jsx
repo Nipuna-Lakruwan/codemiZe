@@ -29,7 +29,7 @@ const ResultsList = ({ results, isLoading = false }) => {
             </div>
             {/* School logo rectangle */}
             <div className="ml-6 w-14 h-16  rounded-md flex items-center justify-center overflow-hidden">
-              <img src={imagePath(school.avatar.url)} alt={school.name} className="w-12 h-12 object-cover rounded" />
+              <img src={imagePath(school.avatar?.url || school.avatarUrl)} alt={school.name} className="w-12 h-12 object-cover rounded" />
             </div>
             {/* School info */}
             <div className="ml-6 flex flex-col justify-center">
