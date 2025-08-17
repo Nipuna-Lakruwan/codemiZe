@@ -11,13 +11,15 @@ import {
     deleteNetworkDesign,
     downloadAllNetworkDesigns,
     downloadNetworkDesign,
-    deleteAllQuestions
+    deleteAllQuestions,
+    checkNetworkDesignUpload
 } from "../../controllers/Games/routeSeekers.controller.js";
 import { protect } from "../../middleware/authMiddleware.js";
 import { routeSeekersNetworkDesignUpload } from "../../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
+router.get("/check-network-design", protect, checkNetworkDesignUpload);
 router.get("/questions", protect, getQuestions);
 router.delete("/questions", protect, deleteAllQuestions);
 router.post("/submit", protect, submitAnswers);

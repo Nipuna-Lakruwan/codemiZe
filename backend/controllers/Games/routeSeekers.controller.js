@@ -142,6 +142,24 @@ export const updateAnswerStatus = async (req, res) => {
   }
 };
 
+// Check if a network design has been uploaded by the current user
+export const checkNetworkDesignUpload = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const gameName = "RouteSeekers";
+
+    const existingUpload = await StudentUpload.findOne({ userId, gameName });
+
+    if (existingUpload) {
+      return res.status(200).json({ hasUploaded: true, file: existingUpload });
+    } else {
+      return res.status(200).json({ hasUploaded: false });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Error checking for existing upload", error: error.message });
+  }
+};
+
 export const uploadNetworkDesign = async (req, res) => {
     try {
         if (!req.file) {
