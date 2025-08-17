@@ -20,26 +20,20 @@ const RouteSeekersJudge = () => {
   const [questions, setQuestions] = useState([]);
   const [activeSubmissionId, setActiveSubmissionId] = useState(null);
 
-  const mockCriteria = [
-    { id: 'c1', criteria: 'Network Topology' },
-    { id: 'c2', criteria: 'IP Addressing Scheme' },
-    { id: 'c3', criteria: 'Routing Configuration' },
-    { id: 'c4', criteria: 'Security Implementation' },
-    { id: 'c5', criteria: 'Network Scalability' }
-  ];
-
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [schoolsRes, questionsRes, answersRes] = await Promise.all([
+        const [schoolsRes, questionsRes, answersRes, criteriaRes] = await Promise.all([
           axiosInstance.get('/api/v1/admin/schools'),
           axiosInstance.get('/api/v1/route-seekers/questions'),
-          axiosInstance.get('/api/v1/route-seekers/all-student-answers')
+          axiosInstance.get('/api/v1/route-seekers/all-student-answers'),
+          axiosInstance.get('/api/v1/criteria/routeSeekers')
         ]);
 
         const schoolsData = schoolsRes.data.schools;
         const answersData = answersRes.data;
+        const fetchedCriteria = criteriaRes.data.data;
 
         const schoolsWithSubmissions = schoolsData.map(school => {
           const submission = answersData.find(answer => (answer.userId?._id || answer.userId) === school._id);
@@ -50,13 +44,13 @@ const RouteSeekersJudge = () => {
         setQuestions(questionsRes.data);
         
         setGameStatus('marking');
-        setCriteria(mockCriteria);
+        setCriteria(fetchedCriteria);
 
         const initialMarkings = {};
         schoolsRes.data.schools.forEach(school => {
           initialMarkings[school._id] = {};
-          mockCriteria.forEach(criterion => {
-            initialMarkings[school._id][criterion.id] = 0;
+          fetchedCriteria.forEach(criterion => {
+            initialMarkings[school._id][criterion._id] = 0;
           });
         });
         setMarkings(initialMarkings);
