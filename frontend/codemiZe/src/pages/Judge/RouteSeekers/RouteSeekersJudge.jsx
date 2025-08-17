@@ -26,16 +26,18 @@ const RouteSeekersJudge = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [schoolsRes, questionsRes, answersRes, criteriaRes, userInfoRes] = await Promise.all([
+        const [schoolsRes, questionsRes, answersRes, criteriaRes, userInfoRes, networkDesignsRes] = await Promise.all([
           axiosInstance.get('/api/v1/admin/schools'),
           axiosInstance.get('/api/v1/route-seekers/questions'),
           axiosInstance.get('/api/v1/route-seekers/all-student-answers'),
           axiosInstance.get('/api/v1/criteria/routeSeekers'),
-          axiosInstance.get('/api/v1/auth/getUserInfo')
+          axiosInstance.get('/api/v1/auth/getUserInfo'),
+          axiosInstance.get('/api/v1/route-seekers/network-designs'),
         ]);
 
         const schoolsData = schoolsRes.data.schools;
         const answersData = answersRes.data;
+        const networkDesignsData = networkDesignsRes.data;
         const fetchedCriteria = criteriaRes.data.data;
         let currentJudgeId = null;
         if(userInfoRes.data.user) {
@@ -45,7 +47,8 @@ const RouteSeekersJudge = () => {
 
         const schoolsWithSubmissions = schoolsData.map(school => {
           const submission = answersData.find(answer => (answer.userId?._id || answer.userId) === school._id);
-          return { ...school, submission: submission || null };
+          const networkDesign = networkDesignsData.find(design => design.userId === school._id);
+          return { ...school, submission: submission || null, networkDesign: networkDesign || null };
         });
 
         setSchools(schoolsWithSubmissions);
