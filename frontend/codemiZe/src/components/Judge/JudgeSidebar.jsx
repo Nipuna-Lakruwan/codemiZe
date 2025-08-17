@@ -24,9 +24,9 @@ const JudgeSidebar = ({ currentPage = '' }) => {
   };
 
   return (
-    <div className="w-70 h-[800px] bg-black/5 rounded-tr-[19px] shadow-[0px_4px_37.099998474121094px_1px_rgba(73,18,136,0.68)] border border-violet-900/70 backdrop-blur-[5.40px] flex flex-col py-8 px-4">
+    <div className="w-70 h-[800px] bg-black/5 rounded-tr-[19px] shadow-[0px_4px_37.099998474121094px_1px_rgba(73,18,136,0.68)] border border-violet-900/70 backdrop-blur-[5.40px] flex flex-col py-9 px-4">
       {/* Navigation items */}
-      <nav className="flex flex-col gap-8 mt-10">
+      <nav className="flex flex-col gap-8 mt-16">
         {navItems.map((item) => {
           // Check if the current path starts with the item's path
           const isActive = location.pathname.startsWith(item.path);

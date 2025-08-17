@@ -200,7 +200,7 @@ const RouteSeekersJudge = () => {
                   onClick={() => handleCardSelect('network-design')}
                 >
                   <img
-                    src="/Network Design.png"
+                    src="/Network Design.jpg"
                     alt="Network Design"
                     className="h-32 w-32 mb-4 object-contain"
                   />

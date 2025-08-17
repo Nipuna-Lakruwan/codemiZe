@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import JudgeSidebar from '../../components/Judge/JudgeSidebar';
 
 const JudgeLayout = ({ children, gameName = "Judge Board" }) => {
+  // Disable scrolling when the component mounts
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    // Re-enable scrolling when the component unmounts
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
+
   return (
     <div
-      className="relative min-h-screen w-full bg-cover bg-center bg-no-repeat bg-fixed overflow-hidden flex"
+      className="fixed inset-0 w-full h-full bg-cover bg-center bg-no-repeat overflow-hidden flex"
       style={{ backgroundImage: "url('/background.jpg')" }}
     >
       <div className="absolute inset-0 bg-black/70 z-0"></div>
@@ -29,13 +38,13 @@ const JudgeLayout = ({ children, gameName = "Judge Board" }) => {
           className="h-20 w-auto"
         />
       </div>
-      <div className="relative z-30 w-56 h-[900px] mt-70">
+      <div className="relative z-30 w-56 h-full pt-70">
         <JudgeSidebar currentPage={gameName} />
       </div>
       <div className="relative z-30 flex-1 flex items-center justify-center">
-        <div className="relative w-[1220px] h-[900px] flex items-center justify-center mt-15">
+        <div className="relative w-[1220px] h-[900px] flex items-center justify-center">
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[880px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] z-0" />
-          <div className="relative w-[1140px] h-[830px] bg-white rounded-md mx-auto flex items-center justify-center z-10 overflow-auto">
+          <div className="relative w-[1140px] h-[830px] bg-white rounded-md mx-auto flex items-center justify-center z-10 overflow-hidden">
             {children}
           </div>
         </div>
