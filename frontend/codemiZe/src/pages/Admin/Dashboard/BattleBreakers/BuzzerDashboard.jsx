@@ -15,7 +15,7 @@ const QuestionDisplay = ({ question, questionNumber, timeRemaining }) => {
       {/* Game image */}
       <div className="mb-8 flex justify-center">
         <img
-          src="/Battle breakers logo 1.png"
+          src="/Battle Breakers.png"
           alt="Battle Breakers"
           className="w-200 h-80 object-contain"
         />
@@ -91,9 +91,8 @@ const TeamRankItem = ({ index, team, responseTime, isNew = false }) => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.2 }}
-      className={`w-[516px] h-16 bg-stone-300 rounded-md shadow-[3px_6px_14px_-2px_rgba(0,0,0,0.25)] border-l-[15px] ${borderColor} flex items-center px-4 relative ${
-        isNew ? 'ring-2 ring-yellow-400 animate-pulse' : ''
-      }`}
+      className={`w-[516px] h-16 bg-stone-300 rounded-md shadow-[3px_6px_14px_-2px_rgba(0,0,0,0.25)] border-l-[15px] ${borderColor} flex items-center px-4 relative ${isNew ? 'ring-2 ring-yellow-400 animate-pulse' : ''
+        }`}
     >
       {/* Rank number */}
       <div className="w-6 justify-start text-purple-950 text-4xl font-medium font-['Oxanium'] mr-3">
@@ -191,11 +190,11 @@ export default function BuzzerDashboard() {
   // Using fixed values for display-only frontend dashboard
   const [timeRemaining, setTimeRemaining] = useState(30);
   const currentQuestionIndex = 0;
-  
+
   // State for real-time buzzer presses
   const [buzzerPresses, setBuzzerPresses] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [questions, setQuestions] = useState([{_id: "", question: ""}])
+  const [questions, setQuestions] = useState([{ _id: "", question: "" }])
 
   useEffect(() => {
     // Listen for buzzer press events from the server
@@ -230,7 +229,7 @@ export default function BuzzerDashboard() {
         // Set initial timer state - will be updated by server timer
         setTimeRemaining(data.allocatedTime);
         setCurrentQuestion(data.questionNo);
-        
+
         if (data.isReconnect) {
           console.log('BuzzerDashboard: Reconnected to active question');
         }
@@ -256,7 +255,7 @@ export default function BuzzerDashboard() {
       socket.on("battleBreakers-timerStopped", (data) => {
         // Timer has been stopped by admin
       });
-      
+
       // Clean up the event listeners when component unmounts
       return () => {
         socket.off("buzzerPress");

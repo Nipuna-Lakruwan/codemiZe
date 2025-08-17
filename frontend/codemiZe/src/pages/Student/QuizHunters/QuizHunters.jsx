@@ -344,7 +344,7 @@ export default function QuizHunters() {
       {!quizEnded && (
         <GameNodeMini
           title="Quiz Hunters"
-          icon="/quiz_hunters_logo-removebg 1.png"
+          icon="/Quiz Hunters 2.png"
           linkTo="/student/games-roadmap"
         />
       )}
@@ -352,7 +352,7 @@ export default function QuizHunters() {
       {!isGameStarted ? (
         <StartGameComponent
           title="Quiz Hunters"
-          iconSrc="/quiz_hunters_logo-removebg 1.png"
+          iconSrc="/Quiz Hunters 2.png"
           iconAlt="Quiz Hunters"
           onStart={handleStartGame}
           isLoading={isLoading}
@@ -384,7 +384,7 @@ export default function QuizHunters() {
           <div className="w-150 h-[600px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 relative">
             {/* Game icon */}
             <img
-              src="/quiz_hunters_logo-removebg 1.png"
+              src="/Quiz Hunters 2.png.png"
               alt="Quiz Hunters"
               className="w-96 h-56 object-contain mb-4 animate-scale-in"
             />

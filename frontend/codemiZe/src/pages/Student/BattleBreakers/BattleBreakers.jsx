@@ -21,23 +21,23 @@ export default function BattleBreakers() {
     };
     localStorage.setItem(key, JSON.stringify(item));
   };
-  
+
   const getLocalStorageWithExpiry = (key) => {
     const itemStr = localStorage.getItem(key);
     if (!itemStr) {
       return null;
     }
-    
+
     try {
       const item = JSON.parse(itemStr);
       const now = new Date();
-      
+
       // If the item has expired, remove it and return null
       if (now.getTime() > item.expiry) {
         localStorage.removeItem(key);
         return null;
       }
-      
+
       return item.value;
     } catch (error) {
       // If parsing fails, remove the corrupted item
@@ -45,7 +45,7 @@ export default function BattleBreakers() {
       return null;
     }
   };
-  
+
   const clearBattleBreakersLocalStorage = () => {
     localStorage.removeItem('battleBreakers_questionId');
     localStorage.removeItem('battleBreakers_question');
@@ -60,10 +60,10 @@ export default function BattleBreakers() {
   const [gameCompleted, setGameCompleted] = useState(false);
   const [questionStartTime, setQuestionStartTime] = useState(null);
   const [questions, setQuestions] = useState([{
-      _id: "",
-      question: "",
-      answer: ""
-    }]);
+    _id: "",
+    question: "",
+    answer: ""
+  }]);
 
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState(30);
@@ -74,7 +74,7 @@ export default function BattleBreakers() {
   useEffect(() => {
     const savedQuestionId = getLocalStorageWithExpiry('battleBreakers_questionId');
     const savedQuestion = getLocalStorageWithExpiry('battleBreakers_question');
-    
+
     if (savedQuestionId && savedQuestion) {
       console.log('Student: Restoring question from local storage');
       setQuestions([{
@@ -90,11 +90,11 @@ export default function BattleBreakers() {
       // Listen for question start events (both new questions and reconnections)
       socket.on("battleBreakers-startQuestionclient", (data) => {
         console.log('Student: Received question start event', data);
-        
+
         // Save question and questionId to local storage with expiry (replace if exists)
         setLocalStorageWithExpiry('battleBreakers_questionId', data._id);
         setLocalStorageWithExpiry('battleBreakers_question', data.question);
-        
+
         setQuestions(() => [
           {
             _id: data._id,
@@ -107,7 +107,7 @@ export default function BattleBreakers() {
         setTimeRemaining(data.allocatedTime);
         setAllocatedTime(data.allocatedTime);
         setIsTimerRunning(true);
-        
+
         // If this is a reconnection, we might get a timer sync afterward
         if (data.isReconnect) {
           console.log('Student: This is a reconnection, waiting for timer sync...');
@@ -127,7 +127,7 @@ export default function BattleBreakers() {
         setTimeRemaining(data.timeRemaining);
         setAllocatedTime(data.totalTime);
         setIsTimerRunning(true);
-        
+
         // Update question start time for accurate timing calculations
         setQuestionStartTime(Date.now() - (data.totalTime - data.timeRemaining) * 1000);
       });
@@ -150,11 +150,11 @@ export default function BattleBreakers() {
         console.log('Game completed:', data);
         setGameCompleted(true);
         setIsTimerRunning(false);
-        
+
         // Clear question and questionId from local storage when game is completed
         clearBattleBreakersLocalStorage();
       });
-      
+
       // Clean up the event listeners when component unmounts
       return () => {
         socket.off("battleBreakers-startQuestionclient");
@@ -314,7 +314,7 @@ export default function BattleBreakers() {
           >
             {/* Game Icon - responsive sizing */}
             <motion.img
-              src="/Battle breakers logo 1.png"
+              src="/Battle Breakers.png"
               alt="Battle Breakers"
               className="w-[40%] sm:w-[45%] md:w-[50%] lg:w-[55%] aspect-square object-contain mb-4 sm:mb-6"
               initial={{ opacity: 0, y: -20 }}
@@ -368,7 +368,7 @@ export default function BattleBreakers() {
           <div className="absolute bottom-8 left-8 z-10">
             <GameNodeMini
               title="Battle Breakers"
-              icon="/Battle breakers logo 1.png"
+              icon="/Battle Breakers.png"
             />
           </div>
 
@@ -376,7 +376,7 @@ export default function BattleBreakers() {
           <div className="w-150 h-[600px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 relative">
             {/* Game icon */}
             <motion.img
-              src="/Battle breakers logo 1.png"
+              src="/Battle Breakers.png"
               alt="Battle Breakers"
               className="w-96 h-56 object-contain mb-4"
               initial={{ scale: 0 }}
@@ -441,7 +441,7 @@ export default function BattleBreakers() {
           <div className="absolute bottom-8 left-8 z-10">
             <GameNodeMini
               title="Battle Breakers"
-              icon="/Battle breakers logo 1.png"
+              icon="/Battle Breakers.png"
             />
           </div>
 

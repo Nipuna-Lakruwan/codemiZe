@@ -148,7 +148,7 @@ export default function CodeCrushers() {
       socket.on('completed', async () => {
         setIsGameStarted(false);
         setIsServerTimerActive(false);
-        
+
         // Try to submit code if there's a valid file uploaded
         if (isFileValid && uploadedFile) {
           try {
@@ -157,7 +157,7 @@ export default function CodeCrushers() {
             console.error('Failed to submit code before navigation:', error);
           }
         }
-        
+
         // Navigate to games roadmap
         navigate('/student/games-roadmap');
       });
@@ -208,7 +208,7 @@ export default function CodeCrushers() {
     }
   };
 
-    // PDF handlers
+  // PDF handlers
   const onDocumentLoadSuccess = ({ numPages }) => {
     console.log('PDF loaded successfully, pages:', numPages);
     setTotalPages(numPages);
@@ -427,7 +427,7 @@ export default function CodeCrushers() {
       {!isGameStarted ? (
         <StartGameComponent
           title="Code Crushers"
-          iconSrc="/code crushers logo 1.png"
+          iconSrc="/CODE CRUSHERS.png"
           iconAlt="Code Crushers"
           onStart={handleStartGame}
           isLoading={isLoading}
@@ -458,7 +458,7 @@ export default function CodeCrushers() {
           <div className="w-150 h-[600px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 relative">
             {/* Game icon */}
             <motion.img
-              src="/code crushers logo 1.png"
+              src="/CODE CRUSHERS.png"
               alt="Code Crushers"
               className="w-96 h-56 object-contain mb-4"
               initial={{ scale: 0 }}
@@ -691,7 +691,7 @@ export default function CodeCrushers() {
             <div className="absolute bottom-8 left-8 z-10">
               <GameNodeMini
                 title="Code Crushers"
-                icon="/code crushers logo 1.png"
+                icon="/CODE CRUSHERS.png"
                 linkTo="/student/games-roadmap"
               />
             </div>

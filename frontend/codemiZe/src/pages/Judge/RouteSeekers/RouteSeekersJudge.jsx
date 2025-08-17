@@ -184,7 +184,7 @@ const RouteSeekersJudge = () => {
                   onClick={() => handleCardSelect('questionnaire')}
                 >
                   <img
-                    src="/quiz_hunters_logo-removebg 1.png"
+                    src="/Questionnaire.png"
                     alt="Questionnaire"
                     className="h-32 w-32 mb-4 object-contain"
                   />
@@ -200,7 +200,7 @@ const RouteSeekersJudge = () => {
                   onClick={() => handleCardSelect('network-design')}
                 >
                   <img
-                    src="/circuit samshers logo 1.png"
+                    src="/Network Design.png"
                     alt="Network Design"
                     className="h-32 w-32 mb-4 object-contain"
                   />

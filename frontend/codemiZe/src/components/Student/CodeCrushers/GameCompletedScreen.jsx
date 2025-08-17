@@ -22,7 +22,7 @@ export default function GameCompletedScreen({ uploadedFile }) {
       <div className="w-150 h-[600px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 relative">
         {/* Game icon */}
         <motion.img
-          src="/code crushers logo 1.png"
+          src="/CODE CRUSHERS.png"
           alt="Code Crushers"
           className="w-96 h-56 object-contain mb-4"
           initial={{ scale: 0 }}
