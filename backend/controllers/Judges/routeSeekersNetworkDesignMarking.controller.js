@@ -3,14 +3,25 @@ import RouteSeekersMarking from "../../models/markings/RouteSeekersNetworkDesign
 // Create a new marking
 export const createMarking = async (req, res) => {
   try {
-    const { schoolId, judgeId, marks } = req.body;
-    const newMarking = new RouteSeekersMarking({
-      schoolId,
-      judgeId,
-      marks,
-    });
-    await newMarking.save();
-    res.status(201).json(newMarking);
+    const { judgeId, markings } = req.body;
+
+    if (!judgeId || !markings || !Array.isArray(markings)) {
+      return res.status(400).json({ message: "Invalid request body. 'judgeId' and 'markings' array are required." });
+    }
+
+    const operations = markings.map(marking => ({
+      updateOne: {
+        filter: { schoolId: marking.schoolId, judgeId: judgeId },
+        update: { $set: { marks: marking.marks } },
+        upsert: true,
+      },
+    }));
+
+    if (operations.length > 0) {
+      await RouteSeekersMarking.bulkWrite(operations);
+    }
+
+    res.status(201).json({ message: "Markings submitted successfully." });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
