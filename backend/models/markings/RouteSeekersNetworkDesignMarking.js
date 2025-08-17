@@ -14,4 +14,4 @@ const routeSeekersMarkingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("RouteSeekersMarking", routeSeekersMarkingSchema);
+export default mongoose.model("RouteSeekersNetworkDesignMarking", routeSeekersMarkingSchema);

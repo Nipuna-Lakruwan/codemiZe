@@ -232,14 +232,41 @@ export default function RouteSeekers() {
     return (timeRemaining / (45 * 60)) * 100;
   };
 
-  // Available resources for download
-  const resources = [
-    { name: "Network Topology Guide.pdf", size: "1.2 MB", url: "#" },
-    { name: "IP Address Scheme.xlsx", size: "0.5 MB", url: "#" },
-    { name: "Router Configuration Reference.pdf", size: "2.1 MB", url: "#" },
-    { name: "Packet Tracer Starter Template.pkt", size: "3.4 MB", url: "#" },
-    { name: "Network Requirements Document.pdf", size: "1.8 MB", url: "#" },
-  ];
+  const [resources, setResources] = useState([]);
+
+  useEffect(() => {
+    const fetchResources = async () => {
+      try {
+        const response = await axiosInstance.get('/api/v1/questions/route-seekers/resource-files');
+        setResources(response.data);
+      } catch (error) {
+        console.error("Error fetching resources:", error);
+      }
+    };
+
+    if (showResourcesModal) {
+      fetchResources();
+    }
+  }, [showResourcesModal]);
+
+  const handleDownload = async (fileId, filename) => {
+    try {
+      const response = await axiosInstance.get(
+        `/api/v1/questions/route-seekers/download-resource/${fileId}`,
+        { responseType: 'blob' }
+      );
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading file:", error);
+    }
+  };
 
   // Animation variants
   const containerVariants = {
@@ -723,24 +750,27 @@ export default function RouteSeekers() {
               <p className="text-white/70 mb-6">The following resources are available to help you complete this networking challenge:</p>
 
               <div className="mb-6 space-y-2">
-                {resources.map((resource, index) => (
-                  <div key={index} className="flex justify-between items-center p-3 bg-stone-800/50 rounded border border-stone-700/50 hover:bg-stone-700/50 transition-colors">
-                    <div className="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-violet-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <span className="text-white">{resource.name}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-white/50 text-sm mr-3">{resource.size}</span>
-                      <button className="p-1 bg-violet-700/50 hover:bg-violet-700 rounded transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                {resources.length > 0 ? (
+                  resources.map((resource) => (
+                    <div key={resource._id} className="flex justify-between items-center p-3 bg-stone-800/50 rounded border border-stone-700/50 hover:bg-stone-700/50 transition-colors">
+                      <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-violet-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                      </button>
+                        <span className="text-white">{resource.originalname}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <button onClick={() => handleDownload(resource._id, resource.originalname)} className="p-1 bg-violet-700/50 hover:bg-violet-700 rounded transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-white/70 text-center">No resources available for download.</p>
+                )}
               </div>
 
               <div className="flex justify-end">
