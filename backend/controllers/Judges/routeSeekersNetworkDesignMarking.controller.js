@@ -1,4 +1,27 @@
 import RouteSeekersMarking from "../../models/markings/RouteSeekersNetworkDesignMarking.js";
+import School from "../../models/School.js";
+
+const updateSchoolRouteSeekerScore = async (schoolId) => {
+  try {
+    const schoolMarkings = await RouteSeekersMarking.find({ schoolId: schoolId });
+
+    let averageScore = 0;
+    if (schoolMarkings.length > 0) {
+      const judgeTotals = schoolMarkings.map((marking) =>
+        marking.marks.reduce((total, m) => total + (m.mark || 0), 0)
+      );
+      averageScore = judgeTotals.reduce((sum, total) => sum + total, 0) / judgeTotals.length;
+    }
+
+    await School.findByIdAndUpdate(schoolId, {
+      $set: { "score.RouteSeekers": averageScore },
+    });
+  } catch (error) {
+    console.error(`Failed to update score for school ${schoolId}:`, error);
+    // Depending on requirements, you might want to handle this error more gracefully
+  }
+};
+
 
 // Create a new marking
 export const createMarking = async (req, res) => {
@@ -19,6 +42,11 @@ export const createMarking = async (req, res) => {
 
     if (operations.length > 0) {
       await RouteSeekersMarking.bulkWrite(operations);
+    }
+
+    const schoolIds = [...new Set(markings.map((m) => m.schoolId))];
+    for (const schoolId of schoolIds) {
+      await updateSchoolRouteSeekerScore(schoolId);
     }
 
     res.status(201).json({ message: "Markings submitted successfully." });
@@ -70,6 +98,9 @@ export const updateMarking = async (req, res) => {
     if (!updatedMarking) {
       return res.status(404).json({ message: "Marking not found" });
     }
+    
+    await updateSchoolRouteSeekerScore(updatedMarking.schoolId);
+
     res.status(200).json(updatedMarking);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -83,6 +114,9 @@ export const deleteMarking = async (req, res) => {
     if (!deletedMarking) {
       return res.status(404).json({ message: "Marking not found" });
     }
+    
+    await updateSchoolRouteSeekerScore(deletedMarking.schoolId);
+
     res.status(200).json({ message: "Marking deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
