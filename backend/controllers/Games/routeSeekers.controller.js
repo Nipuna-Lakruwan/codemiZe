@@ -184,7 +184,7 @@ export const deleteNetworkDesign = async (req, res) => {
         }
 
         fs.unlink(file.fileUrl, async (err) => {
-            if (err) {
+            if (err && err.code !== 'ENOENT') {
                 console.error("File deletion error:", err);
                 return res.status(500).json({ message: "Error deleting the file" });
             }
