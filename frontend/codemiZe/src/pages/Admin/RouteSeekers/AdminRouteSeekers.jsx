@@ -443,6 +443,7 @@ export default function AdminRouteSeekers() {
             handleDeleteNetworkResources={handleDeleteNetworkResources}
             handleResponseUpload={handleResponseUpload}
             handleDownloadResources={handleDownloadResources}
+            selectedFile={selectedFile}
           />
 
           {/* Third rectangle - Questioners Responses */}

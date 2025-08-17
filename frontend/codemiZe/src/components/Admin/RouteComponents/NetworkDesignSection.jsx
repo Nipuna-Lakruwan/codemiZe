@@ -10,7 +10,8 @@ const NetworkDesignSection = ({
   handleResponseUpload,
   handleDownloadResources,
   resources,
-  responses
+  responses,
+  selectedFile
 }) => {
   return (
     <AdminBox width="flex-1 min-w-[300px]" minHeight="320px">
@@ -37,6 +38,13 @@ const NetworkDesignSection = ({
                 </div>
               </label>
             </div>
+            <motion.button
+              onClick={handleNetworkResourceUpload}
+              disabled={!selectedFile}
+              className="ml-4 w-24 h-8 bg-purple-800 rounded-[3px] text-white text-xs flex items-center justify-center disabled:bg-gray-400"
+            >
+              Upload
+            </motion.button>
           </div>
 
           <div className="mt-3">
