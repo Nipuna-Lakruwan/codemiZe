@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import JudgeLayout from '../JudgeLayout';
 import LoadingScreen from '../../../components/Judge/QuizHunters/LoadingScreen';
 import ResultsSection from '../../../components/Judge/QuizHunters/ResultsSection';
 import axiosInstance from '../../../utils/axiosInstance';
 import { API_PATHS } from '../../../utils/apiPaths';
+import { SocketContext } from '../../../context/socketContext';
 
 const QuizHuntersJudge = () => {
+  const socket = useContext(SocketContext);
   const [gameStatus, setGameStatus] = useState('running');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +32,28 @@ const QuizHuntersJudge = () => {
       }
     };
     fetchGameStatus();
+
+    // Setup socket connection and listener
+    if (socket) {
+      socket.on('quizhunters completed', (schoolData) => {
+        setResults(prevResults => {
+          // Prevent duplicates
+          const exists = prevResults.some(r => r.schoolId === schoolData.schoolId);
+          if (exists) return prevResults;
+          const updated = [...prevResults, schoolData].sort((a, b) => b.score - a.score);
+          return updated;
+        });
+      });
+    }
+    return () => {
+      if (socket) {
+        socket.off('quizhunters completed');
+      }
+    };
   }, []);
+
+  // Filter out schools with score 0
+  const filteredResults = results.filter(school => school.score > 0);
 
   return (
     <JudgeLayout>
@@ -44,7 +67,7 @@ const QuizHuntersJudge = () => {
         <LoadingScreen />
       ) : (
         // Show leaderboard/results when completed
-        <ResultsSection results={results} />
+        <ResultsSection results={filteredResults} />
       )}
     </JudgeLayout>
   );

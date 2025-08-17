@@ -317,6 +317,11 @@ export const submitAnswers = async (req, res) => {
                 scoreUpdated: score
             });
         }
+
+        const io = req.app.get("io");
+        if (io) {
+            io.to("judge").emit("battlebreakersNewMarks");
+        }
         
         res.status(200).json({ 
             message: "Answers submitted and scores updated successfully",

@@ -212,6 +212,11 @@ export const calculateAndUpdateScore = async (req, res) => {
     school.score.QuizHunters = finalScore;
     await school.save();
 
+    const data = { id: school.id, score: finalScore, avatarUrl: school.avatar.url, name: school.name, city: school.city };
+
+    const io = req.app.get("io");
+    io.to("judge").emit("quizhunters completed", data);
+
     res.status(200).json({
       message: "Score calculated and updated successfully",
       score: finalScore,

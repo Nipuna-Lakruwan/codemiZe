@@ -111,18 +111,18 @@ const CodeCrushersJudge = () => {
       });
       
       // Get the filename from the response headers
-      const contentDisposition = response.headers['content-disposition'];
       let filename = 'resource_file';
+      const contentDisposition = response.headers['content-disposition'];
       
       if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        const filenameMatch = contentDisposition.match(/filename\*?=(?:UTF-8'')?["']?([^;"']+)/i);
         if (filenameMatch) {
-          filename = filenameMatch[1];
+          filename = decodeURIComponent(filenameMatch[1]);
         }
       }
       
       // Create a blob URL and trigger download
-      const blob = new Blob([response.data]);
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -143,7 +143,6 @@ const CodeCrushersJudge = () => {
       }
     }
   };
-
 
   return (
     <JudgeLayout gameName="Code Crushers">

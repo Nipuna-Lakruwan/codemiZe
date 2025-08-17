@@ -28,6 +28,10 @@ const setupSocket = (io, app) => {
       socket.join("student");
     }
 
+    if (socket.user.role === "Judge") {
+      socket.join("judge");
+    }
+
     // Initialize game handlers based on user role
     if (socket.user.role === "School" || socket.user.role === "Dashboard" || socket.user.role === "Admin") {
       battleBreakersHandler.initializeClient(socket, io);
