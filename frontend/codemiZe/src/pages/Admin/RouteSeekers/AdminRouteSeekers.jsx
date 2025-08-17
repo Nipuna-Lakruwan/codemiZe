@@ -77,12 +77,25 @@ export default function AdminRouteSeekers() {
     }
   };
 
-  const handleQuestionUpload = () => {
+  const handleQuestionUpload = async () => {
     if (selectedFile) {
-      console.log('Uploading questions:', selectedFile);
-      showAlert('Questions uploaded: ' + selectedFile.name, 'Upload Successful', 'success');
-      setQuestionsCount(questionsCount + 5); // Simulate adding 5 new questions
-      setSelectedFile(null);
+      const formData = new FormData();
+      formData.append('csv', selectedFile);
+
+      try {
+        const response = await axiosInstance.post('/api/v1/questions/route-seekers/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        showAlert(`${response.data.length} questions uploaded successfully!`, 'Upload Successful', 'success');
+        setQuestionsCount(prevCount => prevCount + response.data.length);
+        setAllQuestions(prevQuestions => [...prevQuestions, ...response.data]);
+        setSelectedFile(null);
+      } catch (error) {
+        console.error('Error uploading questions:', error);
+        showAlert(error.response?.data?.message || 'Failed to upload questions.', 'Upload Error', 'error');
+      }
     } else {
       showAlert('Please select a file first', 'Upload Error', 'error');
     }
@@ -126,11 +139,18 @@ export default function AdminRouteSeekers() {
     setShowDeleteQuestionsModal(true);
   };
 
-  const confirmDeleteQuestions = () => {
-    setQuestionsCount(0); // This should ideally trigger a backend call
-    setAllQuestions([]);
-    setShowDeleteQuestionsModal(false);
-    showAlert('All questions have been deleted', 'Delete Successful', 'success');
+  const confirmDeleteQuestions = async () => {
+    try {
+      await axiosInstance.delete('/api/v1/route-seekers/questions');
+      setQuestionsCount(0);
+      setAllQuestions([]);
+      showAlert('All questions and answers have been deleted successfully.', 'Delete Successful', 'success');
+    } catch (error) {
+      console.error("Error deleting questions", error);
+      showAlert(error.response?.data?.message || 'Failed to delete questions.', 'Delete Error', 'error');
+    } finally {
+      setShowDeleteQuestionsModal(false);
+    }
   };
 
   const handleDeleteResources = () => {
@@ -309,6 +329,7 @@ export default function AdminRouteSeekers() {
                       id="questionFile"
                       onChange={handleFileChange}
                       className="hidden"
+                      accept=".csv"
                     />
                     <label htmlFor="questionFile" className="cursor-pointer">
                       <div className="w-11 h-5 bg-purple-800 rounded-sm flex items-center justify-center">
@@ -316,6 +337,13 @@ export default function AdminRouteSeekers() {
                       </div>
                     </label>
                   </div>
+                  <motion.button
+                    onClick={handleQuestionUpload}
+                    disabled={!selectedFile}
+                    className="ml-4 w-24 h-8 bg-purple-800 rounded-[3px] text-white text-xs flex items-center justify-center disabled:bg-gray-400"
+                  >
+                    Upload
+                  </motion.button>
                 </div>
 
                 <div className="flex gap-2 mt-3">
@@ -326,7 +354,7 @@ export default function AdminRouteSeekers() {
                     className="w-32 h-8 bg-sky-600 rounded-[3px] text-white text-xs flex items-center justify-center"
                     disabled={questionsCount === 0}
                   >
-                    Delete Question
+                    Delete Questions
                   </motion.button>
 
                   <motion.button
