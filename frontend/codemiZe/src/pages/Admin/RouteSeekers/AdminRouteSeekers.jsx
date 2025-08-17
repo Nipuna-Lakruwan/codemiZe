@@ -198,10 +198,17 @@ export default function AdminRouteSeekers() {
     setShowDeleteNetworkResourceModal(true);
   };
 
-  const confirmDeleteNetworkResources = () => {
-    setResources(0);
-    setShowDeleteNetworkResourceModal(false);
-    showAlert('All network resources have been deleted', 'Delete Successful', 'success');
+  const confirmDeleteNetworkResources = async () => {
+    try {
+      await axiosInstance.delete('/api/v1/questions/route-seekers/resource-files');
+      setResources(0);
+      showAlert('All network resources have been deleted', 'Delete Successful', 'success');
+    } catch (error) {
+      console.error("Error deleting network resources", error);
+      showAlert(error.response?.data?.message || 'Failed to delete network resources.', 'Delete Error', 'error');
+    } finally {
+      setShowDeleteNetworkResourceModal(false);
+    }
   };
 
   // View functions
