@@ -185,7 +185,7 @@ const CircuitSmashersJudge = () => {
                   calculateTotal={calculateTotal}
                   onSubmission={handleSubmit}
                   onDownload={handleDownload}
-                  maxMark={20}
+                  maxMark={10}
                 />
               )}
             </div>

@@ -180,7 +180,7 @@ const TimerDisplay = ({ timeRemaining, totalTime, gameName }) => {
 const useMockTimer = (initialTime = 300, autoStart = false) => {
   const [time, setTime] = useState(initialTime);
   const [isRunning, setIsRunning] = useState(autoStart);
-  const [totalTime] = useState(initialTime);
+  const [totalTime, setTotalTime] = useState(initialTime);
 
   useEffect(() => {
     let timer;
@@ -196,7 +196,10 @@ const useMockTimer = (initialTime = 300, autoStart = false) => {
   }, [isRunning, time]);
 
   const start = useCallback((newTime = null) => {
-    if (newTime !== null) setTime(newTime);
+    if (newTime !== null) {
+      setTime(newTime);
+      setTotalTime(newTime);
+    }
     setIsRunning(true);
   }, []);
 
@@ -206,6 +209,7 @@ const useMockTimer = (initialTime = 300, autoStart = false) => {
 
   const reset = useCallback((newTime = initialTime) => {
     setTime(newTime);
+    setTotalTime(newTime);
     setIsRunning(false);
   }, [initialTime]);
 
@@ -227,24 +231,17 @@ export default function TimerDashboard() {
 
   const socket = useContext(SocketContext);
 
-  // Game state with demo mode
+  // Game state
   const [activeGame, setActiveGame] = useState(null);
-  const [demoMode, setDemoMode] = useState(true); // Start in demo mode by default
-  const [soundEnabled, setSoundEnabled] = useState(true); // Sound effects enabled by default
 
-  // Sound effects hook
-  const { playSound } = useSound({ enabled: soundEnabled });
+  // Sound effects hook - always enabled
+  const { playSound } = useSound({ enabled: true });
 
-  // Mock timer for demo mode
-  const mockTimer = useMockTimer(60); // 3 minutes
+  // Timer for games
+  const gameTimer = useMockTimer(180); // 3 minutes default
 
   // Game info mapping - logos and descriptions for each game type
   const gameInfoMap = {
-    'battleBreakers': {
-      name: 'Battle Breakers',
-      logo: '/Battle breakers logo 1.png',
-      description: 'Fast-paced buzzer competition'
-    },
     'circuitSmashers': {
       name: 'Circuit Smashers',
       logo: '/circuit samshers logo 1.png',
@@ -262,139 +259,93 @@ export default function TimerDashboard() {
     }
   };
 
-  // Demo controls - for testing without backend
-  const startDemoGame = (gameName) => {
-    // Start the game without sound
-    setActiveGame(gameName);
-    mockTimer.reset(60); // Reset to 1 minute
-    mockTimer.start();
-  };
-
-  useEffect(() => {
-    // Add keyboard shortcuts for demo controls
-    const handleKeyDown = (e) => {
-      if (demoMode) {
-        switch (e.key) {
-          case '1':
-            startDemoGame('battleBreakers');
-            break;
-          case '2':
-            startDemoGame('circuitSmashers');
-            break;
-          case '3':
-            startDemoGame('codeCrushers');
-            break;
-          case '4':
-            startDemoGame('routeSeekers');
-            break;
-          case 'r':
-            mockTimer.reset(180);
-            mockTimer.start();
-            break;
-          case ' ':
-            if (mockTimer.isRunning) {
-              mockTimer.stop();
-            } else {
-              mockTimer.start();
-            }
-            break;
-          case 'Escape':
-            setActiveGame(null);
-            mockTimer.stop();
-            break;
-          default:
-            break;
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [demoMode, mockTimer]);
-
   useEffect(() => {
     // Listen for game start events from the server
-    if (socket && !demoMode) {
-      // Handle Battle Breakers events
-      socket.on("battleBreakers-startQuestionclient", (data) => {
-        setActiveGame('battleBreakers');
-        mockTimer.reset(data.allocatedTime || 180);
-        mockTimer.start();
-      });
-
+    if (socket) {
+      console.log('Socket connected, setting up event listeners');
+      
       // Handle Circuit Smashers events
       socket.on("circuitSmashers-startGameclient", (data) => {
+        console.log('Circuit Smashers game started:', data);
         setActiveGame('circuitSmashers');
-        mockTimer.reset(data.allocatedTime || 180);
-        mockTimer.start();
+        const timeToSet = data.allocatedTime || 180;
+        gameTimer.reset(timeToSet);
+        gameTimer.start(timeToSet);
+        playSound('gameStart');
       });
 
       // Handle Code Crushers events
       socket.on("codeCrushers-startGameclient", (data) => {
+        console.log('Code Crushers game started:', data);
         setActiveGame('codeCrushers');
-        mockTimer.reset(data.allocatedTime || 180);
-        mockTimer.start();
+        const timeToSet = data.allocatedTime || 180;
+        gameTimer.reset(timeToSet);
+        gameTimer.start(timeToSet);
+        playSound('gameStart');
       });
 
       // Handle Route Seekers events
       socket.on("routeSeekers-startGameclient", (data) => {
+        console.log('Route Seekers game started:', data);
         setActiveGame('routeSeekers');
-        mockTimer.reset(data.allocatedTime || 180);
-        mockTimer.start();
+        const timeToSet = data.allocatedTime || 180;
+        gameTimer.reset(timeToSet);
+        gameTimer.start(timeToSet);
+        playSound('gameStart');
       });
 
       // Listen for timer updates for all games
-      socket.on("battleBreakers-timerUpdate", (data) => {
-        if (activeGame === 'battleBreakers') {
-          mockTimer.reset(data.timeRemaining);
-          mockTimer.start();
-        }
-      });
-
       socket.on("circuitSmashers-timerUpdate", (data) => {
+        console.log('Circuit Smashers timer update:', data);
         if (activeGame === 'circuitSmashers') {
-          mockTimer.reset(data.timeRemaining);
-          mockTimer.start();
+          gameTimer.reset(data.timeRemaining);
+          if (data.timeRemaining > 0) {
+            gameTimer.start(data.timeRemaining);
+          }
         }
       });
 
       socket.on("codeCrushers-timerUpdate", (data) => {
+        console.log('Code Crushers timer update:', data);
         if (activeGame === 'codeCrushers') {
-          mockTimer.reset(data.timeRemaining);
-          mockTimer.start();
+          gameTimer.reset(data.timeRemaining);
+          if (data.timeRemaining > 0) {
+            gameTimer.start(data.timeRemaining);
+          }
         }
       });
 
       socket.on("routeSeekers-timerUpdate", (data) => {
+        console.log('Route Seekers timer update:', data);
         if (activeGame === 'routeSeekers') {
-          mockTimer.reset(data.timeRemaining);
-          mockTimer.start();
+          gameTimer.reset(data.timeRemaining);
+          if (data.timeRemaining > 0) {
+            gameTimer.start(data.timeRemaining);
+          }
         }
       });
 
       // Listen for game end events
-      socket.on("battleBreakers-timeUp", () => {
-        mockTimer.stop();
-      });
-
       socket.on("circuitSmashers-timeUp", () => {
-        mockTimer.stop();
+        console.log('Circuit Smashers time up');
+        gameTimer.stop();
+        playSound('timeUp');
       });
 
       socket.on("codeCrushers-timeUp", () => {
-        mockTimer.stop();
+        console.log('Code Crushers time up');
+        gameTimer.stop();
+        playSound('timeUp');
       });
 
       socket.on("routeSeekers-timeUp", () => {
-        mockTimer.stop();
+        console.log('Route Seekers time up');
+        gameTimer.stop();
+        playSound('timeUp');
       });
 
       // Clean up the event listeners when component unmounts
       return () => {
-        socket.off("battleBreakers-startQuestionclient");
-        socket.off("battleBreakers-timerUpdate");
-        socket.off("battleBreakers-timeUp");
-
         socket.off("circuitSmashers-startGameclient");
         socket.off("circuitSmashers-timerUpdate");
         socket.off("circuitSmashers-timeUp");
@@ -408,7 +359,7 @@ export default function TimerDashboard() {
         socket.off("routeSeekers-timeUp");
       };
     }
-  }, [socket, activeGame, demoMode, mockTimer]);
+  }, [socket, activeGame, gameTimer, playSound]);
 
   // If no active game, show splash screen with game selection
   if (!activeGame) {
@@ -424,58 +375,7 @@ export default function TimerDashboard() {
             >
               <img src="/codemize-logo.png" alt="CodemiZe Logo" className="w-96 mx-auto mb-10" />
               <div className="mb-10">Timer Dashboard</div>
-
-              {demoMode && (
-                <div className="flex flex-col items-center">
-                  <div className="text-2xl mb-8 text-yellow-300">DEMO MODE ACTIVE</div>
-                  <div className="grid grid-cols-2 gap-6 max-w-4xl mx-auto">
-                    {Object.keys(gameInfoMap).map((game, index) => (
-                      <motion.button
-                        key={game}
-                        className="px-8 py-6 bg-purple-800/50 hover:bg-purple-700/70 rounded-lg border-2 border-purple-500/50 transition-all flex flex-col items-center"
-                        onClick={() => startDemoGame(game)}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <img src={gameInfoMap[game].logo} alt={gameInfoMap[game].name} className="h-20 w-auto mb-4" />
-                        <span>Start {gameInfoMap[game].name}</span>
-                        <span className="text-sm mt-2 text-purple-300">(Press {index + 1})</span>
-                      </motion.button>
-                    ))}
-                  </div>
-                  <div className="text-base mt-10 text-gray-300 max-w-lg">
-                    Keyboard Controls: <br />
-                    1-4: Select game | SPACE: Pause/Resume | R: Reset timer | ESC: Exit game
-                  </div>
-                </div>
-              )}
-
-              {!demoMode && (
-                <div>Waiting for a game to start...</div>
-              )}
-
-              <div className="mt-8 flex flex-col gap-4">
-                {/* Sound toggle button */}
-                <div className="flex items-center justify-center gap-2">
-                  <button
-                    className={`px-4 py-2 rounded-md text-sm flex items-center gap-2 ${soundEnabled ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700'
-                      }`}
-                    onClick={() => setSoundEnabled(!soundEnabled)}
-                  >
-                    <span>{soundEnabled ? '🔊 Sound On' : '🔇 Sound Off'}</span>
-                  </button>
-                </div>
-
-                {/* Demo mode toggle */}
-                <div>
-                  <button
-                    className={`px-4 py-2 rounded-md text-sm ${demoMode ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'}`}
-                    onClick={() => setDemoMode(!demoMode)}
-                  >
-                    {demoMode ? 'Exit Demo Mode' : 'Enter Demo Mode'}
-                  </button>
-                </div>
-              </div>
+              <div>Waiting for a game to start...</div>
             </motion.div>
           </div>
         </div>
@@ -509,23 +409,6 @@ export default function TimerDashboard() {
           />
         </div>
 
-        {demoMode && (
-          <div className="absolute top-4 right-4 z-30 bg-yellow-500/80 text-black px-4 py-2 rounded-md text-sm font-bold">
-            DEMO MODE
-          </div>
-        )}
-
-        {/* Sound toggle button */}
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30">
-          <button
-            className={`px-3 py-1 rounded-md text-sm flex items-center gap-2 ${soundEnabled ? 'bg-blue-600/70 hover:bg-blue-600/90' : 'bg-gray-600/70 hover:bg-gray-600/90'
-              }`}
-            onClick={() => setSoundEnabled(!soundEnabled)}
-          >
-            <span>{soundEnabled ? '🔊' : '🔇'}</span>
-          </button>
-        </div>
-
         {/* Dashboard content - Two columns - Centered vertically */}
         <div className="flex items-center justify-center min-h-[calc(100vh-12rem)] relative z-20">
           <motion.div
@@ -539,41 +422,12 @@ export default function TimerDashboard() {
 
             {/* Right column - Timer Display - made bigger */}
             <TimerDisplay
-              timeRemaining={demoMode ? mockTimer.time : 0}
-              totalTime={demoMode ? mockTimer.totalTime : 180}
+              timeRemaining={gameTimer.time}
+              totalTime={gameTimer.totalTime}
               gameName={gameInfo.name}
             />
           </motion.div>
-        </div>        {/* Demo controls - small controls at the bottom */}
-        {demoMode && (
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3 z-30">
-            <button
-              className="px-4 py-2 bg-blue-500/70 hover:bg-blue-600/90 rounded-md text-white text-sm shadow-lg"
-              onClick={() => {
-                if (mockTimer.isRunning) mockTimer.stop();
-                else mockTimer.start();
-              }}
-            >
-              {mockTimer.isRunning ? 'Pause' : 'Resume'}
-            </button>
-            <button
-              className="px-4 py-2 bg-purple-500/70 hover:bg-purple-600/90 rounded-md text-white text-sm shadow-lg"
-              onClick={() => {
-                // Reset without sound
-                mockTimer.reset(180);
-                mockTimer.start();
-              }}
-            >
-              Reset (3:00)
-            </button>
-            <button
-              className="px-4 py-2 bg-red-500/70 hover:bg-red-600/90 rounded-md text-white text-sm shadow-lg"
-              onClick={() => setActiveGame(null)}
-            >
-              Exit
-            </button>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
