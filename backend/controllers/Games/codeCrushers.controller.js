@@ -1,6 +1,7 @@
 import archiver from "archiver";
 import path from "path";
 import fs from "fs";
+import mime from "mime";
 import GameSlides from "../../models/GameSlides.js";
 import StudentUpload from "../../models/StudentUpload.js";
 import Criteria from "../../models/Criteria.js";
@@ -127,7 +128,36 @@ export const getResource = async (req, res) => {
         if (!resource) {
             return res.status(404).json({ message: "Resource not found" });
         }
-        res.status(200).json({ message: "Resource retrieved successfully", resource });
+
+        // Get the file path from the resource
+        const filePath = path.join(process.cwd(), resource.fileUrl);
+        
+        // Check if file exists
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ message: "File not found on server" });
+        }
+
+        // Get the original filename from the database or extract from path
+        const originalName = resource.originalName || path.basename(filePath);
+        
+        // Detect MIME type
+        const mimeType = mime.getType(filePath) || "application/octet-stream";
+        console.log("Downloading:", originalName, "MIME:", mimeType);
+
+        // Set appropriate headers for file download
+        res.setHeader('Content-Disposition', `attachment; filename="${originalName}"`);
+        res.setHeader('Content-Type', mimeType);
+        res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+
+        // Send the file
+        res.sendFile(filePath, (err) => {
+            if (err) {
+                console.error("Error downloading file:", err);
+                if (!res.headersSent) {
+                    res.status(500).json({ message: "Error downloading file" });
+                }
+            }
+        });
     } catch (error) {
         console.error("Error retrieving resource:", error);
         res.status(500).json({ message: "Internal Server Error" });

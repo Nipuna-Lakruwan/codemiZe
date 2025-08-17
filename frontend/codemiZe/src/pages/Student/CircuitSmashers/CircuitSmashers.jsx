@@ -148,8 +148,8 @@ export default function CircuitSmashers() {
       socket.on('completed', async () => {
         setIsGameStarted(false);
         setIsServerTimerActive(false);
+        handleFileUpload();
 
-        // Try to submit code if there's a valid file uploaded
         if (isFileValid && uploadedFile) {
           try {
             await handleSubmitCode();
