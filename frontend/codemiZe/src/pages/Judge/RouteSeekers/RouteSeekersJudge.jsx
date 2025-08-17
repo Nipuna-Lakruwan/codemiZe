@@ -20,6 +20,7 @@ const RouteSeekersJudge = () => {
   const [questions, setQuestions] = useState([]);
   const [activeSubmissionId, setActiveSubmissionId] = useState(null);
   const [judgeId, setJudgeId] = useState(null);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,8 +37,10 @@ const RouteSeekersJudge = () => {
         const schoolsData = schoolsRes.data.schools;
         const answersData = answersRes.data;
         const fetchedCriteria = criteriaRes.data.data;
+        let currentJudgeId = null;
         if(userInfoRes.data.user) {
-          setJudgeId(userInfoRes.data.user._id);
+          currentJudgeId = userInfoRes.data.user._id;
+          setJudgeId(currentJudgeId);
         }
 
         const schoolsWithSubmissions = schoolsData.map(school => {
@@ -51,14 +54,32 @@ const RouteSeekersJudge = () => {
         setGameStatus('marking');
         setCriteria(fetchedCriteria);
 
-        const initialMarkings = {};
-        schoolsRes.data.schools.forEach(school => {
-          initialMarkings[school._id] = {};
-          fetchedCriteria.forEach(criterion => {
-            initialMarkings[school._id][criterion._id] = 0;
+        if (currentJudgeId) {
+          const markingsRes = await axiosInstance.get('/api/v1/judge/route-seekers-network-design/', {
+            params: { judgeId: currentJudgeId }
           });
-        });
-        setMarkings(initialMarkings);
+
+          if (markingsRes.data && markingsRes.data.length > 0) {
+            const existingMarkings = {};
+            markingsRes.data.forEach(schoolMarking => {
+              existingMarkings[schoolMarking.schoolId] = {};
+              schoolMarking.marks.forEach(mark => {
+                existingMarkings[schoolMarking.schoolId][mark.criteriaId] = mark.mark;
+              });
+            });
+            setMarkings(existingMarkings);
+            setHasSubmitted(true);
+          } else {
+            const initialMarkings = {};
+            schoolsRes.data.schools.forEach(school => {
+              initialMarkings[school._id] = {};
+              fetchedCriteria.forEach(criterion => {
+                initialMarkings[school._id][criterion._id] = 0;
+              });
+            });
+            setMarkings(initialMarkings);
+          }
+        }
 
       } catch (error) {
         console.error("Error fetching data", error);
@@ -263,6 +284,7 @@ const RouteSeekersJudge = () => {
               calculateTotal={calculateTotal}
               setSelectedCard={setSelectedCard}
               handleSubmitMarks={handleSubmitMarks}
+              hasSubmitted={hasSubmitted}
             />
           )}
         </div>

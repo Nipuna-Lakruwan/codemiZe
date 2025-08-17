@@ -30,7 +30,11 @@ export const createMarking = async (req, res) => {
 // Get all markings
 export const getMarkings = async (req, res) => {
   try {
-    const markings = await RouteSeekersMarking.find();
+    let query = {};
+    if (req.query.judgeId) {
+      query.judgeId = req.query.judgeId;
+    }
+    const markings = await RouteSeekersMarking.find(query);
     res.status(200).json(markings);
   } catch (error) {
     res.status(500).json({ message: error.message });
