@@ -5,9 +5,37 @@ import fs from "fs";
 import path from "path";
 import archiver from "archiver";
 import { fileURLToPath } from 'url';
+import School from "../../models/School.js";
+import RouteSeekersNetworkDesignMarking from "../../models/markings/RouteSeekersNetworkDesignMarking.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const calculateAndUpdateRouteSeekersScore = async (schoolId) => {
+    try {
+        // 1. Get Quiz Score
+        const answerDoc = await RouteSeekersAnswer.findOne({ userId: schoolId });
+        const quizScore = answerDoc ? answerDoc.score : 0;
+
+        // 2. Get Average Design Score
+        const schoolMarkings = await RouteSeekersNetworkDesignMarking.find({ schoolId: schoolId });
+        let averageDesignScore = 0;
+        if (schoolMarkings.length > 0) {
+            const judgeTotals = schoolMarkings.map((marking) =>
+                marking.marks.reduce((total, m) => total + (m.mark || 0), 0)
+            );
+            averageDesignScore = judgeTotals.reduce((sum, total) => sum + total, 0) / judgeTotals.length;
+        }
+
+        // 3. Calculate total and update school
+        const totalScore = quizScore + averageDesignScore;
+        await School.findByIdAndUpdate(schoolId, {
+            $set: { "score.RouteSeekers": totalScore },
+        });
+    } catch (error) {
+        console.error(`Failed to update RouteSeekers total score for school ${schoolId}:`, error);
+    }
+};
 
 // Get all questions for students
 export const getQuestions = async (req, res) => {
@@ -135,6 +163,8 @@ export const updateAnswerStatus = async (req, res) => {
     submission.score = correctAnswersCount * 5;
 
     const savedSubmission = await submission.save();
+
+    await calculateAndUpdateRouteSeekersScore(submission.userId);
 
     res.status(200).json({ message: "Answer status updated successfully", result: savedSubmission });
   } catch (error) {
