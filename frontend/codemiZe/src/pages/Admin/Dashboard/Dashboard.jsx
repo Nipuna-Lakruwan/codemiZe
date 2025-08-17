@@ -178,6 +178,7 @@ export default function Dashboard() {
   const deactivateGame = async (gameId) => {
     try {
       const response = await axiosInstance.patch(API_PATHS.GAMES.DEACTIVATE_GAME(gameId));
+      socket.emit('codeCrushers-stopRound');
       console.log('Game deactivated:', response.data);
       fetchData(); // Refresh games data
     } catch (error) {
