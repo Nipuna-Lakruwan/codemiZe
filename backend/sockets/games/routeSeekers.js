@@ -90,8 +90,24 @@ class RouteSeekersHandler {
       this.handleStartNavigation(data);
     });
 
+    socket.on("routeSeekers-startRound", (data) => {
+      this.handleStartNavigation(data);
+    });
+
     socket.on("routeSeekers-stopNavigation", () => {
       this.handleStopNavigation();
+    });
+
+    socket.on("routeSeekers-stopRound", () => {
+      this.handleStopNavigation();
+    });
+
+    socket.on("routeSeekers-pauseRound", () => {
+      this.handlePauseNavigation();
+    });
+
+    socket.on("routeSeekers-resumeRound", () => {
+      this.handleResumeNavigation();
     });
 
     socket.on("routeSeekers-requestProgress", () => {
@@ -148,6 +164,26 @@ class RouteSeekersHandler {
   handleStopNavigation() {
     console.log('Route Seekers: Stopping current navigation');
     this.timer.stopTimer();
+  }
+
+  /**
+   * Handle pause navigation event
+   */
+  handlePauseNavigation() {
+    console.log('Route Seekers: Pausing current navigation');
+    this.timer.pauseTimer();
+    this.io.to(this.roomName).emit("routeSeekers-timerPaused");
+    this.io.to(this.roomName).emit("routeSeekers-roundPaused");
+  }
+
+  /**
+   * Handle resume navigation event
+   */
+  handleResumeNavigation() {
+    console.log('Route Seekers: Resuming current navigation');
+    this.timer.resumeTimer(this.roomName);
+    this.io.to(this.roomName).emit("routeSeekers-timerResumed");
+    this.io.to(this.roomName).emit("routeSeekers-roundResumed");
   }
 
   /**

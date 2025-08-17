@@ -1,13 +1,17 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
 import QuestionnaireActivity from '../../../components/Student/QuestionnaireActivity';
 import ActivitySelection from '../../../components/Student/ActivitySelection';
 import axiosInstance from '../../../utils/axiosInstance';
 import PdfViewer from '../../../components/Student/PDFViewer/PdfViewer';
+import { SocketContext } from '../../../context/SocketContext';
 
 export default function RouteSeekers() {
+  const socket = useContext(SocketContext);
+  const navigate = useNavigate();
   // Game state
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,9 +27,10 @@ export default function RouteSeekers() {
   const [pdfError, setPdfError] = useState(null);
 
   // Timer state
-  const [timeRemaining, setTimeRemaining] = useState(45 * 60);
+  const [timeRemaining, setTimeRemaining] = useState(40 * 60); // 40 minutes in seconds
   const [showTimeWarning, setShowTimeWarning] = useState(false);
   const [timeIsUp, setTimeIsUp] = useState(false);
+  const [isServerTimerActive, setIsServerTimerActive] = useState(false); // Track if server timer is active
 
   // File upload state
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -38,36 +43,105 @@ export default function RouteSeekers() {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState([]);
 
-  // Timer effect
+  // Socket-based timer effect - handles server synchronization
   useEffect(() => {
-    let timer;
-    if (isGameStarted && !gameCompleted && !timeIsUp && timeRemaining > 0) {
-      timer = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev === 5 * 60) {
-            setShowTimeWarning(true);
-            setTimeout(() => setShowTimeWarning(false), 5000);
-          }
-          else if (prev === 60) {
-            setShowTimeWarning(true);
-            setTimeout(() => setShowTimeWarning(false), 5000);
-          }
+    if (socket) {
+      socket.on('routeSeekers-navigationStarted', (data) => {
+        console.log('Navigation started from server:', data);
+        if (data.allocatedTime) {
+          setTimeRemaining(data.allocatedTime);
+          setIsGameStarted(true);
+          setGameCompleted(false);
+          setTimeIsUp(false);
+          setIsServerTimerActive(true);
+        }
+      });
 
-          if (prev <= 1) {
-            clearInterval(timer);
-            setTimeIsUp(true);
-            handleGameEnd();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      // Listen for server timer updates
+      socket.on('routeSeekers-timerUpdate', (data) => {
+        setTimeRemaining(data.timeRemaining);
+        setIsServerTimerActive(true);
+
+        if (data.timeRemaining === 5 * 60) {
+          setShowTimeWarning(true);
+          setTimeout(() => setShowTimeWarning(false), 5000);
+        } else if (data.timeRemaining === 60) {
+          setShowTimeWarning(true);
+          setTimeout(() => setShowTimeWarning(false), 5000);
+        }
+      });
+
+      // Listen for time up event from server
+      socket.on('routeSeekers-timeUp', (data) => {
+        setTimeRemaining(0);
+        setTimeIsUp(true);
+        setIsServerTimerActive(false);
+        handleGameEnd();
+      });
+
+      // Listen for timer stopped event from server
+      socket.on('routeSeekers-timerStopped', (data) => {
+        setTimeRemaining(0);
+        setTimeIsUp(true);
+        setIsServerTimerActive(false);
+        handleGameEnd();
+      });
+
+      // Listen for sync timer event (for reconnection)
+      socket.on('routeSeekers-syncTimer', (data) => {
+        if (data.timeRemaining !== undefined) {
+          setTimeRemaining(data.timeRemaining);
+          setIsGameStarted(data.isReconnect || false);
+          setIsServerTimerActive(data.timeRemaining > 0);
+        }
+      });
+
+      // Listen for timer paused event from server
+      socket.on('routeSeekers-timerPaused', (data) => {
+        setIsServerTimerActive(false);
+      });
+
+      // Listen for timer resumed event from server
+      socket.on('routeSeekers-timerResumed', (data) => {
+        setIsServerTimerActive(true);
+      });
+
+      // Listen for round paused event from server (for dashboard sync)
+      socket.on('routeSeekers-roundPaused', (data) => {
+        setIsServerTimerActive(false);
+      });
+
+      // Listen for round resumed event from server (for dashboard sync)
+      socket.on('routeSeekers-roundResumed', (data) => {
+        setIsServerTimerActive(true);
+      });
+
+      socket.on('completed', async () => {
+        setIsGameStarted(false);
+        setIsServerTimerActive(false);
+        navigate('/student/games-roadmap');
+      });
+
+      // Request current state when component mounts (for reconnection)
+      socket.emit('routeSeekers-requestCurrentState');
     }
 
+    // Cleanup function
     return () => {
-      if (timer) clearInterval(timer);
+      if (socket) {
+        socket.off('routeSeekers-navigationStarted');
+        socket.off('routeSeekers-timerUpdate');
+        socket.off('routeSeekers-timeUp');
+        socket.off('routeSeekers-timerStopped');
+        socket.off('routeSeekers-syncTimer');
+        socket.off('routeSeekers-timerPaused');
+        socket.off('routeSeekers-timerResumed');
+        socket.off('routeSeekers-roundPaused');
+        socket.off('routeSeekers-roundResumed');
+        socket.off('completed');
+      }
     };
-  }, [isGameStarted, gameCompleted, timeRemaining]);
+  }, [socket, navigate]);
 
   // Countdown for next activity popup
   useEffect(() => {
@@ -157,6 +231,11 @@ export default function RouteSeekers() {
 
   // Start game handler
   const handleStartGame = () => {
+    if (!isServerTimerActive) {
+      console.log('Cannot start game: Server timer is not active');
+      return; // Prevent game start if server timer is not active
+    }
+
     setIsLoading(true);
     setTimeout(() => {
       setIsGameStarted(true);
@@ -240,7 +319,7 @@ export default function RouteSeekers() {
 
   // Calculate progress percentage for timer
   const calculateProgress = () => {
-    return (timeRemaining / (45 * 60)) * 100;
+    return (timeRemaining / (40 * 60)) * 100;
   };
 
   const [resources, setResources] = useState([]);
