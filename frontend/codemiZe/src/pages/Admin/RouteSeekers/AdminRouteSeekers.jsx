@@ -101,23 +101,47 @@ export default function AdminRouteSeekers() {
     }
   };
 
-  const handleResourceUpload = () => {
+  const handleResourceUpload = async () => {
     if (selectedFile) {
-      console.log('Uploading resource:', selectedFile);
-      showAlert('Resource uploaded: ' + selectedFile.name, 'Upload Successful', 'success');
-      setResources(resources + 1);
-      setSelectedFile(null);
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      try {
+        await axiosInstance.post('/api/v1/questions/route-seekers/upload-resource', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        showAlert('Resource file uploaded successfully!', 'Upload Successful', 'success');
+        setResources(prev => prev + 1);
+        setSelectedFile(null);
+      } catch (error) {
+        console.error('Error uploading resource file:', error);
+        showAlert(error.response?.data?.message || 'Failed to upload resource file.', 'Upload Error', 'error');
+      }
     } else {
       showAlert('Please select a file first', 'Upload Error', 'error');
     }
   };
 
-  const handleNetworkResourceUpload = () => {
+  const handleNetworkResourceUpload = async () => {
     if (selectedFile) {
-      console.log('Uploading network resource:', selectedFile);
-      showAlert('Network resource uploaded: ' + selectedFile.name, 'Upload Successful', 'success');
-      setResources(resources + 1);
-      setSelectedFile(null);
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      try {
+        await axiosInstance.post('/api/v1/questions/route-seekers/network-design/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        showAlert('Network design PDF uploaded successfully!', 'Upload Successful', 'success');
+        setResources(prev => prev + 1);
+        setSelectedFile(null);
+      } catch (error) {
+        console.error('Error uploading network design PDF:', error);
+        showAlert(error.response?.data?.message || 'Failed to upload network design PDF.', 'Upload Error', 'error');
+      }
     } else {
       showAlert('Please select a file first', 'Upload Error', 'error');
     }
@@ -386,6 +410,13 @@ export default function AdminRouteSeekers() {
                       </div>
                     </label>
                   </div>
+                  <motion.button
+                    onClick={handleResourceUpload}
+                    disabled={!selectedFile}
+                    className="ml-4 w-24 h-8 bg-purple-800 rounded-[3px] text-white text-xs flex items-center justify-center disabled:bg-gray-400"
+                  >
+                    Upload
+                  </motion.button>
                 </div>
 
                 <div className="mt-3">
@@ -408,9 +439,11 @@ export default function AdminRouteSeekers() {
             resources={resources}
             responses={responses}
             handleFileChange={handleFileChange}
+            handleNetworkResourceUpload={handleNetworkResourceUpload}
             handleDeleteNetworkResources={handleDeleteNetworkResources}
             handleResponseUpload={handleResponseUpload}
             handleDownloadResources={handleDownloadResources}
+            selectedFile={selectedFile}
           />
 
           {/* Third rectangle - Questioners Responses */}
