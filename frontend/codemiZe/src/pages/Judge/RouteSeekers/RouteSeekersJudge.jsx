@@ -19,21 +19,26 @@ const RouteSeekersJudge = () => {
   const [schoolQuestions, setSchoolQuestions] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [activeSubmissionId, setActiveSubmissionId] = useState(null);
+  const [judgeId, setJudgeId] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [schoolsRes, questionsRes, answersRes, criteriaRes] = await Promise.all([
+        const [schoolsRes, questionsRes, answersRes, criteriaRes, userInfoRes] = await Promise.all([
           axiosInstance.get('/api/v1/admin/schools'),
           axiosInstance.get('/api/v1/route-seekers/questions'),
           axiosInstance.get('/api/v1/route-seekers/all-student-answers'),
-          axiosInstance.get('/api/v1/criteria/routeSeekers')
+          axiosInstance.get('/api/v1/criteria/routeSeekers'),
+          axiosInstance.get('/api/v1/auth/getUserInfo')
         ]);
 
         const schoolsData = schoolsRes.data.schools;
         const answersData = answersRes.data;
         const fetchedCriteria = criteriaRes.data.data;
+        if(userInfoRes.data.user) {
+          setJudgeId(userInfoRes.data.user._id);
+        }
 
         const schoolsWithSubmissions = schoolsData.map(school => {
           const submission = answersData.find(answer => (answer.userId?._id || answer.userId) === school._id);
@@ -150,6 +155,32 @@ const RouteSeekersJudge = () => {
     setActiveSchool(null);
   };
 
+  const handleSubmitMarks = async () => {
+    if (!judgeId) {
+      alert("Could not identify the judge. Please refresh and try again.");
+      return;
+    }
+
+    const markingsToSubmit = Object.entries(markings).map(([schoolId, schoolMarks]) => ({
+      schoolId,
+      marks: Object.entries(schoolMarks).map(([criteriaId, mark]) => ({
+        criteriaId,
+        mark: Number(mark) || 0,
+      })),
+    }));
+
+    try {
+      await axiosInstance.post('/api/v1/judges/route-seekers-marking/submit-all', {
+        judgeId,
+        markings: markingsToSubmit,
+      });
+      alert('Marks submitted successfully!');
+    } catch (error) {
+      console.error("Error submitting marks", error);
+      alert('Failed to submit marks. Please try again.');
+    }
+  };
+
   return (
     <JudgeLayout gameName="Route Seekers">
       <ScrollbarStyles />
@@ -231,6 +262,7 @@ const RouteSeekersJudge = () => {
               handleKeyDown={handleKeyDown}
               calculateTotal={calculateTotal}
               setSelectedCard={setSelectedCard}
+              handleSubmitMarks={handleSubmitMarks}
             />
           )}
         </div>
