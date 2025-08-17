@@ -198,9 +198,9 @@ export default function AdminBattleBreakers() {
 
   // Effect to track total attempts
   useEffect(() => {
-    // If we've used all 3 attempts, make sure buttons stay disabled but don't auto-proceed
+    // If we've used all 2 attempts, make sure buttons stay disabled but don't auto-proceed
     // User must explicitly click "Next" button
-    if (totalAttempts >= 3) {
+    if (totalAttempts >= 2) {
       // Stop the timer if it's running
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -547,6 +547,13 @@ export default function AdminBattleBreakers() {
         setTotalAttempts(0);
         setCorrectSchool(null);
       }
+
+      // setTimeRemaining(allocatedTime);
+      // if (timerRef.current) {
+      //   clearInterval(timerRef.current);
+      //   timerRef.current = null;
+      // }
+      // socket.emit("battleBreakers-stopQuestion");
     }
   };
 

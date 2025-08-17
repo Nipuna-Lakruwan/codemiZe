@@ -1,18 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import JudgeLayout from '../JudgeLayout';
 import BattleBreakersTable from '../../../components/Judge/BattleBreakers/BattleBreakersTable';
 import axiosInstance from '../../../utils/axiosInstance';
 import { API_PATHS } from '../../../utils/apiPaths';
+import { SocketContext } from '../../../context/SocketContext';
 
 const BattleBreakersJudge = () => {
+  const socket = useContext(SocketContext);
   // State for questions and schools (fetched from API)
   const [questions, setQuestions] = useState([]);
   const [schools, setSchools] = useState([]);
 
   // State for display only
   const [answerHistory, setAnswerHistory] = useState({});
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showQuestionText, setShowQuestionText] = useState(true);
+
+  useEffect(() => {
+    socket.on("battlebreakersNewMarks", () => {
+      // Handle the new marks data
+      loadExistingAttempts();
+      console.log("New marks received:");
+    });
+
+    // Cleanup on unmount
+    return () => {
+      socket.off("battlebreakersNewMarks");
+    };
+  }, [socket]);
 
   // Fetch Questions
   useEffect(() => {
@@ -107,21 +121,7 @@ const BattleBreakersJudge = () => {
     if (questions.length > 0 && schools.length > 0) {
       loadExistingAttempts();
     }
-  }, [questions, schools, currentQuestionIndex]);
-
-  // Move to next question
-  const goToNextQuestion = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-    }
-  };
-
-  // Move to previous question
-  const goToPrevQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
-    }
-  };
+  }, [questions, schools]);
 
   return (
     <JudgeLayout gameName="Battle Breakers">
@@ -138,12 +138,8 @@ const BattleBreakersJudge = () => {
             questions={questions}
             schools={schools}
             answerHistory={answerHistory}
-            currentQuestionIndex={currentQuestionIndex}
             showQuestionText={showQuestionText}
             setShowQuestionText={setShowQuestionText}
-            goToNextQuestion={goToNextQuestion}
-            goToPrevQuestion={goToPrevQuestion}
-            isJudgeView={true}
           />
         </div>
       </div>

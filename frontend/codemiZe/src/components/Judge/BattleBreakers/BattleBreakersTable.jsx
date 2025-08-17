@@ -6,12 +6,8 @@ const BattleBreakersTable = ({
   questions,
   schools,
   answerHistory,
-  currentQuestionIndex,
   showQuestionText,
   setShowQuestionText,
-  goToNextQuestion,
-  goToPrevQuestion,
-  isJudgeView = false,
 }) => {
 
   // Helper: get status for a school in a question from answer history
