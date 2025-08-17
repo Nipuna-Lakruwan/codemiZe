@@ -26,7 +26,7 @@ export default function GameLayout({ children, gameName = "" }) {
         <img
           src="/title2.png"
           alt="CodemiZe"
-          className="h-14 w-auto"
+          className="h-30 w-auto"
         />
       </div>
       {/* Main content */}

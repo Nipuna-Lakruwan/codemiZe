@@ -36,7 +36,7 @@ export default function AdminLayout({ children }) {
       {/* Left navigation sidebar */}
       <div className="fixed w-24 md:w-64 h-full min-h-screen bg-white flex flex-col shadow-lg overflow-y-auto justify-between py-6 px-4">
         {/* Logo */}
-        <div className="mb-8 flex justify-center">
+        <div className="mb-8 flex justify-center p-1 rounded-lg bg-purple-100">
           <img
             src="/left-sidebar-img.png"
             alt="CodemiZe Logo"
@@ -79,7 +79,32 @@ export default function AdminLayout({ children }) {
             Show Winners
           </motion.button>
         </div>
-        {/* Show Winners button */}
+
+        {/* Dashboards Section */}
+        <div className="mt-5">
+          <div className="text-xs text-gray-500 mb-2 px-4">Presentation Dashboards:</div>
+          <div className="space-y-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => window.open('/timer-dashboard', '_blank')}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md shadow transition-colors duration-300 text-sm"
+            >
+              Timer Dashboard
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => window.open('/admin/dashboard/battle-breakers', '_blank')}
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 px-4 rounded-md shadow transition-colors duration-300 text-sm"
+            >
+              Buzzer Dashboard
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Logout button */}
         <div className="mt-10">
           <motion.button
             whileHover={{ scale: 1.05 }}

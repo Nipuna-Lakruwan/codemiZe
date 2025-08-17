@@ -25,6 +25,7 @@ import RouteSeekers from './pages/Student/RouteSeekers/RouteSeekers';
 import BattleBreakers from './pages/Student/BattleBreakers/BattleBreakers';
 import Winners from './pages/Student/Winners/Winners';
 import BuzzerDashboard from './pages/Admin/Dashboard/BattleBreakers/BuzzerDashboard';
+import TimerDashboard from './pages/Admin/Dashboard/TimerDashboard';
 
 // Import judge pages
 import JudgeDashboard from './pages/Judge/JudgeDashboard';
@@ -183,6 +184,10 @@ function App() {
               <BuzzerDashboard />
             </RoleProtectedRoute>
           } />
+
+          {/* Timer Dashboard - accessible without login for big screen presentation */}
+          <Route path="/timer-dashboard" element={<TimerDashboard />} />
+          <Route path="/admin/dashboard/timer" element={<TimerDashboard />} />
         </Routes>
       </div>
     </div>
