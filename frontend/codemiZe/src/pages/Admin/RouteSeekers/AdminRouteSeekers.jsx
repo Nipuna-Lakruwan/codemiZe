@@ -126,11 +126,18 @@ export default function AdminRouteSeekers() {
     setShowDeleteQuestionsModal(true);
   };
 
-  const confirmDeleteQuestions = () => {
-    setQuestionsCount(0); // This should ideally trigger a backend call
-    setAllQuestions([]);
-    setShowDeleteQuestionsModal(false);
-    showAlert('All questions have been deleted', 'Delete Successful', 'success');
+  const confirmDeleteQuestions = async () => {
+    try {
+      await axiosInstance.delete('/api/v1/route-seekers/questions');
+      setQuestionsCount(0);
+      setAllQuestions([]);
+      showAlert('All questions and answers have been deleted successfully.', 'Delete Successful', 'success');
+    } catch (error) {
+      console.error("Error deleting questions", error);
+      showAlert(error.response?.data?.message || 'Failed to delete questions.', 'Delete Error', 'error');
+    } finally {
+      setShowDeleteQuestionsModal(false);
+    }
   };
 
   const handleDeleteResources = () => {
@@ -326,7 +333,7 @@ export default function AdminRouteSeekers() {
                     className="w-32 h-8 bg-sky-600 rounded-[3px] text-white text-xs flex items-center justify-center"
                     disabled={questionsCount === 0}
                   >
-                    Delete Question
+                    Delete Questions
                   </motion.button>
 
                   <motion.button

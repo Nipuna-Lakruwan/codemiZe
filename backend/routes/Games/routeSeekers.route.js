@@ -10,7 +10,8 @@ import {
     getAllNetworkDesigns,
     deleteNetworkDesign,
     downloadAllNetworkDesigns,
-    downloadNetworkDesign
+    downloadNetworkDesign,
+    deleteAllQuestions
 } from "../../controllers/Games/routeSeekers.controller.js";
 import { protect } from "../../middleware/authMiddleware.js";
 import { routeSeekersNetworkDesignUpload } from "../../middleware/uploadMiddleware.js";
@@ -18,6 +19,7 @@ import { routeSeekersNetworkDesignUpload } from "../../middleware/uploadMiddlewa
 const router = express.Router();
 
 router.get("/questions", protect, getQuestions);
+router.delete("/questions", protect, deleteAllQuestions);
 router.post("/submit", protect, submitAnswers);
 router.post("/upload-network-design", protect, routeSeekersNetworkDesignUpload.single('file'), uploadNetworkDesign);
 router.get("/network-designs", protect, getAllNetworkDesigns);

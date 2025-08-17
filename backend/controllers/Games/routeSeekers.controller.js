@@ -91,6 +91,16 @@ export const deleteAllStudentAnswers = async (req, res) => {
   }
 };
 
+export const deleteAllQuestions = async (req, res) => {
+  try {
+    await RouteSeekersQuestion.deleteMany({});
+    await RouteSeekersAnswer.deleteMany({});
+    res.status(200).json({ message: "All questions and answers deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Update a single answer's status
 export const updateAnswerStatus = async (req, res) => {
   try {
