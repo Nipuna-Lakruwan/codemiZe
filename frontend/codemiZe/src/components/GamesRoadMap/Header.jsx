@@ -18,13 +18,14 @@ const Header = () => {
       <div className="w-40"></div>
 
       {/* Centered title and roadmap */}
-      <div className="flex items-center gap-4 absolute left-1/2 transform -translate-x-1/2">
-        <img
-          src="/title2.png"
-          alt="CodemiZe"
-          className="h-16 w-auto"
-        />
-        <span className="text-white h-2 text-4xl font-normal font-['Jersey_25']">
+      <div className="flex items-center gap-6 absolute left-1/2 transform -translate-x-60">
+        <div className="mt-8">
+          <img
+            src="/title2.png"
+            alt="CodemiZe"
+            className="h-50 w-auto"
+          />
+        </div>        <span className="text-white h-2 text-4xl font-normal font-['Jersey_25']">
           Road Map
         </span>
       </div>
@@ -34,7 +35,7 @@ const Header = () => {
         className="px-4 py-2 bg-stone-200/10 hover:bg-stone-200/20 rounded-md border border-white/10 text-white/80 hover:text-white transition-all duration-200 flex items-center gap-2"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm7 4a1 1 0 10-2 0v4a1 1 0 102 0V7zm1 7a1 1 0 100-2H7a1 1 0 100 2h4z" clipRule="evenodd" />
+          <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1</svg>v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm7 4a1 1 0 10-2 0v4a1 1 0 102 0V7zm1 7a1 1 0 100-2H7a1 1 0 100 2h4z" clipRule="evenodd" />
         </svg>
         Logout
       </button>
