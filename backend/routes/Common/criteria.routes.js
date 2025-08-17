@@ -7,8 +7,8 @@ import { createCriterias } from '../../controllers/Common/criteria.controller.js
 const router = express.Router();
 
 router.post("/create", protect, requireAdmin, createCriterias)
-router.get("/", protect, requireAdmin, getAllCriteria);
-router.get("/:gameType", protect, requireAdmin, getCriteriaByGameType);
+router.get("/", protect, getAllCriteria);
+router.get("/:gameType", protect, getCriteriaByGameType);
 router.post("/", protect, requireAdmin, createCriterion);
 router.put("/:id", protect, requireAdmin, updateCriterion);
 router.delete("/:id", protect, requireAdmin, deleteCriterion);
