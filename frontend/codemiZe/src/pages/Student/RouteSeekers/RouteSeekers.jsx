@@ -109,16 +109,27 @@ export default function RouteSeekers() {
         const metaResponse = await axiosInstance.get('/api/v1/questions/route-seekers/network-design/first');
         const pdfFile = metaResponse.data;
 
-        if (pdfFile && pdfFile._id) {
-          // 2. Fetch PDF data as a blob
-          const pdfResponse = await axiosInstance.get(
-            `/api/v1/questions/route-seekers/network-design/view/${pdfFile._id}`,
-            { responseType: 'blob' } // Important
-          );
-          // 3. Create a blob URL
-          const pdfBlob = new Blob([pdfResponse.data], { type: 'application/pdf' });
-          const url = URL.createObjectURL(pdfBlob);
-          setPdfUrl(url);
+        if (pdfFile && pdfFile.path) {
+          const fullPath = pdfFile.path;
+          const uploadsToken = 'uploads';
+          const uploadsIndex = fullPath.indexOf(uploadsToken);
+
+          if (uploadsIndex !== -1) {
+            const relativePath = fullPath.substring(uploadsIndex);
+            const pdfUrlPath = `/${relativePath.replace(/\\/g, '/')}`;
+
+            // 2. Fetch PDF data as a blob
+            const pdfResponse = await axiosInstance.get(
+              pdfUrlPath,
+              { responseType: 'blob' } // Important
+            );
+            // 3. Create a blob URL
+            const pdfBlob = new Blob([pdfResponse.data], { type: 'application/pdf' });
+            const url = URL.createObjectURL(pdfBlob);
+            setPdfUrl(url);
+          } else {
+            setPdfError("Invalid PDF path received from server. 'uploads' directory not in path.");
+          }
         } else {
           setPdfError("Network design PDF not found. Please contact an administrator.");
         }
