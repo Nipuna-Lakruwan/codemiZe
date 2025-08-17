@@ -36,7 +36,7 @@ export default function AdminLayout({ children }) {
       {/* Left navigation sidebar */}
       <div className="fixed w-24 md:w-64 h-full min-h-screen bg-white flex flex-col shadow-lg overflow-y-auto justify-between py-6 px-4">
         {/* Logo */}
-        <div className="mb-8 flex justify-center">
+        <div className="mb-8 flex justify-center p-1 rounded-lg bg-purple-100">
           <img
             src="/left-sidebar-img.png"
             alt="CodemiZe Logo"
