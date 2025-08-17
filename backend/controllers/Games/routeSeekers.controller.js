@@ -91,6 +91,16 @@ export const deleteAllStudentAnswers = async (req, res) => {
   }
 };
 
+export const deleteAllQuestions = async (req, res) => {
+  try {
+    await RouteSeekersQuestion.deleteMany({});
+    await RouteSeekersAnswer.deleteMany({});
+    res.status(200).json({ message: "All questions and answers deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Update a single answer's status
 export const updateAnswerStatus = async (req, res) => {
   try {
@@ -138,6 +148,15 @@ export const uploadNetworkDesign = async (req, res) => {
             return res.status(400).json({ message: "No file uploaded" });
         }
 
+        const existingUpload = await StudentUpload.findOne({
+            userId: req.user.id,
+            gameName: "RouteSeekers",
+        });
+
+        if (existingUpload) {
+            return res.status(400).json({ message: "Answer already uploaded" });
+        }
+
         const newUpload = new StudentUpload({
             userId: req.user.id,
             gameName: "RouteSeekers",
@@ -175,7 +194,7 @@ export const deleteNetworkDesign = async (req, res) => {
         }
 
         fs.unlink(file.fileUrl, async (err) => {
-            if (err) {
+            if (err && err.code !== 'ENOENT') {
                 console.error("File deletion error:", err);
                 return res.status(500).json({ message: "Error deleting the file" });
             }

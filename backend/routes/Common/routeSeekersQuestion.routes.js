@@ -16,7 +16,10 @@ import {
   deleteNetworkDesignPDF,
   getAllNetworkDesignPDFs,
   getNetworkDesignPDFById,
-  getFirstNetworkDesignPDF
+  getFirstNetworkDesignPDF,
+  viewNetworkDesignPDF,
+  downloadFirstQuestionnaireResourceFile,
+  deleteAllResourceFiles
 } from "../../controllers/Common/routeSeekersQuestion.controller.js";
 import { protect } from "../../middleware/authMiddleware.js";
 import { requireAdmin } from "../../middleware/roleMiddleware.js";
@@ -38,12 +41,16 @@ router.post("/upload-resource", protect, resourceUpload.single('file'), uploadQu
 router.post("/network-design/upload", protect, requireAdmin, resourceUpload.single("file"), uploadNetworkDesignPDF);
 router.get("/network-designs", protect, getAllNetworkDesignPDFs);
 router.get("/network-design/first", protect, getFirstNetworkDesignPDF);
+router.get("/network-design/view/:id", protect, viewNetworkDesignPDF);
 router.get("/network-design/:id", protect, getNetworkDesignPDFById);
 router.delete("/network-design/:id", protect, requireAdmin, deleteNetworkDesignPDF);
+
+router.get("/resource/download/first", protect, downloadFirstQuestionnaireResourceFile);
 
 router.get("/download-resource/:id", protect, downloadQuestionnaireResourceFile);
 router.get("/resource-files", protect, getAllUploadedQuestionnaireResourceFiles);
 router.delete("/resource-file/:id", protect, deleteQuestionnaireResourceFile);
+router.delete("/resource-files", protect, deleteAllResourceFiles);
 router.get("/", protect, getAllRouteSeekersQuestions);
 router.post("/delete-many", protect, deleteManyRouteSeekersQuestions);
 router.delete("/", protect, deleteAllRouteSeekersQuestions);

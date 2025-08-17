@@ -1,4 +1,4 @@
-import RouteSeekersMarking from "../../models/markings/RouteSeekersMarking.js";
+import RouteSeekersMarking from "../../models/markings/RouteSeekersNetworkDesignMarking.js";
 
 // Create a new marking
 export const createMarking = async (req, res) => {

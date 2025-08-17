@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
-import GameNodeMini from '../../../components/Games/GameNodeMini';
 import QuestionnaireActivity from '../../../components/Student/QuestionnaireActivity';
 import ActivitySelection from '../../../components/Student/ActivitySelection';
 import axiosInstance from '../../../utils/axiosInstance';
+import PdfViewer from '../../../components/Student/PDFViewer/PdfViewer';
 
 export default function RouteSeekers() {
   // Game state
@@ -19,9 +19,8 @@ export default function RouteSeekers() {
   const [countdown, setCountdown] = useState(5);
 
   // PDF viewer state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(5);
-  const [showFullscreenPDF, setShowFullscreenPDF] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfError, setPdfError] = useState(null);
 
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState(45 * 60);
@@ -38,42 +37,6 @@ export default function RouteSeekers() {
   // Questionnaire state
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState([]);
-
-  // Listen for messages from popup window
-  useEffect(() => {
-    const handleMessage = (event) => {
-      if (event.data.action === 'prevPage') {
-        if (currentPage > 1) {
-          const newPage = currentPage - 1;
-          setCurrentPage(newPage);
-          if (event.source) {
-            event.source.postMessage({
-              action: 'updatePage',
-              page: newPage,
-              totalPages
-            }, '*');
-          }
-        }
-      } else if (event.data.action === 'nextPage') {
-        if (currentPage < totalPages) {
-          const newPage = currentPage + 1;
-          setCurrentPage(newPage);
-          if (event.source) {
-            event.source.postMessage({
-              action: 'updatePage',
-              page: newPage,
-              totalPages
-            }, '*');
-          }
-        }
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => {
-      window.removeEventListener('message', handleMessage);
-    };
-  }, [currentPage, totalPages]);
 
   // Timer effect
   useEffect(() => {
@@ -138,6 +101,60 @@ export default function RouteSeekers() {
     }
   }, [isGameStarted, activity, questions.length]);
 
+  useEffect(() => {
+    const fetchPdf = async () => {
+      setPdfError(null);
+      try {
+        // 1. Get PDF metadata
+        const metaResponse = await axiosInstance.get('/api/v1/questions/route-seekers/network-design/first');
+        const pdfFile = metaResponse.data;
+
+        if (pdfFile && pdfFile.path) {
+          const fullPath = pdfFile.path;
+          const uploadsToken = 'uploads';
+          const uploadsIndex = fullPath.indexOf(uploadsToken);
+
+          if (uploadsIndex !== -1) {
+            const relativePath = fullPath.substring(uploadsIndex);
+            const pdfUrlPath = `/${relativePath.replace(/\\/g, '/')}`;
+
+            // 2. Fetch PDF data as a blob
+            const pdfResponse = await axiosInstance.get(
+              pdfUrlPath,
+              { responseType: 'blob' } // Important
+            );
+            // 3. Create a blob URL
+            const pdfBlob = new Blob([pdfResponse.data], { type: 'application/pdf' });
+            const url = URL.createObjectURL(pdfBlob);
+            setPdfUrl(url);
+          } else {
+            setPdfError("Invalid PDF path received from server. 'uploads' directory not in path.");
+          }
+        } else {
+          setPdfError("Network design PDF not found. Please contact an administrator.");
+        }
+      } catch (error) {
+        console.error("Error fetching PDF:", error);
+        if (error.response?.status === 404) {
+          setPdfError("Network design PDF not found. Please contact an administrator.");
+        } else {
+          setPdfError('Failed to load the network design PDF.');
+        }
+      }
+    };
+
+    if (activity === 'network' && !pdfUrl) {
+      fetchPdf();
+    }
+
+    // Cleanup blob URL on component unmount
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [activity, pdfUrl]);
+
   // Start game handler
   const handleStartGame = () => {
     setIsLoading(true);
@@ -147,23 +164,10 @@ export default function RouteSeekers() {
     }, 1500);
   };
 
-  // Page navigation handlers
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
   // File upload handlers
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
-    if (file && (file.name.endsWith('.pkt') || file.name.endsWith('.zip'))) {
+    if (file && file.name.endsWith('.zip')) {
       setUploadedFile(file);
       setIsFileValid(true);
     } else {
@@ -172,12 +176,26 @@ export default function RouteSeekers() {
     }
   };
 
-  const handleSubmitPacketTracer = () => {
-    if (isFileValid) {
+  const handleNetworkDesignUpload = async () => {
+    if (!isFileValid || !uploadedFile) return;
+
+    const formData = new FormData();
+    formData.append('file', uploadedFile);
+
+    try {
+      await axiosInstance.post('/api/v1/route-seekers/upload-network-design', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       setNetworkCompleted(true);
       if (questionnaireCompleted) {
         setGameCompleted(true);
       }
+      setShowUploadModal(false);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      // You might want to show an error to the user here
     }
   };
 
@@ -225,14 +243,41 @@ export default function RouteSeekers() {
     return (timeRemaining / (45 * 60)) * 100;
   };
 
-  // Available resources for download
-  const resources = [
-    { name: "Network Topology Guide.pdf", size: "1.2 MB", url: "#" },
-    { name: "IP Address Scheme.xlsx", size: "0.5 MB", url: "#" },
-    { name: "Router Configuration Reference.pdf", size: "2.1 MB", url: "#" },
-    { name: "Packet Tracer Starter Template.pkt", size: "3.4 MB", url: "#" },
-    { name: "Network Requirements Document.pdf", size: "1.8 MB", url: "#" },
-  ];
+  const [resources, setResources] = useState([]);
+
+  useEffect(() => {
+    const fetchResources = async () => {
+      try {
+        const response = await axiosInstance.get('/api/v1/questions/route-seekers/resource-files');
+        setResources(response.data);
+      } catch (error) {
+        console.error("Error fetching resources:", error);
+      }
+    };
+
+    if (showResourcesModal) {
+      fetchResources();
+    }
+  }, [showResourcesModal]);
+
+  const handleDownload = async (fileId, filename) => {
+    try {
+      const response = await axiosInstance.get(
+        `/api/v1/questions/route-seekers/download-resource/${fileId}`,
+        { responseType: 'blob' }
+      );
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading file:", error);
+    }
+  };
 
   // Animation variants
   const containerVariants = {
@@ -254,55 +299,6 @@ export default function RouteSeekers() {
     }
   };
 
-  const iconVariants = {
-    hidden: { opacity: 0, y: -20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: 0.2,
-        duration: 0.4
-      }
-    }
-  };
-
-  const textVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: 0.4,
-        duration: 0.3
-      }
-    }
-  };
-
-  const buttonVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: 0.6,
-        duration: 0.3
-      }
-    },
-    hover: {
-      scale: 1.05,
-      boxShadow: "0px 0px 8px rgba(140, 20, 252, 0.6)",
-      transition: {
-        duration: 0.2
-      }
-    },
-    tap: {
-      scale: 0.98,
-      transition: {
-        duration: 0.1
-      }
-    }
-  };
-
   const pdfContainerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -310,25 +306,6 @@ export default function RouteSeekers() {
       y: 0,
       transition: {
         duration: 0.4
-      }
-    }
-  };
-
-  const uploadButtonVariants = {
-    hidden: { opacity: 0, scale: 0.9 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        delay: 0.5,
-        duration: 0.3
-      }
-    },
-    hover: {
-      scale: 1.05,
-      boxShadow: "0px 0px 10px rgba(140, 20, 252, 0.7)",
-      transition: {
-        duration: 0.2
       }
     }
   };
@@ -591,182 +568,13 @@ export default function RouteSeekers() {
                   </div>
                 )}
               </div>
-              <motion.div
-                className="w-[1029px] h-[566px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 relative"
-                variants={pdfContainerVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {/* Download Resources Button (positioned at the bottom left inside transparent box) */}
-                <div className="absolute bottom-6 left-6 z-10">
-                  <motion.button
-                    className="w-56 h-9 bg-sky-600 rounded-[3px] border border-slate-500/40 text-white font-medium flex items-center justify-center gap-1"
-                    whileHover={{ scale: 1.05, boxShadow: "0px 0px 8px rgba(14, 165, 233, 0.6)" }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setShowResourcesModal(true)}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download Resources
-                  </motion.button>
+              {pdfUrl ? (
+                <PdfViewer pdfUrl={pdfUrl} />
+              ) : (
+                <div className="flex items-center justify-center w-[1029px] h-[566px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px]">
+                  <p className="text-white">{pdfError || 'Loading Network Design...'}</p>
                 </div>
-
-                {/* PDF content area with fullscreen option */}
-                <div className="w-[973px] h-[466px] bg-zinc-300 rounded-md flex flex-col relative mb-4">
-                  {/* PDF Viewer Controls - Top right */}
-                  <div className="absolute top-2 right-2 flex space-x-2 z-10">
-                    <button
-                      className="bg-violet-800/80 hover:bg-violet-700 text-white px-3 py-1 rounded flex items-center text-sm"
-                      onClick={() => {
-                        // Open a new window/tab with the PDF viewer
-                        const pdfWindow = window.open('', '_blank');
-                        pdfWindow.document.write(`
-                      <html>
-                        <head>
-                          <title>Route Seekers - Network Challenge</title>
-                          <style>
-                            body { 
-                              margin: 0; 
-                              padding: 0; 
-                              background-color: #1e1e1e;
-                              color: white;
-                              font-family: Arial, sans-serif;
-                              overflow: hidden;
-                            }
-                            .pdf-container {
-                              display: flex;
-                              flex-direction: column;
-                              height: 100vh;
-                              padding: 16px;
-                            }
-                            .header {
-                              display: flex;
-                              justify-content: space-between;
-                              align-items: center;
-                              margin-bottom: 16px;
-                            }
-                            .pdf-content {
-                              background-color: #d4d4d8;
-                              border-radius: 8px;
-                              flex-grow: 1;
-                              display: flex;
-                              align-items: center;
-                              justify-content: center;
-                              margin-bottom: 16px;
-                            }
-                            .footer {
-                              display: flex;
-                              justify-content: center;
-                              align-items: center;
-                              gap: 24px;
-                            }
-                            .nav-button {
-                              background-color: #6d28d9;
-                              color: white;
-                              border: none;
-                              border-radius: 4px;
-                              padding: 8px 16px;
-                              cursor: pointer;
-                            }
-                            .nav-button:disabled {
-                              background-color: #71717a;
-                              cursor: not-allowed;
-                            }
-                            .nav-button:hover:not(:disabled) {
-                              background-color: #7c3aed;
-                            }
-                          </style>
-                        </head>
-                        <body>
-                          <div class="pdf-container">
-                            <div class="header">
-                              <h1>Route Seekers - Network Challenge</h1>
-                              <span>Page ${currentPage} of ${totalPages}</span>
-                            </div>
-                            <div class="pdf-content">
-                              <div class="text-center">
-                                <p style="font-size: 24px; color: #4b5563; font-weight: 600;">Network Topology Challenge</p>
-                                <p style="color: #6b7280;">Page ${currentPage} of ${totalPages}</p>
-                                <p style="font-size: 14px; color: #9ca3af; margin-top: 16px;">Network scenario and requirements would appear here</p>
-                              </div>
-                            </div>
-                            <div class="footer">
-                              <button class="nav-button" onclick="prevPage()" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
-                              <span>Page ${currentPage} of ${totalPages}</span>
-                              <button class="nav-button" onclick="nextPage()" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
-                            </div>
-                          </div>
-                          <script>
-                            function prevPage() {
-                              window.opener.postMessage({ action: 'prevPage' }, '*');
-                            }
-                            function nextPage() {
-                              window.opener.postMessage({ action: 'nextPage' }, '*');
-                            }
-                            // Listen for page updates from parent window
-                            window.addEventListener('message', (event) => {
-                              if (event.data.action === 'updatePage') {
-                                document.querySelectorAll('.footer span, .header span').forEach(el => {
-                                  el.textContent = 'Page ' + event.data.page + ' of ' + event.data.totalPages;
-                                });
-                              }
-                            });
-                          </script>
-                        </body>
-                      </html>
-                    `);
-                        pdfWindow.document.close();
-                      }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                      Open in New Tab
-                    </button>
-                    <button
-                      className="bg-violet-800/80 hover:bg-violet-700 text-white px-3 py-1 rounded flex items-center text-sm"
-                      onClick={() => setShowFullscreenPDF(true)}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
-                      </svg>
-                      Fullscreen
-                    </button>
-                  </div>
-                  <div className="flex-grow flex items-center justify-center">
-                    <div className="text-center">
-                      <p className="text-2xl text-gray-600 font-semibold">Network Topology Challenge</p>
-                      <p className="text-gray-500">Page ${currentPage} of ${totalPages}</p>
-                      <p className="text-sm text-gray-400 mt-4">Network scenario and requirements would appear here</p>
-                      {/* This would be an embedded PDF viewer in a real implementation */}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Page navigation controls */}
-                <div className="flex items-center justify-center space-x-6">
-                  <button
-                    className={`px-4 py-2 rounded-md ${currentPage === 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
-                    onClick={handlePreviousPage}
-                    disabled={currentPage === 1}
-                  >
-                    Back
-                  </button>
-
-                  <div className="text-white/80">
-                    Page ${currentPage} of ${totalPages}
-                  </div>
-
-                  <button
-                    className={`px-4 py-2 rounded-md ${currentPage === totalPages ? 'bg-gray-400 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                  </button>
-                </div>
-              </motion.div>
+              )}
             </>
           )}
 
@@ -865,10 +673,9 @@ export default function RouteSeekers() {
               exit="exit"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-2xl font-bold text-white mb-4">Upload Packet Tracer Solution</h3>
+              <h3 className="text-2xl font-bold text-white mb-4">Upload Network Design Solution</h3>
               <p className="text-white/70 mb-4">Please upload your solution:</p>
               <ul className="text-white/70 mb-6 list-disc list-inside space-y-1 text-sm">
-                <li>Upload a single .pkt file directly</li>
                 <li>For multiple files, create a .zip archive</li>
                 <li>Files with the same name will be overwritten</li>
               </ul>
@@ -878,7 +685,7 @@ export default function RouteSeekers() {
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileUpload}
-                  accept=".pkt,.zip"
+                  accept=".zip"
                   className="hidden"
                   id="file-upload"
                 />
@@ -890,7 +697,7 @@ export default function RouteSeekers() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                   <span className="text-sm text-violet-300">Click to select a file</span>
-                  <span className="text-xs text-violet-400/70 mt-1">(Packet Tracer .pkt or .zip files only)</span>
+                  <span className="text-xs text-violet-400/70 mt-1">(.zip files only)</span>
                 </label>
               </div>
 
@@ -903,7 +710,7 @@ export default function RouteSeekers() {
                     {uploadedFile.name}
                     {!isFileValid && (
                       <span className="ml-auto text-red-400 text-sm">
-                        Invalid file type (must be .pkt or .zip)
+                        Invalid file type (must be .zip)
                       </span>
                     )}
                   </p>
@@ -921,11 +728,7 @@ export default function RouteSeekers() {
                   className={`px-4 py-2 rounded ${isFileValid
                     ? 'bg-violet-700 text-white hover:bg-violet-600'
                     : 'bg-violet-900/40 text-white/50 cursor-not-allowed'} transition-colors`}
-                  onClick={() => {
-                    if (isFileValid) {
-                      setShowUploadModal(false);
-                    }
-                  }}
+                  onClick={handleNetworkDesignUpload}
                   disabled={!isFileValid}
                 >
                   Save File
@@ -958,24 +761,27 @@ export default function RouteSeekers() {
               <p className="text-white/70 mb-6">The following resources are available to help you complete this networking challenge:</p>
 
               <div className="mb-6 space-y-2">
-                {resources.map((resource, index) => (
-                  <div key={index} className="flex justify-between items-center p-3 bg-stone-800/50 rounded border border-stone-700/50 hover:bg-stone-700/50 transition-colors">
-                    <div className="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-violet-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <span className="text-white">{resource.name}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-white/50 text-sm mr-3">{resource.size}</span>
-                      <button className="p-1 bg-violet-700/50 hover:bg-violet-700 rounded transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                {resources.length > 0 ? (
+                  resources.map((resource) => (
+                    <div key={resource._id} className="flex justify-between items-center p-3 bg-stone-800/50 rounded border border-stone-700/50 hover:bg-stone-700/50 transition-colors">
+                      <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-violet-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                      </button>
+                        <span className="text-white">{resource.originalname}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <button onClick={() => handleDownload(resource._id, resource.originalname)} className="p-1 bg-violet-700/50 hover:bg-violet-700 rounded transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-white/70 text-center">No resources available for download.</p>
+                )}
               </div>
 
               <div className="flex justify-end">
@@ -987,62 +793,6 @@ export default function RouteSeekers() {
                 </button>
               </div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Fullscreen PDF Modal */}
-      <AnimatePresence>
-        {showFullscreenPDF && (
-          <motion.div
-            className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <div className="w-full flex justify-between items-center p-4 bg-gray-900/80 border-b border-gray-700">
-              <h2 className="text-xl font-semibold text-white">Route Seekers - Network Challenge</h2>
-              <button
-                className="text-white bg-gray-700 hover:bg-gray-600 p-2 rounded-full"
-                onClick={() => setShowFullscreenPDF(false)}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="flex-grow w-full overflow-auto p-8 flex items-center justify-center">
-              <div className="w-full max-w-5xl h-[80vh] bg-zinc-300 rounded-md flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-3xl text-gray-600 font-semibold">Network Topology Challenge (Fullscreen)</p>
-                  <p className="text-gray-500 text-xl">Page {currentPage} of {totalPages}</p>
-                  <p className="text-gray-400 mt-4">Network scenario and requirements would appear here</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="w-full flex justify-center space-x-8 p-4 bg-gray-900/80 border-t border-gray-700">
-              <button
-                className={`px-6 py-3 rounded-md ${currentPage === 1 ? 'bg-gray-600 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1}
-              >
-                Previous Page
-              </button>
-
-              <div className="text-white/80 flex items-center text-xl">
-                Page {currentPage} of {totalPages}
-              </div>
-
-              <button
-                className={`px-6 py-3 rounded-md ${currentPage === totalPages ? 'bg-gray-600 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-600'} text-white transition-colors`}
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-              >
-                Next Page
-              </button>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
