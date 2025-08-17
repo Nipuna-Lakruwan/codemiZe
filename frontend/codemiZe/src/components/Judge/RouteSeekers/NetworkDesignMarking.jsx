@@ -9,7 +9,8 @@ const NetworkDesignMarking = ({
   handleKeyDown,
   calculateTotal,
   setSelectedCard,
-  handleSubmitMarks
+  handleSubmitMarks,
+  hasSubmitted
 }) => (
   <div className="flex flex-col h-full relative w-full">
     <div className="absolute left-8 top-8">
@@ -102,7 +103,7 @@ const NetworkDesignMarking = ({
           className="px-4 py-2 bg-sky-600 text-white rounded-md text-sm font-medium"
           onClick={handleSubmitMarks}
         >
-          Submit All Marks
+          {hasSubmitted ? 'Update All Marks' : 'Submit All Marks'}
         </motion.button>
         <motion.button
           whileHover={{ scale: 1.05 }}
