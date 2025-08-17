@@ -1,24 +1,30 @@
 import RouteSeekersMarking from "../../models/markings/RouteSeekersNetworkDesignMarking.js";
 import School from "../../models/School.js";
+import RouteSeekersAnswer from "../../models/markings/RouteSeekersAnswer.js";
 
-const updateSchoolRouteSeekerScore = async (schoolId) => {
+const updateSchoolRouteSeekersTotalScore = async (schoolId) => {
   try {
-    const schoolMarkings = await RouteSeekersMarking.find({ schoolId: schoolId });
+    // 1. Get Quiz Score
+    const answerDoc = await RouteSeekersAnswer.findOne({ userId: schoolId });
+    const quizScore = answerDoc ? answerDoc.score : 0;
 
-    let averageScore = 0;
+    // 2. Get Average Design Score
+    const schoolMarkings = await RouteSeekersMarking.find({ schoolId: schoolId });
+    let averageDesignScore = 0;
     if (schoolMarkings.length > 0) {
       const judgeTotals = schoolMarkings.map((marking) =>
         marking.marks.reduce((total, m) => total + (m.mark || 0), 0)
       );
-      averageScore = judgeTotals.reduce((sum, total) => sum + total, 0) / judgeTotals.length;
+      averageDesignScore = judgeTotals.reduce((sum, total) => sum + total, 0) / judgeTotals.length;
     }
 
+    // 3. Calculate total and update school
+    const totalScore = quizScore + averageDesignScore;
     await School.findByIdAndUpdate(schoolId, {
-      $set: { "score.RouteSeekers": averageScore },
+      $set: { "score.RouteSeekers": totalScore },
     });
   } catch (error) {
-    console.error(`Failed to update score for school ${schoolId}:`, error);
-    // Depending on requirements, you might want to handle this error more gracefully
+    console.error(`Failed to update RouteSeekers total score for school ${schoolId}:`, error);
   }
 };
 
@@ -46,7 +52,7 @@ export const createMarking = async (req, res) => {
 
     const schoolIds = [...new Set(markings.map((m) => m.schoolId))];
     for (const schoolId of schoolIds) {
-      await updateSchoolRouteSeekerScore(schoolId);
+      await updateSchoolRouteSeekersTotalScore(schoolId);
     }
 
     res.status(201).json({ message: "Markings submitted successfully." });
@@ -99,7 +105,7 @@ export const updateMarking = async (req, res) => {
       return res.status(404).json({ message: "Marking not found" });
     }
     
-    await updateSchoolRouteSeekerScore(updatedMarking.schoolId);
+    await updateSchoolRouteSeekersTotalScore(updatedMarking.schoolId);
 
     res.status(200).json(updatedMarking);
   } catch (error) {
@@ -115,7 +121,7 @@ export const deleteMarking = async (req, res) => {
       return res.status(404).json({ message: "Marking not found" });
     }
     
-    await updateSchoolRouteSeekerScore(deletedMarking.schoolId);
+    await updateSchoolRouteSeekersTotalScore(deletedMarking.schoolId);
 
     res.status(200).json({ message: "Marking deleted successfully" });
   } catch (error) {
