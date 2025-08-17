@@ -10,6 +10,16 @@ const BattleBreakersTable = ({
   setShowQuestionText,
 }) => {
 
+  // Function to download the test.pdf file
+  const downloadQandA = () => {
+    const link = document.createElement('a');
+    link.href = '/pdf/sample.pdf';
+    link.download = 'BattleBreakers_Q&A.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Helper: get status for a school in a question from answer history
   const getCellStatus = (questionId, schoolId) => {
     const questionAnswers = answerHistory[questionId];
@@ -59,9 +69,32 @@ const BattleBreakersTable = ({
           <div className="flex gap-2 items-center">
             <button
               onClick={() => setShowQuestionText(!showQuestionText)}
-              className="px-3 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
+              className="px-3 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300 transition-colors duration-200"
             >
               {showQuestionText ? 'Hide Question Text' : 'Show Question Text'}
+            </button>
+          </div>
+
+          <div className="flex items-center">
+            <button 
+              onClick={downloadQandA}
+              className="px-4 py-2 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors duration-200 font-medium shadow-sm flex items-center gap-2"
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-4 w-4" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+                />
+              </svg>
+              Download Q & A
             </button>
           </div>
 
