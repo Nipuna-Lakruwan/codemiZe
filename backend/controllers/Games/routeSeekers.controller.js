@@ -228,17 +228,24 @@ export const downloadAllNetworkDesigns = async (req, res) => {
 
 export const downloadNetworkDesign = async (req, res) => {
     try {
-        const { id } = req.params;
-        const file = await StudentUpload.findById(id);
+        const { id } = req.params; // This is the school ID
+        const file = await StudentUpload.findOne({ userId: id, gameName: "RouteSeekers" });
 
         if (!file) {
-            return res.status(404).json({ message: "File not found" });
+            return res.status(404).json({ message: "No network design submission found for this school." });
+        }
+
+        if (!fs.existsSync(file.fileUrl)) {
+            console.error("File not found on disk:", file.fileUrl);
+            return res.status(404).json({ message: "File not found on server." });
         }
 
         res.download(file.fileUrl, file.originalName, (err) => {
             if (err) {
                 console.error("File download error:", err);
-                res.status(500).json({ message: "Error downloading the file" });
+                if (!res.headersSent) {
+                    res.status(500).json({ message: "Error downloading the file" });
+                }
             }
         });
     } catch (error) {

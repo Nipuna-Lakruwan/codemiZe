@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import axiosInstance from '../../../utils/axiosInstance';
 
 const NetworkDesignMarking = ({
   schools,
@@ -11,7 +12,50 @@ const NetworkDesignMarking = ({
   setSelectedCard,
   handleSubmitMarks,
   hasSubmitted
-}) => (
+}) => {
+  const handleDownload = async (schoolId, schoolName) => {
+    try {
+      const response = await axiosInstance.get(`/api/v1/route-seekers/network-designs/${schoolId}/download`, {
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = `${schoolName}-network-design.zip`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch && filenameMatch.length > 1) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      if (error.response && error.response.data) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const errorData = JSON.parse(reader.result);
+            alert(`Download failed: ${errorData.message}`);
+          } catch (e) {
+            alert('Download failed: An unknown error occurred.');
+          }
+        };
+        reader.readAsText(error.response.data);
+      } else {
+        alert('Download failed: Could not connect to the server.');
+      }
+    }
+  };
+
+  return (
   <div className="flex flex-col h-full relative w-full">
     <div className="absolute left-8 top-8">
       <div className="justify-start text-purple-900 text-4xl font-normal font-['Jersey_25']" style={{ fontFamily: 'Jersey_25' }}>
@@ -42,9 +86,13 @@ const NetworkDesignMarking = ({
                         <motion.button
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          className="mt-1 text-[10px] bg-sky-600 text-white px-2 py-1 rounded text-center"
+                          onClick={() => handleDownload(school._id, school.nameInShort)}
+                          disabled={!school.networkDesign}
+                          className={`mt-1 text-[10px] text-white px-2 py-1 rounded text-center ${
+                            !school.networkDesign ? 'bg-gray-400 cursor-not-allowed' : 'bg-sky-600'
+                          }`}
                         >
-                          Download
+                          {!school.networkDesign ? 'No File' : 'Download'}
                         </motion.button>
                       </div>
                     </th>
@@ -117,5 +165,6 @@ const NetworkDesignMarking = ({
     </div>
   </div>
 );
+};
 
 export default NetworkDesignMarking;
