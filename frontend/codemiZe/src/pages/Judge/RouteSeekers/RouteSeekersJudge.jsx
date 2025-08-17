@@ -170,7 +170,7 @@ const RouteSeekersJudge = () => {
     }));
 
     try {
-      await axiosInstance.post('/api/v1/judges/route-seekers-marking/submit-all', {
+      await axiosInstance.post('/api/v1/judge/route-seekers-network-design/', {
         judgeId,
         markings: markingsToSubmit,
       });
