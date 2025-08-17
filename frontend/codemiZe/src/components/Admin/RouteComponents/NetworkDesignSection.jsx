@@ -91,7 +91,7 @@ const NetworkDesignSection = ({
               whileTap={{ scale: 0.95 }}
               onClick={handleDownloadResources}
               className="w-32 h-8 bg-sky-600 rounded-[3px] text-white text-xs flex items-center justify-center"
-              disabled={resources === 0}
+              disabled={responses === 0}
             >
               Download Resources
             </motion.button>

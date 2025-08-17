@@ -287,9 +287,23 @@ export default function AdminRouteSeekers() {
     updateQuestionStatus(questionIndex, 'incorrect');
   };
 
-  const handleDownloadResources = () => {
-    showAlert('Resources are being downloaded', 'Download Started', 'info');
-    // Here you would implement the actual download logic
+  const handleDownloadResources = async () => {
+    try {
+      const response = await axiosInstance.get("/api/v1/route-seekers/download-all-network-designs", {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'routeSeekersNetworkDesigns.zip');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      showAlert('Resources are being downloaded', 'Download Started', 'info');
+    } catch (error) {
+      console.error("Error downloading resources", error);
+      showAlert(error.response?.data?.message || 'Failed to download resources.', 'Download Error', 'error');
+    }
   };
 
   // Time allocation functions
