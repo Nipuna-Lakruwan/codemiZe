@@ -12,7 +12,9 @@ import {
     downloadAllNetworkDesigns,
     downloadNetworkDesign,
     deleteAllQuestions,
-    checkNetworkDesignUpload
+    checkNetworkDesignUpload,
+    setTime,
+    getTime
 } from "../../controllers/Games/routeSeekers.controller.js";
 import { protect } from "../../middleware/authMiddleware.js";
 import { routeSeekersNetworkDesignUpload } from "../../middleware/uploadMiddleware.js";
@@ -22,6 +24,9 @@ const router = express.Router();
 router.get("/check-network-design", protect, checkNetworkDesignUpload);
 router.get("/questions", protect, getQuestions);
 router.delete("/questions", protect, deleteAllQuestions);
+// Allocate time (admin)
+router.post("/time", protect, setTime);
+router.get("/time", protect, getTime);
 router.post("/submit", protect, submitAnswers);
 router.post("/upload-network-design", protect, routeSeekersNetworkDesignUpload.single('file'), uploadNetworkDesign);
 router.get("/network-designs", protect, getAllNetworkDesigns);

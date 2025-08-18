@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from 'react';
+import React, { use, useEffect, useState, useRef } from 'react';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { motion } from 'framer-motion';
 import { FaUpload, FaFileAlt, FaDownload, FaFilePdf } from 'react-icons/fa';
@@ -6,8 +6,13 @@ import AdminBox from '../../../components/Admin/QuizComponents/AdminBox';
 import AlertModal from '../../../components/Admin/QuizComponents/AlertModal';
 import axiosInstance from '../../../utils/axiosInstance';
 import { API_PATHS } from '../../../utils/apiPaths';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function AdminCircuitSmashers() {
+  // Ref for the marking table to capture for PDF
+  const markingTableRef = useRef(null);
+  
   // Resources state
   const [selectedFile, setSelectedFile] = useState(null);
   const [resources, setResources] = useState(0); // Start with 0, will be fetched
@@ -38,9 +43,15 @@ export default function AdminCircuitSmashers() {
     const fetchAllocatedTime = async () => {
       try {
         const response = await axiosInstance.get(API_PATHS.CIRCUIT_SMASHERS.GET_TIME);
-        // Convert seconds to minutes for display
         const timeInMinutes = Math.round(response.data.allocateTime / 60);
-        setAllocatedTime(timeInMinutes);
+        const presetOptions = [15, 30, 45, 60, 90, 120];
+        if (presetOptions.includes(timeInMinutes)) {
+          setAllocatedTime(timeInMinutes);
+          setCustomTime("");
+        } else {
+          setAllocatedTime('custom');
+          setCustomTime(String(timeInMinutes));
+        }
       } catch (error) {
         console.error('Error fetching allocated time:', error);
       }
@@ -165,9 +176,233 @@ export default function AdminCircuitSmashers() {
     }
   };
 
-  const handleDownloadPDF = () => {
-    showAlert('Marking sheet is being downloaded as PDF', 'Download Started', 'info');
-    // Here you would implement the PDF generation and download logic
+  const handleDownloadPDF = async () => {
+    try {
+      showAlert('Generating PDF...', 'Download Started', 'info');
+      
+      // Create a temporary container for the PDF content
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.backgroundColor = 'white';
+      tempContainer.style.padding = '40px';
+      tempContainer.style.fontFamily = 'Arial, sans-serif';
+      tempContainer.style.width = '1200px';
+      
+      // Create PDF content
+      const currentDate = new Date().toLocaleDateString();
+      const currentTime = new Date().toLocaleTimeString();
+      
+      tempContainer.innerHTML = `
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #7c3aed; font-size: 28px; margin-bottom: 10px; font-weight: bold;">Circuit Smashers - Marking Sheet</h1>
+          <p style="color: #666; font-size: 14px; margin: 5px 0;">Judge: ${activeJudge}</p>
+          <p style="color: #666; font-size: 14px; margin: 5px 0;">Generated on: ${currentDate} at ${currentTime}</p>
+        </div>
+        
+        <div style="overflow: visible;">
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 12px;">
+            <thead>
+              <tr style="background-color: #f3f4f6;">
+                <th style="padding: 12px 8px; border: 2px solid #000; text-align: left; font-weight: bold; color: #7c3aed;">Criteria</th>
+                ${teams.map(team => `
+                  <th style="padding: 12px 8px; border: 2px solid #000; text-align: center; font-weight: bold; color: #7c3aed;">${team}</th>
+                `).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${criteria.map((criterion, index) => `
+                <tr style="${index === criteria.length - 1 ? 'background-color: #faf5ff;' : ''}">
+                  <td style="padding: 8px; border: 1px solid #000; text-align: left; font-weight: ${index === criteria.length - 1 ? 'bold' : 'normal'}; color: ${index === criteria.length - 1 ? '#7c3aed' : '#374151'};">${criterion}</td>
+                  ${teams.map(team => `
+                    <td style="padding: 8px; border: 1px solid #000; text-align: center; font-weight: ${index === criteria.length - 1 ? 'bold' : 'normal'}; color: ${index === criteria.length - 1 ? '#7c3aed' : '#374151'};">
+                      ${(() => {
+                        if (!markings) return "-";
+                        let judgeData = markings[activeJudge];
+                        
+                        if (!judgeData && Object.keys(markings).length === 1) {
+                          judgeData = markings[Object.keys(markings)[0]];
+                        }
+                        
+                        if (judgeData && judgeData[team] && judgeData[team][index] !== undefined) {
+                          return judgeData[team][index];
+                        }
+                        return "-";
+                      })()}
+                    </td>
+                  `).join('')}
+                </tr>
+              `).join('')}
+              <tr style="background-color: #e9d5ff; border-top: 2px solid #7c3aed;">
+                <td style="padding: 8px; border: 1px solid #000; text-align: left; font-weight: bold; color: #7c3aed;">Total</td>
+                ${teams.map(team => `
+                  <td style="padding: 8px; border: 1px solid #000; text-align: center; font-weight: bold; color: #7c3aed;">
+                    ${(() => {
+                      if (!markings) return "-";
+                      let judgeData = markings[activeJudge];
+                      
+                      if (!judgeData && Object.keys(markings).length === 1) {
+                        judgeData = markings[Object.keys(markings)[0]];
+                      }
+                      
+                      if (judgeData && judgeData[team]) {
+                        const totalIndex = judgeData[team].length - 1;
+                        return judgeData[team][totalIndex] || "-";
+                      }
+                      return "-";
+                    })()}
+                  </td>
+                `).join('')}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; font-size: 10px; color: #666; text-align: center;">
+          <p>This document was generated automatically by the CodemiZe Circuit Smashers admin panel.</p>
+        </div>
+      `;
+      
+      // Append to body temporarily
+      document.body.appendChild(tempContainer);
+      
+      // Generate PDF using html2canvas and jsPDF
+      const canvas = await html2canvas(tempContainer, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      // Remove temporary container
+      document.body.removeChild(tempContainer);
+      
+      // Create PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('l', 'mm', 'a4'); // landscape orientation
+      
+      // Calculate dimensions
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const imgY = 10;
+      
+      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      
+      // Generate filename with judge name and date
+      const filename = `CircuitSmashers_${activeJudge}_${currentDate.replace(/\//g, '-')}.pdf`;
+      
+      // Download the PDF
+      pdf.save(filename);
+      
+      showAlert('PDF downloaded successfully!', 'Download Complete', 'success');
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      showAlert('Failed to generate PDF. Please try again.', 'Download Error', 'error');
+    }
+  };
+
+  // Alternative simpler PDF download method
+  const handleDownloadSimplePDF = () => {
+    try {
+      showAlert('Generating simple PDF...', 'Download Started', 'info');
+      
+      const pdf = new jsPDF('l', 'mm', 'a4');
+      const currentDate = new Date().toLocaleDateString();
+      
+      // Add title
+      pdf.setFontSize(20);
+      pdf.setTextColor(124, 58, 237); // Purple color
+      pdf.text('Circuit Smashers - Marking Sheet', 20, 20);
+      
+      pdf.setFontSize(12);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`Judge: ${activeJudge}`, 20, 35);
+      pdf.text(`Generated on: ${currentDate}`, 20, 45);
+      
+      // Create table data
+      const headers = ['Criteria', ...teams];
+      const tableData = criteria.map((criterion, index) => {
+        const row = [criterion];
+        teams.forEach(team => {
+          if (markings) {
+            let judgeData = markings[activeJudge];
+            if (!judgeData && Object.keys(markings).length === 1) {
+              judgeData = markings[Object.keys(markings)[0]];
+            }
+            if (judgeData && judgeData[team] && judgeData[team][index] !== undefined) {
+              row.push(judgeData[team][index].toString());
+            } else {
+              row.push('-');
+            }
+          } else {
+            row.push('-');
+          }
+        });
+        return row;
+      });
+      
+      // Add total row
+      const totalRow = ['Total'];
+      teams.forEach(team => {
+        if (markings) {
+          let judgeData = markings[activeJudge];
+          if (!judgeData && Object.keys(markings).length === 1) {
+            judgeData = markings[Object.keys(markings)[0]];
+          }
+          if (judgeData && judgeData[team]) {
+            const totalIndex = judgeData[team].length - 1;
+            totalRow.push((judgeData[team][totalIndex] || '-').toString());
+          } else {
+            totalRow.push('-');
+          }
+        } else {
+          totalRow.push('-');
+        }
+      });
+      tableData.push(totalRow);
+      
+      // Add table using simple text positioning
+      let yPosition = 60;
+      const columnWidth = (pdf.internal.pageSize.getWidth() - 40) / headers.length;
+      
+      // Headers
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, 'bold');
+      headers.forEach((header, index) => {
+        pdf.text(header, 20 + (index * columnWidth), yPosition);
+      });
+      
+      yPosition += 10;
+      pdf.setFont(undefined, 'normal');
+      
+      // Data rows
+      tableData.forEach((row, rowIndex) => {
+        row.forEach((cell, cellIndex) => {
+          if (rowIndex === tableData.length - 1) {
+            pdf.setFont(undefined, 'bold'); // Bold for total row
+          } else {
+            pdf.setFont(undefined, 'normal');
+          }
+          pdf.text(cell.toString(), 20 + (cellIndex * columnWidth), yPosition);
+        });
+        yPosition += 8;
+      });
+      
+      const filename = `CircuitSmashers_${activeJudge}_${currentDate.replace(/\//g, '-')}_simple.pdf`;
+      pdf.save(filename);
+      
+      showAlert('Simple PDF downloaded successfully!', 'Download Complete', 'success');
+      
+    } catch (error) {
+      console.error('Error generating simple PDF:', error);
+      showAlert('Failed to generate simple PDF. Please try again.', 'Download Error', 'error');
+    }
   };
 
   const handleTimeChange = (e) => {
@@ -383,7 +618,7 @@ export default function AdminCircuitSmashers() {
           </div>
 
           {/* Marking Table */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" ref={markingTableRef}>
             <div className="p-1 border-4 border-black rounded-xl">
               <table className="min-w-full bg-white rounded-lg overflow-hidden">
                 <thead>

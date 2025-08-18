@@ -86,6 +86,10 @@ export const API_PATHS = {
     SET_TIME: "/api/v1/circuit-smashers/time",
     GET_TIME: "/api/v1/circuit-smashers/time",
   },
+  ROUTE_SEEKERS: {
+    SET_TIME: "/api/v1/route-seekers/time",
+    GET_TIME: "/api/v1/route-seekers/time",
+  },
   JUDGE: {
     SUBMIT_CODE_CRUSHERS_MARKS: "/api/v1/judge/code-crushers/",
     GET_CODE_CRUSHERS_MARKINGS: "/api/v1/judge/code-crushers/",

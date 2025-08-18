@@ -65,10 +65,10 @@ export default function BattleBreakers() {
       answer: ""
     }]);
 
-  // Timer state
-  const [timeRemaining, setTimeRemaining] = useState(30);
+  // Timer state (initialized to 0 until server provides allocated time)
+  const [timeRemaining, setTimeRemaining] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [allocatedTime, setAllocatedTime] = useState(30);
+  const [allocatedTime, setAllocatedTime] = useState(0);
 
   // Effect to check for saved question in local storage on component mount
   useEffect(() => {
@@ -571,40 +571,62 @@ export default function BattleBreakers() {
           <div className="h-6"></div>
 
           {/* Timer progress bar - smoother animation */}
-          <motion.div
-            className="mt-4 mb-2 w-[720px]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            <div className="w-full bg-gray-700/40 rounded-full h-3 shadow-inner border border-gray-700/20">
-              <motion.div
-                className={`${timeRemaining < 10 ? 'bg-gradient-to-r from-red-600 to-red-400' :
-                  timeRemaining < 20 ? 'bg-gradient-to-r from-amber-600 to-amber-400' :
-                    'bg-gradient-to-r from-violet-800 to-violet-600'
-                  } h-3 rounded-full shadow-[0_0_5px_rgba(140,20,252,0.5)]`}
-                initial={{ width: "100%" }}
-                animate={{ width: `${(timeRemaining / 30) * 100}%` }}
-                transition={{ duration: 0.3 }}
-              />
-            </div>
-          </motion.div>
+          {allocatedTime > 0 && (
+            <motion.div
+              className="mt-4 mb-2 w-[720px]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              {(() => {
+                // Dynamic thresholds based on allocated time
+                const lowThreshold = allocatedTime * 0.25; // 25%
+                const midThreshold = allocatedTime * 0.5;  // 50%
+                const isLow = timeRemaining <= lowThreshold;
+                const isMid = timeRemaining <= midThreshold && !isLow;
+                const barClass = isLow
+                  ? 'bg-gradient-to-r from-red-600 to-red-400'
+                  : isMid
+                    ? 'bg-gradient-to-r from-amber-600 to-amber-400'
+                    : 'bg-gradient-to-r from-violet-800 to-violet-600';
+                const percent = Math.max(0, Math.min(100, (timeRemaining / allocatedTime) * 100));
+                return (
+                  <div className="w-full bg-gray-700/40 rounded-full h-3 shadow-inner border border-gray-700/20">
+                    <motion.div
+                      className={`${barClass} h-3 rounded-full shadow-[0_0_5px_rgba(140,20,252,0.5)]`}
+                      initial={{ width: "100%" }}
+                      animate={{ width: `${percent}%` }}
+                      transition={{ duration: 0.25 }}
+                    />
+                  </div>
+                );
+              })()}
+            </motion.div>
+          )}
 
           {/* Time remaining display - enhanced styling */}
-          <div className="flex items-center text-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${timeRemaining < 5 ? 'text-red-400 animate-pulse' :
-              timeRemaining < 10 ? 'text-amber-300' :
-                'text-white/70'
-              } mr-1`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className={`font-mono font-medium ${timeRemaining < 5 ? 'text-red-400 animate-pulse' :
-              timeRemaining < 10 ? 'text-amber-300' :
-                'text-white/80'
-              }`}>
-              Time remaining: {timeRemaining}s
-            </span>
-          </div>
+          {allocatedTime > 0 && (
+            <div className="flex items-center text-sm">
+              {(() => {
+                const lowThreshold = allocatedTime * 0.25;
+                const midThreshold = allocatedTime * 0.5;
+                const isLow = timeRemaining <= lowThreshold;
+                const isMid = timeRemaining <= midThreshold && !isLow;
+                const colorClass = isLow ? 'text-red-400 animate-pulse' : isMid ? 'text-amber-300' : 'text-white/70';
+                const textColorClass = isLow ? 'text-red-400 animate-pulse' : isMid ? 'text-amber-300' : 'text-white/80';
+                return (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${colorClass} mr-1`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className={`font-mono font-medium ${textColorClass}`}>
+                      Time remaining: {timeRemaining}s
+                    </span>
+                  </>
+                );
+              })()}
+            </div>
+          )}
         </div>
       )}
     </GameLayout>

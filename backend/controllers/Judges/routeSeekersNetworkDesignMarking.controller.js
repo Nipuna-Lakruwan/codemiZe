@@ -19,7 +19,7 @@ const updateSchoolRouteSeekersTotalScore = async (schoolId) => {
     }
 
     // 3. Calculate total and update school
-    const totalScore = quizScore + (averageDesignScore / 2);
+    const totalScore = quizScore + (Math.ceil(averageDesignScore / 2));
     await School.findByIdAndUpdate(schoolId, {
       $set: { "score.RouteSeekers": totalScore },
     });

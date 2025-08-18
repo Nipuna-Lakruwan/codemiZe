@@ -45,7 +45,7 @@ export default function AdminLayout({ children }) {
         </div>
 
         {/* Navigation links */}
-        <nav className="flex-1 flex flex-col space-y-4 mt-4 overflow-y-auto">
+        <nav className="flex-1 flex flex-col space-y-4 mt-4 overflow-y-auto overflow-x-hidden">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -53,6 +53,7 @@ export default function AdminLayout({ children }) {
                 key={item.name}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                className="overflow-hidden"
               >
                 <NavLink
                   to={item.path}
@@ -78,30 +79,6 @@ export default function AdminLayout({ children }) {
           >
             Show Winners
           </motion.button>
-        </div>
-
-        {/* Dashboards Section */}
-        <div className="mt-5">
-          <div className="text-xs text-gray-500 mb-2 px-4">Presentation Dashboards:</div>
-          <div className="space-y-2">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => window.open('/timer-dashboard', '_blank')}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md shadow transition-colors duration-300 text-sm"
-            >
-              Timer Dashboard
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => window.open('/admin/dashboard/battle-breakers', '_blank')}
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 px-4 rounded-md shadow transition-colors duration-300 text-sm"
-            >
-              Buzzer Dashboard
-            </motion.button>
-          </div>
         </div>
 
         {/* Logout button */}

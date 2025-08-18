@@ -118,12 +118,14 @@ class CircuitSmashersHandler {
   }
 
   handleRequestCurrentState(socket) {
-    const currentRoundData = this.timer.getCurrentQuestionData();
+    const currentData = this.timer.getCurrentData();
     
     socket.emit("circuitSmashers-currentState", {
       isActive: this.timer.isTimerActive(),
-      isRoundActive: currentRoundData !== null,
-      currentData: currentRoundData
+      isRoundActive: currentData !== null,
+      timeRemaining: currentData ? currentData.timeRemaining : 0,
+      allocatedTime: currentData ? currentData.allocatedTime : 0,
+      currentData: currentData
     });
   }
 }

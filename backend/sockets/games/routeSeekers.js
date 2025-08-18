@@ -90,8 +90,24 @@ class RouteSeekersHandler {
       this.handleStartNavigation(data);
     });
 
+    socket.on("routeSeekers-startRound", (data) => {
+      this.handleStartNavigation(data);
+    });
+
     socket.on("routeSeekers-stopNavigation", () => {
       this.handleStopNavigation();
+    });
+
+    socket.on("routeSeekers-stopRound", () => {
+      this.handleStopNavigation();
+    });
+
+    socket.on("routeSeekers-pauseRound", () => {
+      this.handlePauseNavigation();
+    });
+
+    socket.on("routeSeekers-resumeRound", () => {
+      this.handleResumeNavigation();
     });
 
     socket.on("routeSeekers-requestProgress", () => {
@@ -151,6 +167,26 @@ class RouteSeekersHandler {
   }
 
   /**
+   * Handle pause navigation event
+   */
+  handlePauseNavigation() {
+    console.log('Route Seekers: Pausing current navigation');
+    this.timer.pauseTimer();
+    this.io.to(this.roomName).emit("routeSeekers-timerPaused");
+    this.io.to(this.roomName).emit("routeSeekers-roundPaused");
+  }
+
+  /**
+   * Handle resume navigation event
+   */
+  handleResumeNavigation() {
+    console.log('Route Seekers: Resuming current navigation');
+    this.timer.resumeTimer(this.roomName);
+    this.io.to(this.roomName).emit("routeSeekers-timerResumed");
+    this.io.to(this.roomName).emit("routeSeekers-roundResumed");
+  }
+
+  /**
    * Handle request progress event
    * @param {Object} socket - Individual socket connection
    */
@@ -179,12 +215,14 @@ class RouteSeekersHandler {
    * @param {Object} socket - Individual socket connection
    */
   handleRequestCurrentState(socket) {
-    const currentNavigationData = this.timer.getCurrentQuestionData();
+    const currentData = this.timer.getCurrentData();
     
     socket.emit("routeSeekers-currentState", {
       isActive: this.timer.isTimerActive(),
-      isNavigationActive: currentNavigationData !== null,
-      currentData: currentNavigationData
+      isRoundActive: currentData !== null,
+      timeRemaining: currentData ? currentData.timeRemaining : 0,
+      allocatedTime: currentData ? currentData.allocatedTime : 0,
+      currentData: currentData
     });
   }
 }
