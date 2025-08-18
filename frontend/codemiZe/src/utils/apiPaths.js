@@ -95,8 +95,10 @@ export const API_PATHS = {
     GET_CODE_CRUSHERS_MARKINGS: "/api/v1/judge/code-crushers/",
     SUBMIT_CIRCUIT_SMASHERS_MARKS_BULK: "/api/v1/judge/circuit-smashers/bulk",
     GET_CIRCUIT_SMASHERS_MARKINGS: "/api/v1/judge/circuit-smashers/",
-    SUBMIT_ROUTE_SEEKERS_MARKS: "/api/v1/judge/route-seekers/",
-    GET_ROUTE_SEEKERS_MARKINGS: "/api/v1/judge/route-seekers/",
+  SUBMIT_ROUTE_SEEKERS_MARKS: "/api/v1/judge/route-seekers/", // (legacy quiz part?)
+  GET_ROUTE_SEEKERS_MARKINGS: "/api/v1/judge/route-seekers/", // (legacy quiz part?)
+  SUBMIT_ROUTE_SEEKERS_NETWORK_DESIGN_MARKS: "/api/v1/judge/route-seekers-network-design/",
+  GET_ROUTE_SEEKERS_NETWORK_DESIGN_MARKINGS: "/api/v1/judge/route-seekers-network-design/",
     GET_QUIZ_HUNTERS_MARKINGS: "/api/v1/judge/quiz-hunters/",
   }
 };
