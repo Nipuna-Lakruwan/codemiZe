@@ -6,14 +6,15 @@ import AdminBox from '../../../components/Admin/QuizComponents/AdminBox';
 {/* Alert and Confirmation modals are now imported via ModalComponents */ }
 import { TeamQuestionsView, QuestionersResponsesSection, NetworkDesignSection, TeamsSection, ModalComponents } from '../../../components/Admin/RouteComponents';
 import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
 
 export default function AdminRouteSeekers() {
   // States for resources
   const [selectedFile, setSelectedFile] = useState(null);
   const [questionsCount, setQuestionsCount] = useState(0); // Renamed from questions to avoid conflict
-  const [resources, setResources] = useState(5); // Initial resources count
-  const [responses, setResponses] = useState(12); // Initial responses count
-  const [allocatedTime, setAllocatedTime] = useState(30); // Default 30 minutes
+  const [resources, setResources] = useState(0); // Will be fetched
+  const [responses, setResponses] = useState(0); // Will be derived from answers
+  const [allocatedTime, setAllocatedTime] = useState(30); // Minutes (default)
   const [customTime, setCustomTime] = useState("");
   const [activeTab, setActiveTab] = useState('Questioners');
 
@@ -42,10 +43,13 @@ export default function AdminRouteSeekers() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [schoolsRes, questionsRes, answersRes] = await Promise.all([
+        const [schoolsRes, questionsRes, answersRes, timeRes, resourceFilesRes, networkDesignsRes] = await Promise.all([
           axiosInstance.get('/api/v1/admin/schools'),
           axiosInstance.get('/api/v1/questions/route-seekers'),
-          axiosInstance.get('/api/v1/route-seekers/all-student-answers')
+          axiosInstance.get('/api/v1/route-seekers/all-student-answers'),
+          axiosInstance.get(API_PATHS.ROUTE_SEEKERS.GET_TIME),
+          axiosInstance.get('/api/v1/questions/route-seekers/resource-files'),
+          axiosInstance.get('/api/v1/route-seekers/network-designs')
         ]);
 
         const schoolsData = schoolsRes.data.schools;
@@ -59,6 +63,20 @@ export default function AdminRouteSeekers() {
         setSchools(schoolsWithSubmissions);
         setAllQuestions(questionsRes.data);
         setQuestionsCount(questionsRes.data.length);
+        setResponses(answersRes.data.length);
+        // timeRes.allocateTime is in seconds
+        if (timeRes?.data?.allocateTime) {
+          const fetchedMinutes = Math.round(timeRes.data.allocateTime / 60);
+          const presetOptions = [15, 30, 45, 60, 90, 120];
+          if (presetOptions.includes(fetchedMinutes)) {
+            setAllocatedTime(fetchedMinutes);
+            setCustomTime("");
+          } else {
+            setAllocatedTime('custom');
+            setCustomTime(String(fetchedMinutes));
+          }
+        }
+        setResources(resourceFilesRes.data.length + networkDesignsRes.data.length);
 
       } catch (error) {
         console.error("Error fetching data", error);
@@ -300,13 +318,19 @@ export default function AdminRouteSeekers() {
     setCustomTime(e.target.value);
   };
 
-  const handleConfirmTime = () => {
+  const handleConfirmTime = async () => {
     const timeToUse = allocatedTime === 'custom' ? parseInt(customTime) : allocatedTime;
     if (allocatedTime === 'custom' && (!customTime || isNaN(parseInt(customTime)))) {
       showAlert('Please enter a valid time in minutes', 'Time Allocation Error', 'error');
       return;
     }
-    showAlert(`Time allocated: ${timeToUse} minutes`, 'Time Allocation', 'success');
+    try {
+      await axiosInstance.post(API_PATHS.ROUTE_SEEKERS.SET_TIME, { allocateTime: timeToUse * 60 });
+      showAlert(`Time allocated: ${timeToUse} minutes`, 'Time Allocation', 'success');
+    } catch (error) {
+      console.error('Error setting time:', error);
+      showAlert(error.response?.data?.message || 'Failed to set allocated time', 'Time Allocation Error', 'error');
+    }
   };
 
   // Helper function for showing alerts

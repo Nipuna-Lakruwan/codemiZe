@@ -7,6 +7,7 @@ import archiver from "archiver";
 import { fileURLToPath } from 'url';
 import School from "../../models/School.js";
 import RouteSeekersNetworkDesignMarking from "../../models/markings/RouteSeekersNetworkDesignMarking.js";
+import Game from "../../models/Game.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -299,4 +300,53 @@ export const downloadNetworkDesign = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
+};
+
+// ================= Allocation Time (Admin) =================
+// Mirror implementation style of other games (e.g., Code Crushers)
+
+export const setTime = async (req, res) => {
+  const { allocateTime } = req.body; // time in seconds
+
+  if (!allocateTime || allocateTime <= 0) {
+    return res.status(400).json({ message: "Valid allocated time is required" });
+  }
+
+  try {
+    const updatedGame = await Game.findOneAndUpdate(
+      { name: "Route Seekers" },
+      { allocateTime: parseInt(allocateTime) },
+      { new: true, upsert: false }
+    );
+
+    if (!updatedGame) {
+      return res.status(404).json({ message: "Route Seekers game not found" });
+    }
+
+    res.status(200).json({
+      message: "Time allocated successfully",
+      game: updatedGame
+    });
+  } catch (error) {
+    console.error("Error setting allocated time (Route Seekers):", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const getTime = async (req, res) => {
+  try {
+    const game = await Game.findOne({ name: "Route Seekers" });
+
+    if (!game) {
+      return res.status(404).json({ message: "Route Seekers game not found" });
+    }
+
+    res.status(200).json({
+      message: "Allocated time retrieved successfully",
+      allocateTime: game.allocateTime
+    });
+  } catch (error) {
+    console.error("Error retrieving allocated time (Route Seekers):", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
