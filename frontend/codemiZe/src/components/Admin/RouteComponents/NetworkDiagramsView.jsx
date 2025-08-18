@@ -1,67 +1,94 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { FaFilePdf } from 'react-icons/fa';
 
-const NetworkDiagramsView = ({ teams }) => {
+const NetworkDiagramsView = ({ teams, judges: rawJudges, criteria: rawCriteria, networkMarkings }) => {
   const [activeJudge, setActiveJudge] = useState('Overall Score');
 
-  // List of judges - can be updated as needed
-  const judges = ['Overall Score', 'Judge 1', 'Judge 2', 'Judge 3'];
+  const { judges, criteria, processedMarkings } = useMemo(() => {
+    if (!rawJudges || !rawCriteria || !networkMarkings || !teams) {
+      return { judges: [], criteria: [], processedMarkings: {} };
+    }
 
-  // Criteria for network diagrams
-  const criteria = [
-    'Network Design', 'Router Configuration', 'Network Security', 'IP Addressing',
-    'Protocol Implementation', 'Documentation', 'Total'
-  ];
+    const criteriaWithTotal = [...rawCriteria, { _id: 'total', criteria: 'Total' }];
+    const judgesWithOverall = [{ _id: 'Overall Score', name: 'Overall Score' }, ...rawJudges];
 
-  // Sample marking data - would be replaced with real data from backend
-  const markings = {
-    'Overall Score': {},
-    'Judge 1': {},
-    'Judge 2': {},
-    'Judge 3': {}
-  };
+    const markingsData = {};
 
-  // Generate random scores for demo purposes
-  teams.forEach(team => {
-    const teamName = team.name;
-    judges.forEach(judge => {
-      // Generate 6 random scores between 6 and 10, plus a total
-      const scores = Array(6).fill().map(() => Math.floor(Math.random() * 5) + 6);
-      const total = scores.reduce((sum, score) => sum + score, 0);
-      markings[judge][teamName] = [...scores, total];
+    // Initialize structure for each judge
+    judgesWithOverall.forEach(judge => {
+      markingsData[judge._id] = {};
+      teams.forEach(team => {
+        markingsData[judge._id][team._id] = {};
+        criteriaWithTotal.forEach(c => {
+          markingsData[judge._id][team._id][c._id] = 0;
+        });
+      });
     });
-  });
 
-  const handleJudgeChange = (judgeName) => {
-    setActiveJudge(judgeName);
+    // Populate with actual marks from judges
+    networkMarkings.forEach(marking => {
+      const judgeId = marking.judgeId;
+      const schoolId = marking.schoolId;
+
+      if (markingsData[judgeId] && markingsData[judgeId][schoolId]) {
+        let total = 0;
+        marking.marks.forEach(m => {
+          markingsData[judgeId][schoolId][m.criteriaId] = m.mark;
+          total += m.mark;
+        });
+        markingsData[judgeId][schoolId]['total'] = total;
+      }
+    });
+
+    // Calculate Overall Score
+    teams.forEach(team => {
+      let overallTotalForTeam = 0;
+      rawCriteria.forEach(criterion => {
+        const marksForCriterion = rawJudges
+          .map(judge => markingsData[judge._id]?.[team._id]?.[criterion._id])
+          .filter(mark => typeof mark === 'number');
+        
+        const avgMark = marksForCriterion.length > 0
+          ? Math.round(marksForCriterion.reduce((a, b) => a + b, 0) / marksForCriterion.length)
+          : 0;
+        
+        markingsData['Overall Score'][team._id][criterion._id] = avgMark;
+        overallTotalForTeam += avgMark;
+      });
+      markingsData['Overall Score'][team._id]['total'] = overallTotalForTeam;
+    });
+
+    return {
+      judges: judgesWithOverall,
+      criteria: criteriaWithTotal,
+      processedMarkings: markingsData,
+    };
+  }, [teams, rawJudges, rawCriteria, networkMarkings]);
+
+  const handleJudgeChange = (judgeId) => {
+    setActiveJudge(judgeId);
   };
 
   const handleDownloadPDF = () => {
-    // PDF download functionality would be implemented here
     console.log('Downloading PDF of Network Diagrams marking sheet');
-    // Alert could be shown through parent component if needed
   };
-
-  // Judges list already declared above
 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-6">
-        {/* Tab Rectangle */}
-        <div className="w-[604px] h-10 bg-white rounded-[3px] border border-black/20 flex items-center">
+        <div className="w-auto max-w-[800px] h-10 bg-white rounded-[3px] border border-black/20 flex items-center">
           {judges.map(judge => (
             <div
-              key={judge}
-              className={`flex-1 h-full flex items-center justify-center cursor-pointer ${activeJudge === judge ? 'bg-sky-600 text-white' : 'text-gray-700'}`}
-              onClick={() => handleJudgeChange(judge)}
+              key={judge._id}
+              className={`flex-1 h-full flex items-center justify-center cursor-pointer px-4 ${activeJudge === judge._id ? 'bg-sky-600 text-white' : 'text-gray-700'}`}
+              onClick={() => handleJudgeChange(judge._id)}
             >
-              <span className="text-xs font-medium">{judge}</span>
+              <span className="text-xs font-medium whitespace-nowrap">{judge.name}</span>
             </div>
           ))}
         </div>
 
-        {/* Download PDF button */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -73,7 +100,6 @@ const NetworkDiagramsView = ({ teams }) => {
         </motion.button>
       </div>
 
-      {/* Marking Table */}
       <div className="overflow-x-auto">
         <div className="p-1 border-4 border-black rounded-xl">
           <table className="min-w-full bg-white rounded-lg overflow-hidden">
@@ -81,7 +107,7 @@ const NetworkDiagramsView = ({ teams }) => {
               <tr className="bg-gray-100">
                 <th className="py-3 px-4 border-b border-r text-left text-sm font-medium text-purple-800">Criteria</th>
                 {teams.map((team) => (
-                  <th key={team.id} className="py-3 px-4 border-b border-r text-center text-sm font-medium text-purple-800">
+                  <th key={team._id} className="py-3 px-4 border-b border-r text-center text-sm font-medium text-purple-800">
                     {team.name}
                   </th>
                 ))}
@@ -89,13 +115,13 @@ const NetworkDiagramsView = ({ teams }) => {
             </thead>
             <tbody>
               {criteria.map((criterion, index) => (
-                <tr key={criterion} className={index === criteria.length - 1 ? "bg-purple-50" : ""}>
+                <tr key={criterion._id} className={index === criteria.length - 1 ? "bg-purple-50" : ""}>
                   <td className={`py-2 px-4 border-b border-r text-left text-sm font-medium ${index === criteria.length - 1 ? "text-purple-800" : "text-gray-700"}`}>
-                    {criterion}
+                    {criterion.criteria}
                   </td>
                   {teams.map((team) => (
-                    <td key={`${team.id}-${criterion}`} className={`py-2 px-4 border-b border-r text-center text-sm ${index === criteria.length - 1 ? "font-bold text-purple-800" : "text-gray-700"}`}>
-                      {markings[activeJudge][team.name]?.[index] || '-'}
+                    <td key={`${team._id}-${criterion._id}`} className={`py-2 px-4 border-b border-r text-center text-sm ${index === criteria.length - 1 ? "font-bold text-purple-800" : "text-gray-700"}`}>
+                      {processedMarkings[activeJudge]?.[team._id]?.[criterion._id] ?? '-'}
                     </td>
                   ))}
                 </tr>

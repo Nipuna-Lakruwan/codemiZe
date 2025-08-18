@@ -25,6 +25,9 @@ export default function AdminRouteSeekers() {
   // Data states
   const [schools, setSchools] = useState([]);
   const [allQuestions, setAllQuestions] = useState([]);
+  const [judges, setJudges] = useState([]);
+  const [criteria, setCriteria] = useState([]);
+  const [networkMarkings, setNetworkMarkings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Modal states
@@ -42,10 +45,13 @@ export default function AdminRouteSeekers() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [schoolsRes, questionsRes, answersRes] = await Promise.all([
+        const [schoolsRes, questionsRes, answersRes, judgesRes, criteriaRes, markingsRes] = await Promise.all([
           axiosInstance.get('/api/v1/admin/schools'),
           axiosInstance.get('/api/v1/questions/route-seekers'),
-          axiosInstance.get('/api/v1/route-seekers/all-student-answers')
+          axiosInstance.get('/api/v1/route-seekers/all-student-answers'),
+          axiosInstance.get('/api/v1/admin/judges'),
+          axiosInstance.get('/api/v1/criteria/routeSeekers'),
+          axiosInstance.get('/api/v1/judge/route-seekers-network-design/')
         ]);
 
         const schoolsData = schoolsRes.data.schools;
@@ -59,6 +65,9 @@ export default function AdminRouteSeekers() {
         setSchools(schoolsWithSubmissions);
         setAllQuestions(questionsRes.data);
         setQuestionsCount(questionsRes.data.length);
+        setJudges(judgesRes.data.judges);
+        setCriteria(criteriaRes.data.data);
+        setNetworkMarkings(markingsRes.data);
 
       } catch (error) {
         console.error("Error fetching data", error);
@@ -533,6 +542,9 @@ export default function AdminRouteSeekers() {
           handleBackToTeams={handleBackToTeams}
           handleMarkCorrect={handleMarkCorrect}
           handleMarkIncorrect={handleMarkIncorrect}
+          judges={judges}
+          criteria={criteria}
+          networkMarkings={networkMarkings}
         />
 
         {/* Modals */}
