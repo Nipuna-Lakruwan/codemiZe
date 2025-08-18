@@ -427,7 +427,7 @@ export default function AdminRouteSeekers() {
               {/* Upload Resource File Section */}
               <div className="mt-3">
                 <div className="flex items-center">
-                  <div className="justify-start text-black/60 text-xs font-medium font-['Inter']">Upload Resource File</div>
+                  <div className="justify-start text-black/60 text-xs font-medium font-['Inter']">Upload Network Design</div>
                   <div className="ml-2">
                     <input
                       type="file"
