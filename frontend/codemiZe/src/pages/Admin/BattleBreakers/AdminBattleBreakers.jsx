@@ -14,7 +14,7 @@ export default function AdminBattleBreakers() {
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isQuestionActive, setIsQuestionActive] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(30);
+  const [timeRemaining, setTimeRemaining] = useState(20);
   const [schools, setSchools] = useState([]);
   const [showAddQuestionModal, setShowAddQuestionModal] = useState(false);
   const [questionText, setQuestionText] = useState('');
@@ -46,6 +46,7 @@ export default function AdminBattleBreakers() {
 
       const time = await axiosInstance.get(API_PATHS.BATTLE_BREAKERS.GET_ALLOCATED_TIME);
       setAllocatedTime(time.data.allocatedTime || 20);
+      setTimeRemaining(time.data.allocatedTime || 20);
     };
     fetchQuestions();
   }, []);
