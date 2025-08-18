@@ -57,21 +57,21 @@ const createUploadMiddleware = (options = {}) => {
 const avatarUpload = createUploadMiddleware({
   destination: 'avatars',
   allowedMimeTypes: ['image/jpeg', 'image/jpg', 'image/png'],
-  maxFileSize: 5 * 1024 * 1024 // 5MB
+  maxFileSize: 20 * 1024 * 1024 // 20MB
 });
 
 // Pre-configured upload middleware for slides
 const slidesUpload = createUploadMiddleware({
   destination: 'slides',
   allowedMimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'text/plain'],
-  maxFileSize: 10 * 1024 * 1024 // 10MB
+  maxFileSize: 50 * 1024 * 1024 // 50MB
 });
 
 // Pre-configured upload middleware for documents
 const CSVUpload = createUploadMiddleware({
   destination: 'csv',
   allowedMimeTypes: ['text/csv', 'application/vnd.ms-excel', 'application/csv'],
-  maxFileSize: 5 * 1024 * 1024 // 5MB
+  maxFileSize: 15 * 1024 * 1024 // 15MB
 });
 
 // Pre-configured upload middleware for documents
@@ -98,20 +98,20 @@ const resourceUpload = createUploadMiddleware({
     '.txt',     // Text files
     '.zip'      // Zip archives for multiple files
   ],
-  maxFileSize: 50 * 1024 * 1024 // 50MB (increased for larger project files)
+  maxFileSize: 150 * 1024 * 1024 // 150MB (increased for larger project files)
 });
 
 const routeSeekersNetworkDesignUpload = createUploadMiddleware({
   destination: 'resources/routeSeekersNetworkDesign',
   allowedMimeTypes: ['application/zip'],
-  maxFileSize: 10 * 1024 * 1024 // 10MB
+  maxFileSize: 30 * 1024 * 1024 // 30MB
 });
 
 // Pre-configured upload middleware for general files
 const generalUpload = createUploadMiddleware({
   destination: 'general',
   allowedMimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-  maxFileSize: 10 * 1024 * 1024 // 10MB
+  maxFileSize: 30 * 1024 * 1024 // 30MB
 });
 
 export { createUploadMiddleware, avatarUpload, slidesUpload, generalUpload, CSVUpload, resourceUpload, routeSeekersNetworkDesignUpload };

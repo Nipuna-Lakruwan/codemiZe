@@ -206,8 +206,9 @@ export default function UserManagement() {
           },
         });
         
+        // Ensure newly added school uses _id to match existing data shape (components reference school._id)
         setSchools([...schools, {
-          id: response.data.id,
+          _id: response.data.id,
           ...newSchool,
           avatar: response.data.school?.avatar || { url: '/c-logo.png' }
         }]);
@@ -284,8 +285,9 @@ export default function UserManagement() {
           },
         });
         
+        // Use _id for consistency with fetched judges (judgesSection expects judge._id)
         setJudges([...judges, {
-          id: response.data.id,
+          _id: response.data.id,
           ...newJudge,
           avatar: response.data.user?.avatar || { url: '/c-logo.png' }
         }]);
@@ -362,8 +364,9 @@ export default function UserManagement() {
           },
         });
         
+        // Use _id for consistency with fetched users (UsersSection expects user._id)
         setUsers([...users, {
-          id: response.data.id,
+          _id: response.data.id,
           ...newUser,
           avatar: response.data.user?.avatar || { url: '/c-logo.png' }
         }]);
