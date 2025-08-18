@@ -47,16 +47,24 @@ export const editSchool = async (req, res) => {
   const { name, email, city, nameInShort, password } = req.body;
 
   try {
-    // Find the existing school first
     const existingSchool = await School.findById(id);
     if (!existingSchool) {
       return res.status(404).json({ message: "School not found" });
     }
 
-    // Handle avatar upload
-    let avatarData = existingSchool.avatar; // Keep existing avatar by default
+    // Update primitive fields only if provided (allow partial updates)
+    if (typeof name !== 'undefined') existingSchool.name = name;
+    if (typeof email !== 'undefined') existingSchool.email = email;
+    if (typeof city !== 'undefined') existingSchool.city = city;
+    if (typeof nameInShort !== 'undefined') existingSchool.nameInShort = nameInShort;
+
+    // If a new password is provided, assign it so pre('save') hook will hash it
+    if (password) {
+      existingSchool.password = password; // Will be hashed by pre-save hook
+    }
+
+    // Avatar handling
     if (req.file) {
-      // Delete old avatar if it exists and is not the default
       if (existingSchool.avatar && existingSchool.avatar.publicId && existingSchool.avatar.publicId !== 'default') {
         try {
           await deleteFromLocal(existingSchool.avatar.publicId, 'avatars');
@@ -64,33 +72,21 @@ export const editSchool = async (req, res) => {
           console.log('Error deleting old avatar:', error.message);
         }
       }
-      
-      // Set new avatar data
-      avatarData = {
+      existingSchool.avatar = {
         url: `/uploads/avatars/${req.file.filename}`,
         publicId: req.file.filename
       };
     }
 
-    // Prepare update data
-    const updateData = {
-      name,
-      email,
-      city,
-      nameInShort,
-      avatar: avatarData,
-      ...(password && { password }) // Only include password if provided
-    };
+    await existingSchool.save(); // triggers hashing if password changed
 
-    const updatedSchool = await School.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    ).select("-password -__v");
+    const sanitized = existingSchool.toObject();
+    delete sanitized.password;
+    delete sanitized.__v;
 
     res.status(200).json({
       message: "School updated successfully",
-      school: updatedSchool
+      school: sanitized
     });
   } catch (err) {
     res.status(500).json({ message: "Error updating school", error: err.message });
@@ -100,18 +96,21 @@ export const editSchool = async (req, res) => {
 export const editUser = async (req, res) => {
   const { id } = req.params;
   const { name, email, role, password } = req.body;
-  
+
   try {
-    // Find the existing user first
     const existingUser = await User.findById(id);
     if (!existingUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Handle avatar upload
-    let avatarData = existingUser.avatar; // Keep existing avatar by default
+    if (typeof name !== 'undefined') existingUser.name = name;
+    if (typeof email !== 'undefined') existingUser.email = email;
+    if (typeof role !== 'undefined') existingUser.role = role;
+    if (password) {
+      existingUser.password = password; // Will be hashed by pre-save hook
+    }
+
     if (req.file) {
-      // Delete old avatar if it exists and is not the default
       if (existingUser.avatar && existingUser.avatar.publicId && existingUser.avatar.publicId !== 'default') {
         try {
           await deleteFromLocal(existingUser.avatar.publicId, 'avatars');
@@ -119,32 +118,21 @@ export const editUser = async (req, res) => {
           console.log('Error deleting old avatar:', error.message);
         }
       }
-      
-      // Set new avatar data
-      avatarData = {
+      existingUser.avatar = {
         url: `/uploads/avatars/${req.file.filename}`,
         publicId: req.file.filename
       };
     }
 
-    // Prepare update data
-    const updateData = {
-      name,
-      email,
-      role,
-      avatar: avatarData,
-      ...(password && { password }) // Only include password if provided
-    };
+    await existingUser.save();
 
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    ).select("-password -__v");
+    const sanitized = existingUser.toObject();
+    delete sanitized.password;
+    delete sanitized.__v;
 
     res.status(200).json({
       message: "User updated successfully",
-      user: updatedUser
+      user: sanitized
     });
   } catch (err) {
     res.status(500).json({ message: "Error updating user", error: err.message });
