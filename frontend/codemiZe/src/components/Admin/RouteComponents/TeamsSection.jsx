@@ -49,9 +49,9 @@ const TeamsSection = ({ teams, activeTab, setActiveTab, handleViewTeam, viewingT
         {/* Render different views based on activeTab */}
         {activeTab === 'Questioners' && (
           <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar">
-            {teams.map(team => (
+      {teams.map(team => (
               <div
-                key={team.id}
+        key={team._id || team.id || team.name}
                 className="w-[860px] h-16 bg-white rounded-md shadow-[3px_6px_14.2px_-2px_rgba(0,0,0,0.25)] border-l-[15px] border-sky-400 mx-auto flex items-center"
               >
                 {/* Team Logo */}

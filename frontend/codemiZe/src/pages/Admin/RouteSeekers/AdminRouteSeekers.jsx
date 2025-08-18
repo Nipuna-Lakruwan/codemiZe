@@ -38,6 +38,8 @@ export default function AdminRouteSeekers() {
   const [showDeleteQuestionsModal, setShowDeleteQuestionsModal] = useState(false);
   const [showDeleteResourcesModal, setShowDeleteResourcesModal] = useState(false);
   const [showDeleteNetworkResourceModal, setShowDeleteNetworkResourceModal] = useState(false);
+  const [showQuestionsModal, setShowQuestionsModal] = useState(false); // New modal for viewing questionnaire
+  const [questionSearch, setQuestionSearch] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -224,8 +226,7 @@ export default function AdminRouteSeekers() {
 
   // View functions
   const handleViewQuestions = () => {
-    showAlert('Viewing all questions', 'Questions View', 'info');
-    // In a real implementation, this would open a modal to display `allQuestions`
+  setShowQuestionsModal(true);
   };
 
   const handleViewTeam = (team) => {
@@ -299,8 +300,44 @@ export default function AdminRouteSeekers() {
   };
 
   const handleDownloadResources = () => {
-    showAlert('Resources are being downloaded', 'Download Started', 'info');
-    // Here you would implement the actual download logic
+    // Prevent attempt if no student-uploaded resources
+    if (resources === 0) {
+      showAlert('There are no student uploads to download.', 'No Resources', 'info');
+      return;
+    }
+
+    showAlert('Preparing all student uploads (network designs) for download...', 'Download Starting', 'info');
+
+    // Download ALL Route Seekers network design submissions (zip of uploads)
+    // Backend endpoint: GET /api/v1/route-seekers/download-all-network-designs
+    axiosInstance.get('/api/v1/route-seekers/download-all-network-designs', { responseType: 'blob' })
+      .then(response => {
+        try {
+          const disposition = response.headers['content-disposition'];
+          let filename = 'routeSeekersNetworkDesigns.zip';
+          if (disposition) {
+            const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+            if (match && match[1]) filename = match[1].replace(/^"|"$/g, '');
+          }
+          const blob = new Blob([response.data]);
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+          showAlert('All student network design uploads downloaded successfully.', 'Download Complete', 'success');
+        } catch (err) {
+          console.error('Download handling error:', err);
+          showAlert('Failed to process downloaded archive.', 'Download Error', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error downloading all network designs:', error);
+        showAlert(error.response?.data?.message || 'Failed to download student uploads.', 'Download Error', 'error');
+      });
   };
 
   // Time allocation functions
@@ -551,6 +588,12 @@ export default function AdminRouteSeekers() {
           confirmDeleteNetworkResources={confirmDeleteNetworkResources}
           alertModal={alertModal}
           closeAlert={closeAlert}
+          // Questionnaire modal props
+          showQuestionsModal={showQuestionsModal}
+          setShowQuestionsModal={setShowQuestionsModal}
+          questions={allQuestions}
+          questionSearch={questionSearch}
+          setQuestionSearch={setQuestionSearch}
         />
 
         {/* Custom scrollbar styles */}
