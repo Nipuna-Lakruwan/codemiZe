@@ -215,8 +215,8 @@ export default function Winners() {
                   </motion.div>
                 </div>
 
-                {/* Team name below the stage */}
-                <h3 className="text-white text-2xl font-bold bg-purple-900 bg-opacity-50 px-6 py-2 rounded-lg">
+                {/* Team/School name - moved slightly upward */}
+                <h3 className="-mt-8 text-white text-2xl font-bold bg-purple-900 bg-opacity-50 px-6 py-2 rounded-lg">
                   {winner.name}
                 </h3>
               </div>
