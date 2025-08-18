@@ -48,7 +48,7 @@ export default function ActiveGameScreen({
       <div className="absolute bottom-8 left-8 z-10">
         <GameNodeMini
           title="Code Crushers"
-          icon="/code crushers logo 1.png"
+          icon="/CODE CRUSHERS.png"
         />
       </div>
 

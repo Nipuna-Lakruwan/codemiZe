@@ -29,7 +29,7 @@ export default function ActiveGameScreen({
         {/* Game logo */}
         <div className="flex items-center mb-4 sm:mb-0">
           <img
-            src="/Battle breakers logo 1.png"
+            src="/Battle Breakers.png"
             alt="Battle Breakers"
             className="w-16 h-16 object-contain mr-3"
           />

@@ -81,7 +81,7 @@ export default function StartScreen({ handleStartGame, isLoading }) {
       >
         {/* Game Icon - responsive sizing */}
         <motion.img
-          src="/code crushers logo 1.png"
+          src="/CODE CRUSHERS.png"
           alt="Code Crushers"
           className="w-[40%] sm:w-[45%] md:w-[50%] lg:w-[55%] aspect-square object-contain mb-4 sm:mb-6"
           variants={iconVariants}

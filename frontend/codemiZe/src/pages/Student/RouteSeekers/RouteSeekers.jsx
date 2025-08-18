@@ -479,7 +479,7 @@ export default function RouteSeekers() {
       {!isGameStarted ? (
         <StartGameComponent
           title="Route Seekers"
-          iconSrc="/circuit samshers logo 1.png"
+          iconSrc="/Route Seekers.png"
           iconAlt="Route Seekers"
           onStart={handleStartGame}
           isLoading={isLoading}
@@ -508,7 +508,7 @@ export default function RouteSeekers() {
           <div className="w-150 h-[600px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 relative">
             {/* Game icon */}
             <motion.img
-              src="/circuit samshers logo 1.png"
+              src="/Route Seekers.png"
               alt="Route Seekers"
               className="w-96 h-56 object-contain mb-4"
               initial={{ scale: 0 }}

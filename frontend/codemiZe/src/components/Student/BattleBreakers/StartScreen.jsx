@@ -70,7 +70,7 @@ export default function StartScreen({ handleStartGame, isLoading }) {
       >
         {/* Game Icon - responsive sizing */}
         <motion.img
-          src="/Battle breakers logo 1.png"
+          src="/Battle Breakers.png"
           alt="Battle Breakers"
           className="w-[40%] sm:w-[45%] md:w-[50%] lg:w-[55%] aspect-square object-contain mb-4 sm:mb-6"
           initial={{ opacity: 0, y: -20 }}

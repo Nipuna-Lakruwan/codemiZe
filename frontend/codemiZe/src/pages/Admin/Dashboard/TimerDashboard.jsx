@@ -176,8 +176,8 @@ const TimerDisplay = ({ timeRemaining, totalTime, gameName }) => {
   );
 };
 
-// Removed mock timer – server authoritative updates are used instead
 
+// Removed mock timer – server authoritative updates are used instead
 
 export default function TimerDashboard() {
   // Animation variants for staggered animations
@@ -193,6 +193,7 @@ export default function TimerDashboard() {
   };
 
   const socket = useContext(SocketContext);
+
   const [activeGame, setActiveGame] = useState(null);
   const { playSound } = useSound({ enabled: true });
   // Central timer state (server authoritative)
@@ -210,7 +211,7 @@ export default function TimerDashboard() {
     },
     'codeCrushers': {
       name: 'Code Crushers',
-      logo: '/code crushers logo 1.png',
+      logo: '/CODE CRUSHERS.png',
       description: 'Coding and algorithm competition'
     },
     'routeSeekers': {
