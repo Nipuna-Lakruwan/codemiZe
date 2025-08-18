@@ -14,7 +14,7 @@ export default function AdminBattleBreakers() {
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isQuestionActive, setIsQuestionActive] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(30);
+  const [timeRemaining, setTimeRemaining] = useState(20);
   const [schools, setSchools] = useState([]);
   const [showAddQuestionModal, setShowAddQuestionModal] = useState(false);
   const [questionText, setQuestionText] = useState('');
@@ -43,6 +43,10 @@ export default function AdminBattleBreakers() {
       const response = await axiosInstance.get(API_PATHS.BATTLE_BREAKERS.GET_QUESTIONS);
       setQuestions(response.data);
       setFilteredQuestions(response.data);
+
+      const time = await axiosInstance.get(API_PATHS.BATTLE_BREAKERS.GET_ALLOCATED_TIME);
+      setAllocatedTime(time.data.allocatedTime || 20);
+      setTimeRemaining(time.data.allocatedTime || 20);
     };
     fetchQuestions();
   }, []);
@@ -195,9 +199,9 @@ export default function AdminBattleBreakers() {
 
   // Effect to track total attempts
   useEffect(() => {
-    // If we've used all 3 attempts, make sure buttons stay disabled but don't auto-proceed
+    // If we've used all 2 attempts, make sure buttons stay disabled but don't auto-proceed
     // User must explicitly click "Next" button
-    if (totalAttempts >= 3) {
+    if (totalAttempts >= 2) {
       // Stop the timer if it's running
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -544,6 +548,13 @@ export default function AdminBattleBreakers() {
         setTotalAttempts(0);
         setCorrectSchool(null);
       }
+
+      // setTimeRemaining(allocatedTime);
+      // if (timerRef.current) {
+      //   clearInterval(timerRef.current);
+      //   timerRef.current = null;
+      // }
+      // socket.emit("battleBreakers-stopQuestion");
     }
   };
 

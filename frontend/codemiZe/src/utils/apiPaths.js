@@ -44,6 +44,7 @@ export const API_PATHS = {
     GET_DASHBOARD: (questionId) => `/api/v1/battle-breakers/school/${questionId}`,
     SUBMIT_ANSWERS: "/api/v1/battle-breakers/submit",
     FINISH_GAME: "/api/v1/battle-breakers/finishGame",
+    GET_ALLOCATED_TIME: "/api/v1/battle-breakers/allocatedTime",
   },
   QUIZ_HUNTERS: {
     GET_ALL_QUESTIONS: "/api/v1/quiz-hunters/",
@@ -84,6 +85,10 @@ export const API_PATHS = {
     GET_MARKINGS: "/api/v1/circuit-smashers/markings",
     SET_TIME: "/api/v1/circuit-smashers/time",
     GET_TIME: "/api/v1/circuit-smashers/time",
+  },
+  ROUTE_SEEKERS: {
+    SET_TIME: "/api/v1/route-seekers/time",
+    GET_TIME: "/api/v1/route-seekers/time",
   },
   JUDGE: {
     SUBMIT_CODE_CRUSHERS_MARKS: "/api/v1/judge/code-crushers/",

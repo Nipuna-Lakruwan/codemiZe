@@ -19,47 +19,70 @@ const RouteSeekersJudge = () => {
   const [schoolQuestions, setSchoolQuestions] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [activeSubmissionId, setActiveSubmissionId] = useState(null);
-
-  const mockCriteria = [
-    { id: 'c1', criteria: 'Network Topology' },
-    { id: 'c2', criteria: 'IP Addressing Scheme' },
-    { id: 'c3', criteria: 'Routing Configuration' },
-    { id: 'c4', criteria: 'Security Implementation' },
-    { id: 'c5', criteria: 'Network Scalability' }
-  ];
+  const [judgeId, setJudgeId] = useState(null);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [schoolsRes, questionsRes, answersRes] = await Promise.all([
+        const [schoolsRes, questionsRes, answersRes, criteriaRes, userInfoRes, networkDesignsRes] = await Promise.all([
           axiosInstance.get('/api/v1/admin/schools'),
           axiosInstance.get('/api/v1/route-seekers/questions'),
-          axiosInstance.get('/api/v1/route-seekers/all-student-answers')
+          axiosInstance.get('/api/v1/route-seekers/all-student-answers'),
+          axiosInstance.get('/api/v1/criteria/routeSeekers'),
+          axiosInstance.get('/api/v1/auth/getUserInfo'),
+          axiosInstance.get('/api/v1/route-seekers/network-designs'),
         ]);
 
         const schoolsData = schoolsRes.data.schools;
         const answersData = answersRes.data;
+        const networkDesignsData = networkDesignsRes.data;
+        const fetchedCriteria = criteriaRes.data.data;
+        let currentJudgeId = null;
+        if(userInfoRes.data.user) {
+          currentJudgeId = userInfoRes.data.user._id;
+          setJudgeId(currentJudgeId);
+        }
 
         const schoolsWithSubmissions = schoolsData.map(school => {
           const submission = answersData.find(answer => (answer.userId?._id || answer.userId) === school._id);
-          return { ...school, submission: submission || null };
+          const networkDesign = networkDesignsData.find(design => design.userId === school._id);
+          return { ...school, submission: submission || null, networkDesign: networkDesign || null };
         });
 
         setSchools(schoolsWithSubmissions);
         setQuestions(questionsRes.data);
         
         setGameStatus('marking');
-        setCriteria(mockCriteria);
+        setCriteria(fetchedCriteria);
 
-        const initialMarkings = {};
-        schoolsRes.data.schools.forEach(school => {
-          initialMarkings[school._id] = {};
-          mockCriteria.forEach(criterion => {
-            initialMarkings[school._id][criterion.id] = 0;
+        if (currentJudgeId) {
+          const markingsRes = await axiosInstance.get('/api/v1/judge/route-seekers-network-design/', {
+            params: { judgeId: currentJudgeId }
           });
-        });
-        setMarkings(initialMarkings);
+
+          if (markingsRes.data && markingsRes.data.length > 0) {
+            const existingMarkings = {};
+            markingsRes.data.forEach(schoolMarking => {
+              existingMarkings[schoolMarking.schoolId] = {};
+              schoolMarking.marks.forEach(mark => {
+                existingMarkings[schoolMarking.schoolId][mark.criteriaId] = mark.mark;
+              });
+            });
+            setMarkings(existingMarkings);
+            setHasSubmitted(true);
+          } else {
+            const initialMarkings = {};
+            schoolsRes.data.schools.forEach(school => {
+              initialMarkings[school._id] = {};
+              fetchedCriteria.forEach(criterion => {
+                initialMarkings[school._id][criterion._id] = 0;
+              });
+            });
+            setMarkings(initialMarkings);
+          }
+        }
 
       } catch (error) {
         console.error("Error fetching data", error);
@@ -156,6 +179,32 @@ const RouteSeekersJudge = () => {
     setActiveSchool(null);
   };
 
+  const handleSubmitMarks = async () => {
+    if (!judgeId) {
+      alert("Could not identify the judge. Please refresh and try again.");
+      return;
+    }
+
+    const markingsToSubmit = Object.entries(markings).map(([schoolId, schoolMarks]) => ({
+      schoolId,
+      marks: Object.entries(schoolMarks).map(([criteriaId, mark]) => ({
+        criteriaId,
+        mark: Number(mark) || 0,
+      })),
+    }));
+
+    try {
+      await axiosInstance.post('/api/v1/judge/route-seekers-network-design/', {
+        judgeId,
+        markings: markingsToSubmit,
+      });
+      alert('Marks submitted successfully!');
+    } catch (error) {
+      console.error("Error submitting marks", error);
+      alert('Failed to submit marks. Please try again.');
+    }
+  };
+
   return (
     <JudgeLayout gameName="Route Seekers">
       <ScrollbarStyles />
@@ -237,6 +286,8 @@ const RouteSeekersJudge = () => {
               handleKeyDown={handleKeyDown}
               calculateTotal={calculateTotal}
               setSelectedCard={setSelectedCard}
+              handleSubmitMarks={handleSubmitMarks}
+              hasSubmitted={hasSubmitted}
             />
           )}
         </div>

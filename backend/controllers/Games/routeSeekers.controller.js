@@ -5,9 +5,38 @@ import fs from "fs";
 import path from "path";
 import archiver from "archiver";
 import { fileURLToPath } from 'url';
+import School from "../../models/School.js";
+import RouteSeekersNetworkDesignMarking from "../../models/markings/RouteSeekersNetworkDesignMarking.js";
+import Game from "../../models/Game.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const calculateAndUpdateRouteSeekersScore = async (schoolId) => {
+    try {
+        // 1. Get Quiz Score
+        const answerDoc = await RouteSeekersAnswer.findOne({ userId: schoolId });
+        const quizScore = answerDoc ? answerDoc.score : 0;
+
+        // 2. Get Average Design Score
+        const schoolMarkings = await RouteSeekersNetworkDesignMarking.find({ schoolId: schoolId });
+        let averageDesignScore = 0;
+        if (schoolMarkings.length > 0) {
+            const judgeTotals = schoolMarkings.map((marking) =>
+                marking.marks.reduce((total, m) => total + (m.mark || 0), 0)
+            );
+            averageDesignScore = judgeTotals.reduce((sum, total) => sum + total, 0) / judgeTotals.length;
+        }
+
+        // 3. Calculate total and update school
+        const totalScore = quizScore + (averageDesignScore / 2);
+        await School.findByIdAndUpdate(schoolId, {
+            $set: { "score.RouteSeekers": totalScore },
+        });
+    } catch (error) {
+        console.error(`Failed to update RouteSeekers total score for school ${schoolId}:`, error);
+    }
+};
 
 // Get all questions for students
 export const getQuestions = async (req, res) => {
@@ -91,6 +120,16 @@ export const deleteAllStudentAnswers = async (req, res) => {
   }
 };
 
+export const deleteAllQuestions = async (req, res) => {
+  try {
+    await RouteSeekersQuestion.deleteMany({});
+    await RouteSeekersAnswer.deleteMany({});
+    res.status(200).json({ message: "All questions and answers deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Update a single answer's status
 export const updateAnswerStatus = async (req, res) => {
   try {
@@ -126,9 +165,29 @@ export const updateAnswerStatus = async (req, res) => {
 
     const savedSubmission = await submission.save();
 
+    await calculateAndUpdateRouteSeekersScore(submission.userId);
+
     res.status(200).json({ message: "Answer status updated successfully", result: savedSubmission });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Check if a network design has been uploaded by the current user
+export const checkNetworkDesignUpload = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const gameName = "RouteSeekers";
+
+    const existingUpload = await StudentUpload.findOne({ userId, gameName });
+
+    if (existingUpload) {
+      return res.status(200).json({ hasUploaded: true, file: existingUpload });
+    } else {
+      return res.status(200).json({ hasUploaded: false });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Error checking for existing upload", error: error.message });
   }
 };
 
@@ -136,6 +195,15 @@ export const uploadNetworkDesign = async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: "No file uploaded" });
+        }
+
+        const existingUpload = await StudentUpload.findOne({
+            userId: req.user.id,
+            gameName: "RouteSeekers",
+        });
+
+        if (existingUpload) {
+            return res.status(400).json({ message: "Answer already uploaded" });
         }
 
         const newUpload = new StudentUpload({
@@ -175,7 +243,7 @@ export const deleteNetworkDesign = async (req, res) => {
         }
 
         fs.unlink(file.fileUrl, async (err) => {
-            if (err) {
+            if (err && err.code !== 'ENOENT') {
                 console.error("File deletion error:", err);
                 return res.status(500).json({ message: "Error deleting the file" });
             }
@@ -209,20 +277,76 @@ export const downloadAllNetworkDesigns = async (req, res) => {
 
 export const downloadNetworkDesign = async (req, res) => {
     try {
-        const { id } = req.params;
-        const file = await StudentUpload.findById(id);
+        const { id } = req.params; // This is the school ID
+        const file = await StudentUpload.findOne({ userId: id, gameName: "RouteSeekers" });
 
         if (!file) {
-            return res.status(404).json({ message: "File not found" });
+            return res.status(404).json({ message: "No network design submission found for this school." });
+        }
+
+        if (!fs.existsSync(file.fileUrl)) {
+            console.error("File not found on disk:", file.fileUrl);
+            return res.status(404).json({ message: "File not found on server." });
         }
 
         res.download(file.fileUrl, file.originalName, (err) => {
             if (err) {
                 console.error("File download error:", err);
-                res.status(500).json({ message: "Error downloading the file" });
+                if (!res.headersSent) {
+                    res.status(500).json({ message: "Error downloading the file" });
+                }
             }
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
+};
+
+// ================= Allocation Time (Admin) =================
+// Mirror implementation style of other games (e.g., Code Crushers)
+
+export const setTime = async (req, res) => {
+  const { allocateTime } = req.body; // time in seconds
+
+  if (!allocateTime || allocateTime <= 0) {
+    return res.status(400).json({ message: "Valid allocated time is required" });
+  }
+
+  try {
+    const updatedGame = await Game.findOneAndUpdate(
+      { name: "Route Seekers" },
+      { allocateTime: parseInt(allocateTime) },
+      { new: true, upsert: false }
+    );
+
+    if (!updatedGame) {
+      return res.status(404).json({ message: "Route Seekers game not found" });
+    }
+
+    res.status(200).json({
+      message: "Time allocated successfully",
+      game: updatedGame
+    });
+  } catch (error) {
+    console.error("Error setting allocated time (Route Seekers):", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const getTime = async (req, res) => {
+  try {
+    const game = await Game.findOne({ name: "Route Seekers" });
+
+    if (!game) {
+      return res.status(404).json({ message: "Route Seekers game not found" });
+    }
+
+    res.status(200).json({
+      message: "Allocated time retrieved successfully",
+      allocateTime: game.allocateTime
+    });
+  } catch (error) {
+    console.error("Error retrieving allocated time (Route Seekers):", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };

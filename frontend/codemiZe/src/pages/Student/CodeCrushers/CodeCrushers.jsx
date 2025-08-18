@@ -37,6 +37,7 @@ export default function CodeCrushers() {
   const [isFileValid, setIsFileValid] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const fileInputRef = useRef(null);
+  const hasSubmittedRef = useRef(false); // Prevent double submissions
 
   useEffect(() => {
     const getSlides = async () => {
@@ -117,7 +118,10 @@ export default function CodeCrushers() {
         setTimeRemaining(0);
         setTimeIsUp(true);
         setIsServerTimerActive(false);
-        handleGameEnd();
+        // Auto submit immediately if a valid file exists
+        if (isFileValid && uploadedFile) {
+          handleSubmitCode();
+        }
       });
 
       // Listen for timer stopped event from server
@@ -125,7 +129,10 @@ export default function CodeCrushers() {
         setTimeRemaining(0);
         setTimeIsUp(true);
         setIsServerTimerActive(false);
-        handleGameEnd();
+        // Auto submit immediately if a valid file exists
+        if (isFileValid && uploadedFile) {
+          handleSubmitCode();
+        }
       });
 
       // Listen for timer paused event from server
@@ -149,7 +156,6 @@ export default function CodeCrushers() {
         setIsGameStarted(false);
         setIsServerTimerActive(false);
 
-        // Try to submit code if there's a valid file uploaded
         if (isFileValid && uploadedFile) {
           try {
             await handleSubmitCode();
@@ -157,8 +163,6 @@ export default function CodeCrushers() {
             console.error('Failed to submit code before navigation:', error);
           }
         }
-
-        // Navigate to games roadmap
         navigate('/student/games-roadmap');
       });
 
@@ -247,47 +251,27 @@ export default function CodeCrushers() {
   };
 
   const handleSubmitCode = async () => {
+    if (hasSubmittedRef.current) return; // Guard against duplicates
     if (isFileValid && uploadedFile) {
       try {
+        hasSubmittedRef.current = true;
         setIsLoading(true);
         const formData = new FormData();
         formData.append('resource', uploadedFile);
-
-        // Replace with your actual upload endpoint
         await axiosInstance.post(API_PATHS.CODE_CRUSHERS.UPLOAD_RESOURCE, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
-
         setGameCompleted(true);
-        setIsLoading(false);
       } catch (error) {
-        setIsLoading(false);
-        // Optionally show error to user
         console.error('Upload failed:', error);
+        hasSubmittedRef.current = false; // Allow retry on failure
+      } finally {
+        setIsLoading(false);
       }
     }
   };
 
-  // Game end handler (time's up)
-  const handleGameEnd = () => {
-    // Show the time's up modal but don't auto-submit
-    // The user will see their file status and can proceed to results if a file is uploaded
-    // Otherwise, they'll have one last chance to upload a file
-
-    // After a reasonable delay to let the user respond, proceed with auto-submission
-    // if they haven't taken action
-    if (isFileValid && uploadedFile) {
-      // Set a longer timeout to auto-submit if the user doesn't click "View Results"
-      setTimeout(() => {
-        // Only auto-submit if the time's up modal is still showing (user hasn't clicked)
-        if (timeIsUp && !gameCompleted) {
-          handleSubmitCode();
-        }
-      }, 15000); // 15 seconds delay
-    }
-  };
+  // Removed delayed auto-submit handler; immediate auto-submit now handled in socket events.
 
   // Format time as MM:SS
   const formatTime = (timeInSeconds) => {

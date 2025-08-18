@@ -317,6 +317,11 @@ export const submitAnswers = async (req, res) => {
                 scoreUpdated: score
             });
         }
+
+        const io = req.app.get("io");
+        if (io) {
+            io.to("judge").emit("battlebreakersNewMarks");
+        }
         
         res.status(200).json({ 
             message: "Answers submitted and scores updated successfully",
@@ -355,4 +360,23 @@ export const finishGame = async (req, res) => {
         console.error("Error finishing game:", error);
         res.status(500).json({ message: "Internal Server Error" });
     }
-}
+};
+
+export const getTime = async (req, res) => {
+    try {
+        // Find the Battle Breakers game and get its allocated time
+        const battleBreakersGame = await Game.findOne({ name: "Battle Breakers" });
+        
+        if (!battleBreakersGame) {
+            return res.status(404).json({ message: "Battle Breakers game not found" });
+        }
+        
+        res.status(200).json({
+            allocatedTime: battleBreakersGame.allocateTime,
+            gameStatus: battleBreakersGame.status
+        });
+    } catch (error) {
+        console.error("Error fetching allocated time:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};

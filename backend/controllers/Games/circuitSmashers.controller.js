@@ -139,12 +139,17 @@ export const getResource = async (req, res) => {
         // Get the original filename from the database or extract from path
         const originalName = resource.originalName || path.basename(filePath);
         
+        // Detect MIME type
+        const mimeType = mime.getType(filePath) || "application/octet-stream";
+        console.log("Downloading:", originalName, "MIME:", mimeType);
+
         // Set appropriate headers for file download
         res.setHeader('Content-Disposition', `attachment; filename="${originalName}"`);
-        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Content-Type', mimeType);
+        res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
         
         // Send the file
-        res.download(filePath, originalName, (err) => {
+        res.sendFile(filePath, (err) => {
             if (err) {
                 console.error("Error downloading file:", err);
                 if (!res.headersSent) {

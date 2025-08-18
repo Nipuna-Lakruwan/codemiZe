@@ -6,6 +6,7 @@ import axiosInstance from '../../../utils/axiosInstance';
 import { API_PATHS } from '../../../utils/apiPaths';
 import { SocketContext } from '../../../context/SocketContext';
 import { useAuth } from '../../../context/AuthContext';
+import { imagePath } from '../../../utils/helper';
 
 const Confetti = () => {
   const [particles, setParticles] = useState([]);
@@ -136,12 +137,12 @@ export default function Winners() {
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="mb-1 mt-0 flex justify-center w-full"
+          className="-mb-16 mt-0 flex justify-center w-full"
         >
           <img
             src="/codemize-logo.png"
             alt="CodemiZe Winners"
-            className="h-50 w-auto"
+            className="h-70 w-auto" /* increased slightly from h-50 to h-60 */
           />
         </motion.div>
 
@@ -150,7 +151,7 @@ export default function Winners() {
           initial={{ y: -30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-24 flex justify-center w-full"
+          className="-mt-2 mb-24 flex justify-center w-full"
         >
           <div className="text-orange-200 text-9xl font-normal font-['Jersey_25'] text-center" style={{ fontFamily: 'Jersey_25' }}>
             Winners
@@ -191,7 +192,7 @@ export default function Winners() {
                     }}
                   >
                     <img
-                      src={index === 0 ? "/scl1.png" : "/scl2.png"}
+                      src={imagePath(winner.avatar.url)}
                       alt="Scale"
                       className="w-60 object-contain"
                     />

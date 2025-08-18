@@ -6,14 +6,15 @@ import AdminBox from '../../../components/Admin/QuizComponents/AdminBox';
 {/* Alert and Confirmation modals are now imported via ModalComponents */ }
 import { TeamQuestionsView, QuestionersResponsesSection, NetworkDesignSection, TeamsSection, ModalComponents } from '../../../components/Admin/RouteComponents';
 import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
 
 export default function AdminRouteSeekers() {
   // States for resources
   const [selectedFile, setSelectedFile] = useState(null);
   const [questionsCount, setQuestionsCount] = useState(0); // Renamed from questions to avoid conflict
-  const [resources, setResources] = useState(5); // Initial resources count
-  const [responses, setResponses] = useState(12); // Initial responses count
-  const [allocatedTime, setAllocatedTime] = useState(30); // Default 30 minutes
+  const [resources, setResources] = useState(0); // Will be fetched
+  const [responses, setResponses] = useState(0); // Will be derived from answers
+  const [allocatedTime, setAllocatedTime] = useState(30); // Minutes (default)
   const [customTime, setCustomTime] = useState("");
   const [activeTab, setActiveTab] = useState('Questioners');
 
@@ -42,10 +43,13 @@ export default function AdminRouteSeekers() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [schoolsRes, questionsRes, answersRes] = await Promise.all([
+        const [schoolsRes, questionsRes, answersRes, timeRes, resourceFilesRes, networkDesignsRes] = await Promise.all([
           axiosInstance.get('/api/v1/admin/schools'),
           axiosInstance.get('/api/v1/questions/route-seekers'),
-          axiosInstance.get('/api/v1/route-seekers/all-student-answers')
+          axiosInstance.get('/api/v1/route-seekers/all-student-answers'),
+          axiosInstance.get(API_PATHS.ROUTE_SEEKERS.GET_TIME),
+          axiosInstance.get('/api/v1/questions/route-seekers/resource-files'),
+          axiosInstance.get('/api/v1/route-seekers/network-designs')
         ]);
 
         const schoolsData = schoolsRes.data.schools;
@@ -59,6 +63,20 @@ export default function AdminRouteSeekers() {
         setSchools(schoolsWithSubmissions);
         setAllQuestions(questionsRes.data);
         setQuestionsCount(questionsRes.data.length);
+        setResponses(answersRes.data.length);
+        // timeRes.allocateTime is in seconds
+        if (timeRes?.data?.allocateTime) {
+          const fetchedMinutes = Math.round(timeRes.data.allocateTime / 60);
+          const presetOptions = [15, 30, 45, 60, 90, 120];
+          if (presetOptions.includes(fetchedMinutes)) {
+            setAllocatedTime(fetchedMinutes);
+            setCustomTime("");
+          } else {
+            setAllocatedTime('custom');
+            setCustomTime(String(fetchedMinutes));
+          }
+        }
+        setResources(resourceFilesRes.data.length + networkDesignsRes.data.length);
 
       } catch (error) {
         console.error("Error fetching data", error);
@@ -77,34 +95,71 @@ export default function AdminRouteSeekers() {
     }
   };
 
-  const handleQuestionUpload = () => {
+  const handleQuestionUpload = async () => {
     if (selectedFile) {
-      console.log('Uploading questions:', selectedFile);
-      showAlert('Questions uploaded: ' + selectedFile.name, 'Upload Successful', 'success');
-      setQuestionsCount(questionsCount + 5); // Simulate adding 5 new questions
-      setSelectedFile(null);
+      const formData = new FormData();
+      formData.append('csv', selectedFile);
+
+      try {
+        const response = await axiosInstance.post('/api/v1/questions/route-seekers/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        showAlert(`${response.data.length} questions uploaded successfully!`, 'Upload Successful', 'success');
+        setQuestionsCount(prevCount => prevCount + response.data.length);
+        setAllQuestions(prevQuestions => [...prevQuestions, ...response.data]);
+        setSelectedFile(null);
+      } catch (error) {
+        console.error('Error uploading questions:', error);
+        showAlert(error.response?.data?.message || 'Failed to upload questions.', 'Upload Error', 'error');
+      }
     } else {
       showAlert('Please select a file first', 'Upload Error', 'error');
     }
   };
 
-  const handleResourceUpload = () => {
+  const handleResourceUpload = async () => {
     if (selectedFile) {
-      console.log('Uploading resource:', selectedFile);
-      showAlert('Resource uploaded: ' + selectedFile.name, 'Upload Successful', 'success');
-      setResources(resources + 1);
-      setSelectedFile(null);
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      try {
+        await axiosInstance.post('/api/v1/questions/route-seekers/upload-resource', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        showAlert('Resource file uploaded successfully!', 'Upload Successful', 'success');
+        setResources(prev => prev + 1);
+        setSelectedFile(null);
+      } catch (error) {
+        console.error('Error uploading resource file:', error);
+        showAlert(error.response?.data?.message || 'Failed to upload resource file.', 'Upload Error', 'error');
+      }
     } else {
       showAlert('Please select a file first', 'Upload Error', 'error');
     }
   };
 
-  const handleNetworkResourceUpload = () => {
+  const handleNetworkResourceUpload = async () => {
     if (selectedFile) {
-      console.log('Uploading network resource:', selectedFile);
-      showAlert('Network resource uploaded: ' + selectedFile.name, 'Upload Successful', 'success');
-      setResources(resources + 1);
-      setSelectedFile(null);
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      try {
+        await axiosInstance.post('/api/v1/questions/route-seekers/network-design/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        showAlert('Network design PDF uploaded successfully!', 'Upload Successful', 'success');
+        setResources(prev => prev + 1);
+        setSelectedFile(null);
+      } catch (error) {
+        console.error('Error uploading network design PDF:', error);
+        showAlert(error.response?.data?.message || 'Failed to upload network design PDF.', 'Upload Error', 'error');
+      }
     } else {
       showAlert('Please select a file first', 'Upload Error', 'error');
     }
@@ -126,21 +181,35 @@ export default function AdminRouteSeekers() {
     setShowDeleteQuestionsModal(true);
   };
 
-  const confirmDeleteQuestions = () => {
-    setQuestionsCount(0); // This should ideally trigger a backend call
-    setAllQuestions([]);
-    setShowDeleteQuestionsModal(false);
-    showAlert('All questions have been deleted', 'Delete Successful', 'success');
+  const confirmDeleteQuestions = async () => {
+    try {
+      await axiosInstance.delete('/api/v1/questions/route-seekers');
+      setQuestionsCount(0);
+      setAllQuestions([]);
+      showAlert('All questions and answers have been deleted successfully.', 'Delete Successful', 'success');
+    } catch (error) {
+      console.error("Error deleting questions", error);
+      showAlert(error.response?.data?.message || 'Failed to delete questions.', 'Delete Error', 'error');
+    } finally {
+      setShowDeleteQuestionsModal(false);
+    }
   };
 
   const handleDeleteResources = () => {
     setShowDeleteResourcesModal(true);
   };
 
-  const confirmDeleteResources = () => {
-    setResources(0);
-    setShowDeleteResourcesModal(false);
-    showAlert('All resources have been deleted', 'Delete Successful', 'success');
+  const confirmDeleteResources = async () => {
+    try {
+      await axiosInstance.delete('/api/v1/questions/route-seekers/resource-files');
+      setResources(0);
+      showAlert('All resources have been deleted', 'Delete Successful', 'success');
+    } catch (error) {
+      console.error("Error deleting resources", error);
+      showAlert(error.response?.data?.message || 'Failed to delete resources.', 'Delete Error', 'error');
+    } finally {
+      setShowDeleteResourcesModal(false);
+    }
   };
 
   const handleDeleteNetworkResources = () => {
@@ -249,13 +318,19 @@ export default function AdminRouteSeekers() {
     setCustomTime(e.target.value);
   };
 
-  const handleConfirmTime = () => {
+  const handleConfirmTime = async () => {
     const timeToUse = allocatedTime === 'custom' ? parseInt(customTime) : allocatedTime;
     if (allocatedTime === 'custom' && (!customTime || isNaN(parseInt(customTime)))) {
       showAlert('Please enter a valid time in minutes', 'Time Allocation Error', 'error');
       return;
     }
-    showAlert(`Time allocated: ${timeToUse} minutes`, 'Time Allocation', 'success');
+    try {
+      await axiosInstance.post(API_PATHS.ROUTE_SEEKERS.SET_TIME, { allocateTime: timeToUse * 60 });
+      showAlert(`Time allocated: ${timeToUse} minutes`, 'Time Allocation', 'success');
+    } catch (error) {
+      console.error('Error setting time:', error);
+      showAlert(error.response?.data?.message || 'Failed to set allocated time', 'Time Allocation Error', 'error');
+    }
   };
 
   // Helper function for showing alerts
@@ -309,6 +384,7 @@ export default function AdminRouteSeekers() {
                       id="questionFile"
                       onChange={handleFileChange}
                       className="hidden"
+                      accept=".csv"
                     />
                     <label htmlFor="questionFile" className="cursor-pointer">
                       <div className="w-11 h-5 bg-purple-800 rounded-sm flex items-center justify-center">
@@ -316,6 +392,13 @@ export default function AdminRouteSeekers() {
                       </div>
                     </label>
                   </div>
+                  <motion.button
+                    onClick={handleQuestionUpload}
+                    disabled={!selectedFile}
+                    className="ml-4 w-24 h-8 bg-purple-800 rounded-[3px] text-white text-xs flex items-center justify-center disabled:bg-gray-400"
+                  >
+                    Upload
+                  </motion.button>
                 </div>
 
                 <div className="flex gap-2 mt-3">
@@ -326,7 +409,7 @@ export default function AdminRouteSeekers() {
                     className="w-32 h-8 bg-sky-600 rounded-[3px] text-white text-xs flex items-center justify-center"
                     disabled={questionsCount === 0}
                   >
-                    Delete Question
+                    Delete Questions
                   </motion.button>
 
                   <motion.button
@@ -344,7 +427,7 @@ export default function AdminRouteSeekers() {
               {/* Upload Resource File Section */}
               <div className="mt-3">
                 <div className="flex items-center">
-                  <div className="justify-start text-black/60 text-xs font-medium font-['Inter']">Upload Resource File</div>
+                  <div className="justify-start text-black/60 text-xs font-medium font-['Inter']">Upload Network Design</div>
                   <div className="ml-2">
                     <input
                       type="file"
@@ -358,6 +441,13 @@ export default function AdminRouteSeekers() {
                       </div>
                     </label>
                   </div>
+                  <motion.button
+                    onClick={handleResourceUpload}
+                    disabled={!selectedFile}
+                    className="ml-4 w-24 h-8 bg-purple-800 rounded-[3px] text-white text-xs flex items-center justify-center disabled:bg-gray-400"
+                  >
+                    Upload
+                  </motion.button>
                 </div>
 
                 <div className="mt-3">
@@ -380,9 +470,11 @@ export default function AdminRouteSeekers() {
             resources={resources}
             responses={responses}
             handleFileChange={handleFileChange}
+            handleNetworkResourceUpload={handleNetworkResourceUpload}
             handleDeleteNetworkResources={handleDeleteNetworkResources}
             handleResponseUpload={handleResponseUpload}
             handleDownloadResources={handleDownloadResources}
+            selectedFile={selectedFile}
           />
 
           {/* Third rectangle - Questioners Responses */}

@@ -52,9 +52,15 @@ export default function AdminQuizHunters() {
     const fetchAllocatedTime = async () => {
       try {
         const response = await axiosInstance.get(API_PATHS.QUIZ_HUNTERS.GET_TIME);
-        // Convert seconds to minutes for display
         const timeInMinutes = Math.round(response.data.allocateTime / 60);
-        setAllocatedTime(timeInMinutes);
+        const presetOptions = [15, 30, 45, 60, 90, 120];
+        if (presetOptions.includes(timeInMinutes)) {
+          setAllocatedTime(timeInMinutes);
+          setCustomTime("");
+        } else {
+          setAllocatedTime('custom');
+          setCustomTime(String(timeInMinutes));
+        }
       } catch (error) {
         console.error('Error fetching allocated time:', error);
       }

@@ -114,12 +114,14 @@ class CodeCrushersHandler {
   }
 
   handleRequestCurrentState(socket) {
-    const currentChallengeData = this.timer.getCurrentQuestionData();
+    const currentData = this.timer.getCurrentData();
     
     socket.emit("codeCrushers-currentState", {
       isActive: this.timer.isTimerActive(),
-      isChallengeActive: currentChallengeData !== null,
-      currentData: currentChallengeData
+      isRoundActive: currentData !== null,
+      timeRemaining: currentData ? currentData.timeRemaining : 0,
+      allocatedTime: currentData ? currentData.allocatedTime : 0,
+      currentData: currentData
     });
   }
 }

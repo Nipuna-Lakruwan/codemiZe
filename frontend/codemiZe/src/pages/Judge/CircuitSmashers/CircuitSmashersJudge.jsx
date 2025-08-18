@@ -114,8 +114,8 @@ const CircuitSmashersJudge = () => {
       });
       
       // Get the filename from the response headers
-      const contentDisposition = response.headers['content-disposition'];
       let filename = 'resource_file';
+      const contentDisposition = response.headers['content-disposition'];
       
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="(.+)"/);
@@ -185,7 +185,7 @@ const CircuitSmashersJudge = () => {
                   calculateTotal={calculateTotal}
                   onSubmission={handleSubmit}
                   onDownload={handleDownload}
-                  maxMark={20}
+                  maxMark={10}
                 />
               )}
             </div>
