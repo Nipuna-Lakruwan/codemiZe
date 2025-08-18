@@ -176,45 +176,8 @@ const TimerDisplay = ({ timeRemaining, totalTime, gameName }) => {
   );
 };
 
-// Mock timer for demonstration
-const useMockTimer = (initialTime = 300, autoStart = false) => {
-  const [time, setTime] = useState(initialTime);
-  const [isRunning, setIsRunning] = useState(autoStart);
-  const [totalTime, setTotalTime] = useState(initialTime);
+// Removed mock timer – server authoritative updates are used instead
 
-  useEffect(() => {
-    let timer;
-    if (isRunning && time > 0) {
-      timer = setInterval(() => {
-        setTime((prevTime) => Math.max(0, prevTime - 1));
-      }, 1000);
-    } else if (time === 0) {
-      setIsRunning(false);
-    }
-
-    return () => clearInterval(timer);
-  }, [isRunning, time]);
-
-  const start = useCallback((newTime = null) => {
-    if (newTime !== null) {
-      setTime(newTime);
-      setTotalTime(newTime);
-    }
-    setIsRunning(true);
-  }, []);
-
-  const stop = useCallback(() => {
-    setIsRunning(false);
-  }, []);
-
-  const reset = useCallback((newTime = initialTime) => {
-    setTime(newTime);
-    setTotalTime(newTime);
-    setIsRunning(false);
-  }, [initialTime]);
-
-  return { time, isRunning, totalTime, start, stop, reset };
-};
 
 export default function TimerDashboard() {
   // Animation variants for staggered animations
@@ -230,15 +193,13 @@ export default function TimerDashboard() {
   };
 
   const socket = useContext(SocketContext);
-
-  // Game state
   const [activeGame, setActiveGame] = useState(null);
-
-  // Sound effects hook - always enabled
   const { playSound } = useSound({ enabled: true });
-
-  // Timer for games
-  const gameTimer = useMockTimer(180); // 3 minutes default
+  // Central timer state (server authoritative)
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [totalTime, setTotalTime] = useState(0);
+  // Keep per‑game state snapshots to avoid race conditions
+  const [gameStates, setGameStates] = useState({});
 
   // Game info mapping - logos and descriptions for each game type
   const gameInfoMap = {
@@ -260,106 +221,138 @@ export default function TimerDashboard() {
   };
 
   useEffect(() => {
+    if (!socket) return;
+
+    const handleTimerState = (gameName, data) => {
+      setGameStates(prev => ({ ...prev, [gameName]: data }));
+    };
+
+    socket.on("circuitSmashers-currentState", (data) => handleTimerState('circuitSmashers', data));
+    socket.on("codeCrushers-currentState", (data) => handleTimerState('codeCrushers', data));
+    socket.on("routeSeekers-currentState", (data) => handleTimerState('routeSeekers', data));
+
+    // Request current state for all games on connect
+    socket.emit("circuitSmashers-requestCurrentState");
+    socket.emit("codeCrushers-requestCurrentState");
+    socket.emit("routeSeekers-requestCurrentState");
+
+    return () => {
+      socket.off("circuitSmashers-currentState");
+      socket.off("codeCrushers-currentState");
+      socket.off("routeSeekers-currentState");
+    };
+  }, [socket]);
+
+  // Decide which game is active based on collected states (first active wins unless replaced by another active)
+  useEffect(() => {
+    // Find any game with an active round
+    const entries = Object.entries(gameStates);
+    const activeEntry = entries.find(([, v]) => (v?.isRoundActive || v?.isActive) && (v.timeRemaining > 0 || v.allocatedTime > 0));
+    if (activeEntry) {
+      const [gameName, data] = activeEntry;
+      if (activeGame !== gameName) {
+        setActiveGame(gameName);
+        const t = data.timeRemaining || data.allocatedTime || 0;
+        setTotalTime(data.allocatedTime || t);
+        setTimeRemaining(t);
+        // play sound only on change
+        playSound('gameStart');
+      } else {
+        // Same active game: keep timer in sync without resetting total unless provided
+        if (typeof data.timeRemaining === 'number') {
+          setTimeRemaining(data.timeRemaining);
+        }
+        if (data.allocatedTime) setTotalTime(data.allocatedTime);
+      }
+    }
+  }, [gameStates, activeGame, playSound]);
+
+  useEffect(() => {
     // Listen for game start events from the server
     if (socket) {
       console.log('Socket connected, setting up event listeners');
       
       // Handle Circuit Smashers events
-      socket.on("circuitSmashers-startGameclient", (data) => {
+      socket.on("circuitSmashers-roundStarted", (data) => {
         console.log('Circuit Smashers game started:', data);
         setActiveGame('circuitSmashers');
-        const timeToSet = data.allocatedTime || 180;
-        gameTimer.reset(timeToSet);
-        gameTimer.start(timeToSet);
+        const timeToSet = data.allocatedTime || 1800;
+        setTotalTime(timeToSet);
+        setTimeRemaining(timeToSet);
         playSound('gameStart');
       });
 
       // Handle Code Crushers events
-      socket.on("codeCrushers-startGameclient", (data) => {
+      socket.on("codeCrushers-roundStarted", (data) => {
         console.log('Code Crushers game started:', data);
         setActiveGame('codeCrushers');
-        const timeToSet = data.allocatedTime || 180;
-        gameTimer.reset(timeToSet);
-        gameTimer.start(timeToSet);
+        const timeToSet = data.allocatedTime || 1800;
+        setTotalTime(timeToSet);
+        setTimeRemaining(timeToSet);
         playSound('gameStart');
       });
 
       // Handle Route Seekers events
-      socket.on("routeSeekers-startGameclient", (data) => {
+      socket.on("routeSeekers-roundStarted", (data) => {
         console.log('Route Seekers game started:', data);
         setActiveGame('routeSeekers');
-        const timeToSet = data.allocatedTime || 180;
-        gameTimer.reset(timeToSet);
-        gameTimer.start(timeToSet);
+        const timeToSet = data.allocatedTime || 2400;
+        setTotalTime(timeToSet);
+        setTimeRemaining(timeToSet);
         playSound('gameStart');
       });
 
       // Listen for timer updates for all games
       socket.on("circuitSmashers-timerUpdate", (data) => {
-        console.log('Circuit Smashers timer update:', data);
         if (activeGame === 'circuitSmashers') {
-          gameTimer.reset(data.timeRemaining);
-          if (data.timeRemaining > 0) {
-            gameTimer.start(data.timeRemaining);
-          }
+          setTimeRemaining(data.timeRemaining);
         }
       });
 
       socket.on("codeCrushers-timerUpdate", (data) => {
-        console.log('Code Crushers timer update:', data);
         if (activeGame === 'codeCrushers') {
-          gameTimer.reset(data.timeRemaining);
-          if (data.timeRemaining > 0) {
-            gameTimer.start(data.timeRemaining);
-          }
+          setTimeRemaining(data.timeRemaining);
         }
       });
 
       socket.on("routeSeekers-timerUpdate", (data) => {
-        console.log('Route Seekers timer update:', data);
         if (activeGame === 'routeSeekers') {
-          gameTimer.reset(data.timeRemaining);
-          if (data.timeRemaining > 0) {
-            gameTimer.start(data.timeRemaining);
-          }
+          setTimeRemaining(data.timeRemaining);
         }
       });
 
       // Listen for game end events
       socket.on("circuitSmashers-timeUp", () => {
-        console.log('Circuit Smashers time up');
-        gameTimer.stop();
+        if (activeGame === 'circuitSmashers') setTimeRemaining(0);
         playSound('timeUp');
       });
 
       socket.on("codeCrushers-timeUp", () => {
-        console.log('Code Crushers time up');
-        gameTimer.stop();
+        if (activeGame === 'codeCrushers') setTimeRemaining(0);
         playSound('timeUp');
       });
 
       socket.on("routeSeekers-timeUp", () => {
-        console.log('Route Seekers time up');
-        gameTimer.stop();
+        if (activeGame === 'routeSeekers') setTimeRemaining(0);
         playSound('timeUp');
       });
 
       // Clean up the event listeners when component unmounts
       return () => {
-        socket.off("circuitSmashers-startGameclient");
+        socket.off("circuitSmashers-roundStarted");
         socket.off("circuitSmashers-timerUpdate");
         socket.off("circuitSmashers-timeUp");
 
-        socket.off("codeCrushers-startGameclient");
+        socket.off("codeCrushers-roundStarted");
         socket.off("codeCrushers-timerUpdate");
         socket.off("codeCrushers-timeUp");
 
-        socket.off("routeSeekers-startGameclient");
+        socket.off("routeSeekers-roundStarted");
         socket.off("routeSeekers-timerUpdate");
         socket.off("routeSeekers-timeUp");
       };
     }
-  }, [socket, activeGame, gameTimer, playSound]);
+  }, [socket, activeGame, playSound]);
 
   // If no active game, show splash screen with game selection
   if (!activeGame) {
@@ -422,8 +415,8 @@ export default function TimerDashboard() {
 
             {/* Right column - Timer Display - made bigger */}
             <TimerDisplay
-              timeRemaining={gameTimer.time}
-              totalTime={gameTimer.totalTime}
+              timeRemaining={timeRemaining}
+              totalTime={totalTime || timeRemaining}
               gameName={gameInfo.name}
             />
           </motion.div>

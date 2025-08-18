@@ -215,12 +215,14 @@ class RouteSeekersHandler {
    * @param {Object} socket - Individual socket connection
    */
   handleRequestCurrentState(socket) {
-    const currentNavigationData = this.timer.getCurrentQuestionData();
+    const currentData = this.timer.getCurrentData();
     
     socket.emit("routeSeekers-currentState", {
       isActive: this.timer.isTimerActive(),
-      isNavigationActive: currentNavigationData !== null,
-      currentData: currentNavigationData
+      isRoundActive: currentData !== null,
+      timeRemaining: currentData ? currentData.timeRemaining : 0,
+      allocatedTime: currentData ? currentData.allocatedTime : 0,
+      currentData: currentData
     });
   }
 }
