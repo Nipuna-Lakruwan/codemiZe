@@ -246,7 +246,6 @@ export default function GamesRoadmap() {
         });
 
         setGames(mergedGames);
-        console.log('Fetched games:', mergedGames);
       } catch (error) {
         console.error('Error fetching games:', error);
       }

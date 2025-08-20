@@ -31,6 +31,7 @@ export default function CircuitSmashers() {
   const [showTimeWarning, setShowTimeWarning] = useState(false);
   const [timeIsUp, setTimeIsUp] = useState(false);
   const [isServerTimerActive, setIsServerTimerActive] = useState(false); // Track if server timer is active
+  const [redirectCountdown, setRedirectCountdown] = useState(10); // 10-second countdown for redirect
 
   // File upload state
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -118,9 +119,16 @@ export default function CircuitSmashers() {
         setTimeRemaining(0);
         setTimeIsUp(true);
         setIsServerTimerActive(false);
-        // Auto submit immediately if a valid file exists
+        
+        // Auto submit if a valid file exists
         if (isFileValid && uploadedFile) {
-          handleSubmitCode();
+          handleSubmitCode().then(() => {
+            setGameCompleted(true);
+            setRedirectCountdown(10);
+          });
+        } else {
+          setGameCompleted(true);
+          setRedirectCountdown(10);
         }
       });
 
@@ -129,9 +137,16 @@ export default function CircuitSmashers() {
         setTimeRemaining(0);
         setTimeIsUp(true);
         setIsServerTimerActive(false);
-        // Auto submit immediately if a valid file exists
+        
+        // Auto submit if a valid file exists
         if (isFileValid && uploadedFile) {
-          handleSubmitCode();
+          handleSubmitCode().then(() => {
+            setGameCompleted(true);
+            setRedirectCountdown(10);
+          });
+        } else {
+          setGameCompleted(true);
+          setRedirectCountdown(10);
         }
       });
 
@@ -156,6 +171,7 @@ export default function CircuitSmashers() {
         setIsGameStarted(false);
         setIsServerTimerActive(false);
         
+        // Auto submit if a valid file exists
         if (isFileValid && uploadedFile) {
           try {
             await handleSubmitCode();
@@ -163,8 +179,10 @@ export default function CircuitSmashers() {
             console.error('Failed to submit code before navigation:', error);
           }
         }
-
-        navigate('/student/games-roadmap');
+        
+        setGameCompleted(true);
+        // Start countdown for redirect
+        setRedirectCountdown(10);
       });
 
       // Request current state when component mounts (for reconnection)
@@ -185,6 +203,18 @@ export default function CircuitSmashers() {
       }
     };
   }, [socket, isFileValid, uploadedFile]);
+
+  // Countdown effect for redirect
+  useEffect(() => {
+    if (gameCompleted && redirectCountdown > 0) {
+      const timer = setTimeout(() => {
+        setRedirectCountdown(redirectCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (gameCompleted && redirectCountdown === 0) {
+      navigate('/student/games-roadmap');
+    }
+  }, [gameCompleted, redirectCountdown, navigate]);
 
   // Start game handler - only allows start when server timer is active
   const handleStartGame = () => {
@@ -464,26 +494,45 @@ export default function CircuitSmashers() {
               transition={{ delay: 0.3 }}
             >
               <h3 className="text-3xl font-bold text-green-400 mb-2">
-                Well Done!
+                {uploadedFile && hasSubmittedRef.current ? "Well Done!" : "Time's Up!"}
               </h3>
               <p className="text-xl text-white/80">
-                Your Arduino code has been successfully submitted!
+                {uploadedFile && hasSubmittedRef.current 
+                  ? "Your Arduino code has been automatically submitted!"
+                  : uploadedFile 
+                    ? "Your uploaded file is being submitted..."
+                    : "Time's up! No file was uploaded."
+                }
               </p>
             </motion.div>
 
             {/* File name display */}
             {uploadedFile && (
               <motion.div
-                className="bg-purple-900/30 border border-purple-500/30 rounded-md p-4 mb-8 w-full max-w-md"
+                className="bg-purple-900/30 border border-purple-500/30 rounded-md p-4 mb-6 w-full max-w-md"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
               >
                 <p className="text-white text-center">
-                  <span className="font-medium">Submitted file:</span> {uploadedFile.name}
+                  <span className="font-medium">
+                    {hasSubmittedRef.current ? "Submitted file:" : "Submitting file:"}
+                  </span> {uploadedFile.name}
                 </p>
               </motion.div>
             )}
+
+            {/* Countdown and redirect info */}
+            <motion.div
+              className="text-center mb-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              <p className="text-white/70 text-lg">
+                Redirecting to Road Map in {redirectCountdown} seconds...
+              </p>
+            </motion.div>
 
             {/* Road Map button with map icon */}
             <motion.button
@@ -493,7 +542,7 @@ export default function CircuitSmashers() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
-              onClick={() => window.location.href = "/student/games-roadmap"}
+              onClick={() => navigate('/student/games-roadmap')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6-3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -524,59 +573,6 @@ export default function CircuitSmashers() {
                       : `${Math.floor(timeRemaining / 60)} minutes remaining!`}
                   </span>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Time's up popup */}
-          <AnimatePresence>
-            {timeIsUp && !gameCompleted && (
-              <motion.div
-                className="fixed inset-0 bg-black/70 flex items-center justify-center z-40 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-              >
-                <motion.div
-                  className="bg-red-900/80 px-8 py-6 rounded-lg border border-red-500/30 max-w-md text-center"
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", delay: 0.2 }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <h2 className="text-3xl font-bold text-red-100 mb-2">Time's Up!</h2>
-                  <p className="text-red-200 mb-6">
-                    {uploadedFile
-                      ? `Your uploaded file "${uploadedFile.name}" will be submitted.`
-                      : "Time's up! You haven't uploaded any file yet."}
-                  </p>
-                  <div className="flex space-x-4 justify-center">
-                    {uploadedFile ? (
-                      <motion.button
-                        className="px-6 py-2 bg-green-800 text-white rounded-md border border-green-600/30"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleSubmitCode}
-                      >
-                        View Results
-                      </motion.button>
-                    ) : (
-                      <motion.button
-                        className="px-6 py-2 bg-amber-800 text-white rounded-md border border-amber-600/30"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => {
-                          setTimeIsUp(false);
-                          setShowUploadModal(true);
-                        }}
-                      >
-                        Upload File
-                      </motion.button>
-                    )}
-                  </div>
-                </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -689,7 +685,7 @@ export default function CircuitSmashers() {
               whileHover={{ scale: 1.05, boxShadow: "0px 0px 8px rgba(140, 20, 252, 0.6)" }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowUploadModal(true)}
-              disabled={timeIsUp}
+              disabled={gameCompleted}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -708,7 +704,7 @@ export default function CircuitSmashers() {
                     setUploadedFile(null);
                     setIsFileValid(false);
                   }}
-                  disabled={timeIsUp}
+                  disabled={gameCompleted}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
