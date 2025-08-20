@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
-const GameNode = ({ game, idx, visibleGames }) => {
+const GameNode = ({ game, idx, visibleGames, isAnimating }) => {
   const navigate = useNavigate();
 
   // Floating animation variants for game icons
@@ -37,6 +37,19 @@ const GameNode = ({ game, idx, visibleGames }) => {
     }
   };
 
+  // State change animation variants
+  const stateChangeAnimation = {
+    initial: { scale: 1, opacity: 1 },
+    animate: {
+      scale: [1, 1.15, 1],
+      opacity: [1, 0.7, 1],
+      transition: {
+        duration: 0.8,
+        ease: "easeInOut"
+      }
+    }
+  };
+
   return (
     <AnimatePresence key={game.id}>
       {visibleGames.includes(idx) && (
@@ -51,15 +64,18 @@ const GameNode = ({ game, idx, visibleGames }) => {
             <motion.div
               className="relative"
               initial={{ opacity: 0, scale: 0.5, x: -80 }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-                x: 0,
-                transition: {
-                  duration: 0.6,
-                  ease: "easeOut",
-                }
-              }}
+              animate={[
+                {
+                  opacity: 1,
+                  scale: 1,
+                  x: 0,
+                  transition: {
+                    duration: 0.6,
+                    ease: "easeOut",
+                  }
+                },
+                isAnimating ? stateChangeAnimation.animate : {}
+              ]}
               whileHover={(game.isAvailable && !game.isCompleted) ? { scale: 1.08 } : {}}
             >
               {/* Triangle gradient with game icon */}
@@ -86,14 +102,41 @@ const GameNode = ({ game, idx, visibleGames }) => {
                         : 'brightness(0.4) saturate(0) contrast(0.8)',
                   }}
                   initial={{ opacity: 0, rotateZ: 15 }}
-                  animate={{
-                    opacity: 1,
-                    rotateZ: 0,
-                    transition: {
-                      duration: 0.8,
-                      delay: 0.2
-                    }
-                  }}
+                  animate={[
+                    {
+                      opacity: 1,
+                      rotateZ: 0,
+                      transition: {
+                        duration: 0.8,
+                        delay: 0.2
+                      }
+                    },
+                    isAnimating ? {
+                      opacity: [1, 0.3, 1],
+                      filter: [
+                        game.isCompleted
+                          ? 'drop-shadow(0 0 10px rgba(34, 197, 94, 0.6)) hue-rotate(90deg) saturate(1.2)'
+                          : game.isAvailable
+                            ? 'drop-shadow(0 0 10px rgba(140, 20, 252, 0.6))'
+                            : 'brightness(0.4) saturate(0) contrast(0.8)',
+                        game.isCompleted
+                          ? 'drop-shadow(0 0 30px rgba(34, 197, 94, 1.2)) hue-rotate(90deg) saturate(1.8) brightness(1.4)'
+                          : game.isAvailable
+                            ? 'drop-shadow(0 0 30px rgba(140, 20, 252, 1.2)) brightness(1.4)'
+                            : 'brightness(0.7) saturate(0.3) contrast(1.2)',
+                        game.isCompleted
+                          ? 'drop-shadow(0 0 10px rgba(34, 197, 94, 0.6)) hue-rotate(90deg) saturate(1.2)'
+                          : game.isAvailable
+                            ? 'drop-shadow(0 0 10px rgba(140, 20, 252, 0.6))'
+                            : 'brightness(0.4) saturate(0) contrast(0.8)'
+                      ],
+                      transition: {
+                        duration: 1.0,
+                        times: [0, 0.5, 1],
+                        ease: "easeInOut"
+                      }
+                    } : {}
+                  ]}
                 />
 
                 {/* Game icon with floating animation */}
@@ -121,7 +164,16 @@ const GameNode = ({ game, idx, visibleGames }) => {
                         ease: "easeOut"
                       }
                     },
-                    (game.isAvailable && !game.isCompleted) ? "animate" : {}
+                    (game.isAvailable && !game.isCompleted) ? "animate" : {},
+                    isAnimating ? {
+                      opacity: [1, 0.4, 1],
+                      scale: [1, 1.1, 1],
+                      rotateZ: [0, 3, -3, 0],
+                      transition: {
+                        duration: 0.8,
+                        ease: "easeInOut"
+                      }
+                    } : {}
                   ]}
                   variants={floatingAnimation}
                 />
@@ -131,10 +183,11 @@ const GameNode = ({ game, idx, visibleGames }) => {
                 game={game}
                 buttonAnimation={buttonAnimation}
                 navigate={navigate}
+                isAnimating={isAnimating}
               />
             </motion.div>
 
-            <GameTitle game={game} />
+            <GameTitle game={game} isAnimating={isAnimating} />
           </div>
         </div>
       )}
@@ -142,7 +195,7 @@ const GameNode = ({ game, idx, visibleGames }) => {
   );
 };
 
-const GameButton = ({ game, buttonAnimation, navigate }) => {
+const GameButton = ({ game, buttonAnimation, navigate, isAnimating }) => {
   // Map game titles to their routes
   const gameRoutes = {
     'Quiz Hunters': '/student/quiz-hunters',
@@ -187,7 +240,16 @@ const GameButton = ({ game, buttonAnimation, navigate }) => {
         initial="rest"
         whileHover={(game.isAvailable && !game.isCompleted) ? "hover" : "disabled"}
         whileTap={(game.isAvailable && !game.isCompleted) ? "tap" : "disabled"}
-        animate={(game.isAvailable && !game.isCompleted) ? "rest" : "disabled"}
+        animate={[
+          (game.isAvailable && !game.isCompleted) ? "rest" : "disabled",
+          isAnimating ? {
+            opacity: [1, 0.3, 1],
+            transition: {
+              duration: 0.8,
+              ease: "easeInOut"
+            }
+          } : {}
+        ]}
         variants={buttonAnimation}
       >
         <motion.img
@@ -205,15 +267,25 @@ const GameButton = ({ game, buttonAnimation, navigate }) => {
             borderRadius: '50%'
           }}
           initial={{ opacity: 0, rotateY: 90 }}
-          animate={{
-            opacity: 1,
-            rotateY: 0,
-            transition: {
-              duration: 0.6,
-              delay: 0.3,
-              ease: "easeOut"
-            }
-          }}
+          animate={[
+            {
+              opacity: 1,
+              rotateY: 0,
+              transition: {
+                duration: 0.6,
+                delay: 0.3,
+                ease: "easeOut"
+              }
+            },
+            isAnimating ? {
+              opacity: [1, 0.2, 1],
+              scale: [1, 1.05, 1],
+              transition: {
+                duration: 0.8,
+                ease: "easeInOut"
+              }
+            } : {}
+          ]}
         />
       </motion.div>
 
@@ -251,7 +323,7 @@ const GameButton = ({ game, buttonAnimation, navigate }) => {
   );
 };
 
-const GameTitle = ({ game }) => {
+const GameTitle = ({ game, isAnimating }) => {
   return (
     <motion.div
       className={`mt-4 text-white font-semibold text-center px-3 py-2 rounded-md backdrop-blur-sm ${game.isCompleted
@@ -261,14 +333,24 @@ const GameTitle = ({ game }) => {
           : 'bg-black/40 border border-gray-500/20'
         }`}
       initial={{ opacity: 0, y: 20 }}
-      animate={{
-        opacity: 1,
-        y: 0,
-        transition: {
-          duration: 0.4,
-          delay: 0.5
-        }
-      }}
+      animate={[
+        {
+          opacity: 1,
+          y: 0,
+          transition: {
+            duration: 0.4,
+            delay: 0.5
+          }
+        },
+        isAnimating ? {
+          opacity: [1, 0.4, 1],
+          y: [0, -5, 0],
+          transition: {
+            duration: 0.8,
+            ease: "easeInOut"
+          }
+        } : {}
+      ]}
       whileHover={{ scale: 1.05 }}
     >
       <div className="text-xl">{game.title}</div>

@@ -198,6 +198,19 @@ export default function GamesRoadmap() {
       }
     });
 
+    // Trigger animation for the changed game node only
+    if (initialAnimationComplete) {
+      setAnimatedGameIds(prev => new Set([...prev, gameId]));
+      // Remove the animation trigger after a short delay to reset for future changes
+      setTimeout(() => {
+        setAnimatedGameIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(gameId);
+          return newSet;
+        });
+      }, 1000);
+    }
+
     // Update path availability based on new game states
     //updatePathAvailability();
   };
@@ -245,6 +258,8 @@ export default function GamesRoadmap() {
   // Animation states for sequential reveal
   const [visibleGames, setVisibleGames] = useState([]);
   const [visiblePaths, setVisiblePaths] = useState([]);
+  const [initialAnimationComplete, setInitialAnimationComplete] = useState(false);
+  const [animatedGameIds, setAnimatedGameIds] = useState(new Set());
 
   // Theme color for available items
   const themeColor = 'rgba(62, 5, 128, 1)';
@@ -304,9 +319,9 @@ export default function GamesRoadmap() {
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-  // Sequential animation effect - Updated for left to right flow
+  // Initial sequential animation effect - only runs once when games are first loaded
   useEffect(() => {
-    if (games.length === 0) return;
+    if (games.length === 0 || initialAnimationComplete) return;
 
     const animateSequence = async () => {
       // Reset animations if needed
@@ -327,10 +342,13 @@ export default function GamesRoadmap() {
         setVisibleGames(prev => [...prev, i + 1]);
         await new Promise(resolve => setTimeout(resolve, 500));
       }
+
+      // Mark initial animation as complete
+      setInitialAnimationComplete(true);
     };
 
     animateSequence();
-  }, [games]);
+  }, [games.length, initialAnimationComplete]); // Only depend on games.length, not the entire games array
 
   return (
     <div
@@ -364,6 +382,7 @@ export default function GamesRoadmap() {
             game={game}
             idx={idx}
             visibleGames={visibleGames}
+            isAnimating={animatedGameIds.has(game._id)}
           />
         ))}
       </div>
