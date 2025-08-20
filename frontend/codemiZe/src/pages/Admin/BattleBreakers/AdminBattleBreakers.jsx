@@ -664,7 +664,7 @@ export default function AdminBattleBreakers() {
         status: isCorrect ? "Correct" : "Incorrect"
       }]
     };
-
+    console.log('Submitting answer:', submissionData);
     try {
       // Call the submitAnswers API endpoint
       await axiosInstance.post(API_PATHS.BATTLE_BREAKERS.SUBMIT_ANSWERS, submissionData);

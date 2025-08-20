@@ -13,7 +13,7 @@ import { API_PATHS } from '../../../utils/apiPaths';
 export default function AdminQuizHunters() {
   // Questions state
   const [selectedFile, setSelectedFile] = useState(null);
-  const [allocatedTime, setAllocatedTime] = useState(30); // Default 30 minutes
+  const [allocatedTime, setAllocatedTime] = useState(20); // Default 20 minutes
   const [customTime, setCustomTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');

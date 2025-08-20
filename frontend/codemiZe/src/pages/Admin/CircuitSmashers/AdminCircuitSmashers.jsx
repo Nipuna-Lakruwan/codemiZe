@@ -29,7 +29,10 @@ export default function AdminCircuitSmashers() {
     const fetchTeams = async () => {
       try {
         const response = await axiosInstance.get(API_PATHS.ADMIN.GET_ALL_SCHOOLS);
-        const schools = response.data.schools.map(item => item.nameInShort);
+        const schools = response.data.schools.map(item => ({
+          id: item._id || item.id,
+          nameInShort: item.nameInShort
+        }));
         setTeams(schools);
       } catch (error) {
         console.error('Error fetching teams:', error);
@@ -207,7 +210,7 @@ export default function AdminCircuitSmashers() {
               <tr style="background-color: #f3f4f6;">
                 <th style="padding: 12px 8px; border: 2px solid #000; text-align: left; font-weight: bold; color: #7c3aed;">Criteria</th>
                 ${teams.map(team => `
-                  <th style="padding: 12px 8px; border: 2px solid #000; text-align: center; font-weight: bold; color: #7c3aed;">${team}</th>
+                  <th style="padding: 12px 8px; border: 2px solid #000; text-align: center; font-weight: bold; color: #7c3aed;">${team.nameInShort}</th>
                 `).join('')}
               </tr>
             </thead>
@@ -225,8 +228,8 @@ export default function AdminCircuitSmashers() {
                           judgeData = markings[Object.keys(markings)[0]];
                         }
                         
-                        if (judgeData && judgeData[team] && judgeData[team][index] !== undefined) {
-                          return judgeData[team][index];
+                        if (judgeData && judgeData[team.nameInShort] && judgeData[team.nameInShort][index] !== undefined) {
+                          return judgeData[team.nameInShort][index];
                         }
                         return "-";
                       })()}
@@ -246,9 +249,9 @@ export default function AdminCircuitSmashers() {
                         judgeData = markings[Object.keys(markings)[0]];
                       }
                       
-                      if (judgeData && judgeData[team]) {
-                        const totalIndex = judgeData[team].length - 1;
-                        return judgeData[team][totalIndex] || "-";
+                      if (judgeData && judgeData[team.nameInShort]) {
+                        const totalIndex = judgeData[team.nameInShort].length - 1;
+                        return judgeData[team.nameInShort][totalIndex] || "-";
                       }
                       return "-";
                     })()}
@@ -326,7 +329,7 @@ export default function AdminCircuitSmashers() {
       pdf.text(`Generated on: ${currentDate}`, 20, 45);
       
       // Create table data
-      const headers = ['Criteria', ...teams];
+      const headers = ['Criteria', ...teams.map(team => team.nameInShort)];
       const tableData = criteria.map((criterion, index) => {
         const row = [criterion];
         teams.forEach(team => {
@@ -335,8 +338,8 @@ export default function AdminCircuitSmashers() {
             if (!judgeData && Object.keys(markings).length === 1) {
               judgeData = markings[Object.keys(markings)[0]];
             }
-            if (judgeData && judgeData[team] && judgeData[team][index] !== undefined) {
-              row.push(judgeData[team][index].toString());
+            if (judgeData && judgeData[team.nameInShort] && judgeData[team.nameInShort][index] !== undefined) {
+              row.push(judgeData[team.nameInShort][index].toString());
             } else {
               row.push('-');
             }
@@ -355,9 +358,9 @@ export default function AdminCircuitSmashers() {
           if (!judgeData && Object.keys(markings).length === 1) {
             judgeData = markings[Object.keys(markings)[0]];
           }
-          if (judgeData && judgeData[team]) {
-            const totalIndex = judgeData[team].length - 1;
-            totalRow.push((judgeData[team][totalIndex] || '-').toString());
+          if (judgeData && judgeData[team.nameInShort]) {
+            const totalIndex = judgeData[team.nameInShort].length - 1;
+            totalRow.push((judgeData[team.nameInShort][totalIndex] || '-').toString());
           } else {
             totalRow.push('-');
           }
@@ -625,8 +628,8 @@ export default function AdminCircuitSmashers() {
                   <tr className="bg-gray-100">
                     <th className="py-3 px-4 border-b border-r text-left text-sm font-medium text-purple-800">Criteria</th>
                     {teams.map((team) => (
-                      <th key={team} className="py-3 px-4 border-b border-r text-center text-sm font-medium text-purple-800">
-                        {team}
+                      <th key={team.id} className="py-3 px-4 border-b border-r text-center text-sm font-medium text-purple-800">
+                        {team.nameInShort}
                       </th>
                     ))}
                   </tr>
@@ -638,7 +641,7 @@ export default function AdminCircuitSmashers() {
                         {criterion}
                       </td>
                       {teams.map((team) => (
-                        <td key={`${team}-${criterion}`} className={`py-2 px-4 border-b border-r text-center text-sm ${index === criteria.length - 1 ? "font-bold text-purple-800" : "text-gray-700"}`}>
+                        <td key={`${team.id}-${criterion}`} className={`py-2 px-4 border-b border-r text-center text-sm ${index === criteria.length - 1 ? "font-bold text-purple-800" : "text-gray-700"}`}>
                           {(() => {
                             if (!markings) return "-";
                             let judgeData = markings[activeJudge];
@@ -647,8 +650,8 @@ export default function AdminCircuitSmashers() {
                               judgeData = markings[Object.keys(markings)[0]];
                             }
                             
-                            if (judgeData && judgeData[team] && judgeData[team][index] !== undefined) {
-                              return judgeData[team][index];
+                            if (judgeData && judgeData[team.nameInShort] && judgeData[team.nameInShort][index] !== undefined) {
+                              return judgeData[team.nameInShort][index];
                             }
                             return "-";
                           })()}
@@ -662,7 +665,7 @@ export default function AdminCircuitSmashers() {
                       Total
                     </td>
                     {teams.map((team) => (
-                      <td key={`${team}-total`} className="py-2 px-4 border-b border-r text-center text-sm font-bold text-purple-800">
+                      <td key={`${team.id}-total`} className="py-2 px-4 border-b border-r text-center text-sm font-bold text-purple-800">
                         {(() => {
                           if (!markings) return "-";
                           let judgeData = markings[activeJudge];
@@ -671,10 +674,10 @@ export default function AdminCircuitSmashers() {
                             judgeData = markings[Object.keys(markings)[0]];
                           }
                           
-                          if (judgeData && judgeData[team]) {
+                          if (judgeData && judgeData[team.nameInShort]) {
                             // Get the last element which is the total
-                            const totalIndex = judgeData[team].length - 1;
-                            return judgeData[team][totalIndex] || "-";
+                            const totalIndex = judgeData[team.nameInShort].length - 1;
+                            return judgeData[team.nameInShort][totalIndex] || "-";
                           }
                           return "-";
                         })()}

@@ -301,7 +301,7 @@ export const submitAnswers = async (req, res) => {
                 if (status === "Correct") {
                     score = 5; // Second attempt correct: +5 points
                 } else {
-                    score = 0; // Second attempt wrong: no points (no additional penalty)
+                    score = 0; // Second attempt wrong: no points
                 }
             }
 

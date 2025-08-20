@@ -46,7 +46,7 @@ export default function QuizHunters() {
         const state = JSON.parse(savedQuizState);
         const now = Date.now();
         const elapsed = Math.floor((now - state.startTime) / 1000);
-        const remaining = Math.max(0, (30 * 60) - elapsed);
+        const remaining = Math.max(0, (20 * 60) - elapsed);
         
         if (remaining > 0) {
           // Quiz is still active
@@ -135,7 +135,7 @@ export default function QuizHunters() {
         if (quizStartTime) {
           const now = Date.now();
           const elapsed = Math.floor((now - quizStartTime) / 1000);
-          const remaining = Math.max(0, (30 * 60) - elapsed);
+          const remaining = Math.max(0, (20 * 60) - elapsed);
           
           setTimeRemaining(remaining);
           
@@ -219,8 +219,8 @@ export default function QuizHunters() {
       // Set the quiz start time
       const startTime = Date.now();
       setQuizStartTime(startTime);
-      setTimeRemaining(30 * 60); // 30 minutes
-      
+      setTimeRemaining(20 * 60); // 20 minutes
+
       // Save state to localStorage
       saveQuizState(startTime);
       
@@ -317,8 +317,8 @@ export default function QuizHunters() {
   // Calculate progress percentage - now based on remaining time
   const calculateProgress = () => {
     if (timeRemaining === null) return 100;
-    // Calculate as percentage of total time (30 minutes)
-    const totalTime = 30 * 60; // 30 minutes in seconds
+    // Calculate as percentage of total time (20 minutes)
+    const totalTime = 20 * 60; // 20 minutes in seconds
     return (timeRemaining / totalTime) * 100;
   };
 

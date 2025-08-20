@@ -31,7 +31,9 @@ export default function AdminCodeCrushers() {
       try {
         const response = await axiosInstance.get(API_PATHS.ADMIN.GET_ALL_SCHOOLS);
         const schools = response.data.schools.map(item => item.nameInShort);
-        setTeams(schools);
+        // Remove duplicates by converting to Set and back to array
+        const uniqueSchools = [...new Set(schools)];
+        setTeams(uniqueSchools);
       } catch (error) {
         console.error('Error fetching teams:', error);
       }
@@ -627,8 +629,8 @@ export default function AdminCodeCrushers() {
                 <thead>
                   <tr className="bg-gray-100">
                     <th className="py-3 px-4 border-b border-r text-left text-sm font-medium text-purple-800">Criteria</th>
-                    {teams.map((team) => (
-                      <th key={team} className="py-3 px-4 border-b border-r text-center text-sm font-medium text-purple-800">
+                    {teams.map((team, teamIndex) => (
+                      <th key={`header-${team}-${teamIndex}`} className="py-3 px-4 border-b border-r text-center text-sm font-medium text-purple-800">
                         {team}
                       </th>
                     ))}
@@ -640,8 +642,8 @@ export default function AdminCodeCrushers() {
                       <td className={`py-2 px-4 border-b border-r text-left text-sm font-medium ${index === criteria.length - 1 ? "text-purple-800" : "text-gray-700"}`}>
                         {criterion}
                       </td>
-                      {teams.map((team) => (
-                        <td key={`${team}-${criterion}`} className={`py-2 px-4 border-b border-r text-center text-sm ${index === criteria.length - 1 ? "font-bold text-purple-800" : "text-gray-700"}`}>
+                      {teams.map((team, teamIndex) => (
+                        <td key={`${team}-${criterion}-${teamIndex}`} className={`py-2 px-4 border-b border-r text-center text-sm ${index === criteria.length - 1 ? "font-bold text-purple-800" : "text-gray-700"}`}>
                           {(() => {
                             if (!markings) return "-";
                             let judgeData = markings[activeJudge];
@@ -664,8 +666,8 @@ export default function AdminCodeCrushers() {
                     <td className="py-2 px-4 border-b border-r text-left text-sm font-bold text-purple-800">
                       Total
                     </td>
-                    {teams.map((team) => (
-                      <td key={`${team}-total`} className="py-2 px-4 border-b border-r text-center text-sm font-bold text-purple-800">
+                    {teams.map((team, teamIndex) => (
+                      <td key={`${team}-total-${teamIndex}`} className="py-2 px-4 border-b border-r text-center text-sm font-bold text-purple-800">
                         {(() => {
                           if (!markings) return "-";
                           let judgeData = markings[activeJudge];

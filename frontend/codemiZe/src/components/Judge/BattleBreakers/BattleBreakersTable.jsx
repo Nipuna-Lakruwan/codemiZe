@@ -54,9 +54,21 @@ const BattleBreakersTable = ({
       else if (totalAttempts === 2) return 5; // Second attempt  
       else return 0; // Third attempt or more
     } else if (questionAnswers[schoolId] === false) {
-      // Wrong answer - check if it's first wrong attempt (-5) or subsequent (0)
-      // This is simplified - in practice you'd need more detailed attempt tracking
-      return -5;
+      // Wrong answer - check if it's first wrong attempt (-5) or second wrong attempt (0)
+      // Check all attempts for this school to determine which attempt this was
+      let attemptNumber = 1;
+      for (let i = 1; i <= 2; i++) {
+        if (questionAnswers[`${schoolId}_attempt_${i}`] === false) {
+          attemptNumber = i;
+          break;
+        }
+      }
+      
+      if (attemptNumber === 1) {
+        return -5; // First wrong attempt: -5 points
+      } else {
+        return 0; // Second wrong attempt: 0 points (no deduction)
+      }
     }
     
     return 0;
