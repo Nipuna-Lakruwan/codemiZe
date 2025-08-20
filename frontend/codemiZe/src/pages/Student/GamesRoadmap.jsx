@@ -11,7 +11,7 @@ import CentralLogo from '../../components/GamesRoadMap/CentralLogo';
 import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPaths';
 import { imagePath } from '../../utils/helper';
-import { SocketContext } from '../../context/socketContext';
+import { SocketContext } from '../../context/SocketContext';
 
 // Game data with positions and status (status: 'completed', 'active', 'inactive')
 const mockGames = [

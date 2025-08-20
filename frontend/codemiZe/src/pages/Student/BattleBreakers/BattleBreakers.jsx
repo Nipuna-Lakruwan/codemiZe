@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import GameLayout from '../GameLayout/GameLayout';
 import StartGameComponent from '../../../components/Games/StartGameComponent';
 import GameNodeMini from '../../../components/Games/GameNodeMini';
@@ -9,6 +10,7 @@ import { SocketContext } from '../../../context/SocketContext';
 
 export default function BattleBreakers() {
   const socket = useContext(SocketContext);
+  const navigate = useNavigate();
 
   // Helper functions for localStorage with expiration (20 seconds = 20000ms)
   const EXPIRATION_TIME = 20000; // 20 seconds in milliseconds
@@ -69,6 +71,9 @@ export default function BattleBreakers() {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [allocatedTime, setAllocatedTime] = useState(0);
+
+  // Countdown state for redirect
+  const [redirectCountdown, setRedirectCountdown] = useState(5);
 
   // Effect to check for saved question in local storage on component mount
   useEffect(() => {
@@ -150,6 +155,7 @@ export default function BattleBreakers() {
         console.log('Game completed:', data);
         setGameCompleted(true);
         setIsTimerRunning(false);
+        setRedirectCountdown(5); // Reset countdown to 5 seconds
 
         // Clear question and questionId from local storage when game is completed
         clearBattleBreakersLocalStorage();
@@ -174,6 +180,30 @@ export default function BattleBreakers() {
       clearBattleBreakersLocalStorage();
     };
   }, []);
+
+  // Countdown timer for redirect when game is completed
+  useEffect(() => {
+    let intervalId;
+    
+    if (gameCompleted && redirectCountdown > 0) {
+      intervalId = setInterval(() => {
+        setRedirectCountdown(prev => {
+          if (prev <= 1) {
+            // Redirect to games roadmap when countdown reaches 0
+            navigate('/student/games-roadmap');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [gameCompleted, redirectCountdown, navigate]);
 
   // Mock buzzer sound functionality
   const playBuzzerSound = () => {
@@ -373,7 +403,7 @@ export default function BattleBreakers() {
           </div>
 
           {/* Completion glass container */}
-          <div className="w-150 h-[600px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 relative">
+          <div className="w-150 h-[720px] bg-stone-200/5 rounded-lg shadow-[0px_0px_34px_-6px_rgba(104,104,104,0.22)] border border-white/5 backdrop-blur-[5.90px] flex flex-col items-center p-6 relative">
             {/* Game icon */}
             <motion.img
               src="/Battle Breakers.png"
@@ -413,12 +443,19 @@ export default function BattleBreakers() {
               <h3 className="text-3xl font-bold text-green-400 mb-2">
                 Well Done!
               </h3>
-              <p className="text-xl text-white/80">
+              <p className="text-xl text-white/80 mb-4">
                 You've completed all the questions in this round!
               </p>
+              <motion.p 
+                className="text-lg text-white/70"
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              >
+                Redirecting to Games Roadmap in {redirectCountdown} seconds...
+              </motion.p>
             </motion.div>
 
-            {/* Road Map button with map icon */}
+            {/* Road Map button with map icon and countdown */}
             <motion.button
               className="px-8 py-3 bg-purple-950 rounded-[3px] border border-slate-500/40 text-white font-medium flex items-center gap-2"
               whileHover={{ scale: 1.05, boxShadow: "0px 0px 8px rgba(140, 20, 252, 0.6)" }}
@@ -426,12 +463,12 @@ export default function BattleBreakers() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
-              onClick={() => window.location.href = "/student/games-roadmap"}
+              onClick={() => navigate('/student/games-roadmap')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6-3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
-              Road Map
+              Go to Road Map ({redirectCountdown}s)
             </motion.button>
           </div>
         </div>
