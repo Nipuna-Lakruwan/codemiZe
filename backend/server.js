@@ -1,3 +1,15 @@
+/********************************************************************
+ *  🚀 CodemiZe 2.0 | Powered by Express.js + MongoDB
+ *  ---------------------------------------------------------------
+ *  Author   : Pasindu Deshan  
+ *  Project  : Full-Stack Development | Backend API  
+ *  Date     : © 2025  
+ *  Notes    : This server powers the application’s RESTful API, 
+ *             including authentication, routes, and middleware. 
+ *  
+ *  ⚡ Leave it better than you found it. Build for scale.  
+ ********************************************************************/
+
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import http from "http";
